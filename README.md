@@ -1,20 +1,5 @@
 
-# flutter_application_1
-
-A new Flutter project.
-
-## Getting Started
-
-This project is a starting point for a Flutter application.
-
-A few resources to get you started if this is your first Flutter project:
-
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
-
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
-=======
 # frontend
 
+깃허브로 협업
+https://velog.io/@ygy0102/GIT-%EA%B9%83%ED%97%88%EB%B8%8C%EB%A1%9C-%ED%98%91%EC%97%85%ED%95%98%EA%B8%B0-Repository-%EA%B3%B5%EC%9C%A0-PR-merge
