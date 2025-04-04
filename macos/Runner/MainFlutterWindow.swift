@@ -3,8 +3,7 @@ import FlutterMacOS
 
 class MainFlutterWindow: NSWindow {
   override func awakeFromNib() {
-    RegisterGeneratedPlugins(registry: flutterViewController)
-
+  
     let flutterViewController = FlutterViewController()
     let windowFrame = NSRect(x: 0, y: 0, width: 1040, height: 720)  // 창 크기 설정
     self.contentViewController = flutterViewController
@@ -13,6 +12,7 @@ class MainFlutterWindow: NSWindow {
     self.isMovableByWindowBackground = true  // 창 이동 가능
     self.styleMask.insert(.resizable)  // 창 크기 조절 가능 (원하면 제거 가능)
 
-    super.awakeFromNib()
+   RegisterGeneratedPlugins(registry: flutterViewController)
+   super.awakeFromNib()
   }
 }
