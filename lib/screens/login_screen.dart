@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_application_1/home_screen.dart'; // 홈 화면 불러오기
+import 'package:flutter_application_1/screens/home_screen.dart';
 import 'package:flutter_application_1/screens/sign_up_screen.dart'; // 회원가입 화면 불러오기
 
 // 사용자 정보를 담을 클래스
