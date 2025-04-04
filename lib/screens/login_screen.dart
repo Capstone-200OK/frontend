@@ -28,6 +28,7 @@ class _LoginScreenState extends State<LoginScreen> {
   // 사용자 정보 리스트 (로그인할 때 비교할 데이터)
   List<User> users = [
     User(id: 'yeeun123', email: 'yeeun@naver.com', password: '123456'),
+    User(id: 'hyunseo', email: '111@naver.com', password: '111111'),
     User(id: 'testUser', email: 'test@example.com', password: 'password123'),
   ];
 
