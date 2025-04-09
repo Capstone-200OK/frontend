@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_application_1/screens/personal_screen.dart';
 
 class HomeScreen extends StatelessWidget {
   final String username;
@@ -87,7 +88,14 @@ class HomeScreen extends StatelessWidget {
               children: [
                 // 개인 버튼
                 ElevatedButton(
-                  onPressed: () {},
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => PersonalScreen(username: username),
+                      ),
+                    );
+                  },
                   style: ElevatedButton.styleFrom(
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(20), // 모서리를 둥글게
