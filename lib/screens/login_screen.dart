@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/screens/home_screen.dart';
 import 'package:flutter_application_1/screens/sign_up_screen.dart'; // 회원가입 화면 불러오기
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 
 // 사용자 정보를 담을 클래스
 class User {
@@ -36,40 +38,44 @@ class _LoginScreenState extends State<LoginScreen> {
   ];
 
   // 로그인 처리 함수
-  void _login() {
+  void _login() async {
     // 텍스트 필드에서 입력된 값 가져오기
-    String id = _idController.text;
+    // String id = _idController.text;
     String email = _emailController.text;
     String password = _passwordController.text;
+    final url = Uri.parse("http://223.194.155.152:8080/user/login");
 
-    // 로그인할 사용자 찾기
-    User? loggedInUser;
-    for (var user in users) {
-      // 이메일과 비밀번호가 일치하는 사용자를 찾으면 로그인 성공
-      if (user.email == email && user.password == password) {
-        loggedInUser = user;
-        break;
-      }
-    }
-
-    // 로그인 성공 여부 확인
-    if (loggedInUser != null) {
-      // 로그인 성공 후 홈 화면으로 이동하며 로그인한 사용자 아이디를 전달
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(
-          builder:
-              (context) => HomeScreen(username: loggedInUser!.id), // 홈 화면으로 이동
-        ),
+    try {
+      final response = await http.post(
+        url,
+        headers: {"Content-Type": "application/json"},
+        body: json.encode({
+          "email": email,
+          "password": password,
+        }),
       );
-      // 로그인 성공 메시지 표시
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('로그인 성공')));
-    } else {
-      // 로그인 실패 시 오류 메시지 표시
+      print(response);
+      if (response.statusCode == 200 && json.decode(response.body) == true) {
+        // 로그인 성공
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (context) => HomeScreen(username: email), // 아이디 대신 이메일
+          ),
+        );
+        ScaffoldMessenger.of(context)
+            .showSnackBar(const SnackBar(content: Text('로그인 성공')));
+      } else {
+        // 로그인 실패
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('로그인 실패: 이메일 또는 비밀번호가 일치하지 않습니다.')),
+        );
+      }
+    } catch (e) {
+      // 서버 연결 실패 등
+      print(e);
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('회원가입이 안 되어 있거나 로그인 정보가 일치하지 않습니다.')),
+        SnackBar(content: Text('오류 발생: $e')),
       );
     }
   }
