@@ -11,11 +11,12 @@ class HomeScreen extends StatelessWidget {
     return Scaffold(
       // 상단 AppBar 설정
       appBar: AppBar(
-        title: const Text(
-          'SORTY FILE', // AppBar에 표시할 제목
-          style: TextStyle(fontSize: 15), // 제목 글씨 크기 설정
+        title: Image.asset(
+          'assets/images/LOGO-text.png', //로고 이미지지
+          height: 230, // 이미지 높이 조정
         ),
-        backgroundColor: Colors.white, // AppBar 배경색을 흰색으로 설정
+        //centerTitle: true, // 가운데 정렬 (선택사항)
+        backgroundColor: Colors.white,
       ),
 
       drawer: Drawer(
@@ -183,13 +184,14 @@ class HomeScreen extends StatelessWidget {
                 ),
               ],
             ),
+            
             const SizedBox(height: 200), // 요소 간의 간격 설정
             // 검색창(TextField) 부분
             TextField(
               decoration: InputDecoration(
                 hintText: 'search', // 검색창의 힌트 텍스트
                 filled: true, // 🔹 배경색 적용할 때 필수
-                fillColor:Color(0xFFCFD8DC), //  TextField 배경색 
+                fillColor: Color(0xFFCFD8DC), //  TextField 배경색
                 //border: OutlineInputBorder(), // 검색창의 테두리 설정
                 prefixIcon: Icon(
                   Icons.search,
@@ -199,11 +201,8 @@ class HomeScreen extends StatelessWidget {
                   Icons.tune,
                   color: Color(0xff263238),
                 ), // 오른쪽 '조절' 아이콘
-                 
               ),
             ),
-            const SizedBox(height: 20), // 검색창과 다음 요소 간의 간격 설정
-            // 아이디 및 개인정보 표시
           ],
         ),
       ),
