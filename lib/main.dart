@@ -16,7 +16,7 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
-      //home: const LoginScreen(), // 로그인 화면을 초기 화면으로 설정
+      //home: const PersonalScreen(username: '현서'), // 로그인 화면을 초기 화면으로 설정
       home: const HomeScreen(username: '현서'),
     );
   }
