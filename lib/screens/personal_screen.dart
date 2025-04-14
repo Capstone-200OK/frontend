@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:desktop_drop/desktop_drop.dart';
 import 'dart:io';
+import 'file_sorty.dart';
 
 // 파일 정보 클래스
 class FileItem {
@@ -34,7 +35,7 @@ class PersonalScreen extends StatefulWidget {
 class _PersonalScreenState extends State<PersonalScreen> {
   // 파일 선택 상태 저장용 리스트
   List<FileItem> selectedFiles = [];
-  Set<String> fileNames = {}; // 🔹 중복 방지를 위한 파일 이름 저장용 집합
+  Set<String> fileNames = {}; // 중복 방지를 위한 파일 이름 저장용 집합
 
   @override
   Widget build(BuildContext context) {
@@ -46,6 +47,12 @@ class _PersonalScreenState extends State<PersonalScreen> {
           automaticallyImplyLeading: false, // 기본 뒤로가기/햄버거 제거
           backgroundColor: Colors.white,
           elevation: 0,
+          actions: [
+           const Icon(Icons.history, color: Color(0xFF263238)),
+           const SizedBox(width: 10),
+           const Icon(Icons.settings, color: Color(0xFF263238)),
+           const SizedBox(width: 10),
+          ],
           // Drawer 버튼
           leading: Builder(
             builder:
@@ -127,7 +134,7 @@ class _PersonalScreenState extends State<PersonalScreen> {
 
       drawer: Drawer(
         shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.zero, // 🔸 모서리 각지게
+          borderRadius: BorderRadius.zero, // 모서리 각지게
         ),
         child: Container(
           color: Color(0xFF455A64),
@@ -267,12 +274,6 @@ class _PersonalScreenState extends State<PersonalScreen> {
             ],
           ),
         ),
-        actions: [
-          const Icon(Icons.history, color: Color(0xFF263238)),
-          const SizedBox(width: 10),
-          const Icon(Icons.settings, color: Color(0xFF263238)),
-          const SizedBox(width: 10),
-        ],
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -307,7 +308,11 @@ class _PersonalScreenState extends State<PersonalScreen> {
                 ),
                 ElevatedButton(
                   onPressed: () {
-                    // 파일 이름 기준으로 정렬
+                    Navigator.push(
+                        context, MaterialPageRoute(
+                            builder: (context) => FileSortyScreen(files: selectedFiles),
+                        ),
+                    );
                     selectedFiles.sort((a, b) => a.name.compareTo(b.name));
                     setState(() {});
                   },
@@ -317,10 +322,10 @@ class _PersonalScreenState extends State<PersonalScreen> {
                       horizontal: 12,
                       vertical: 6,
                     ),
-                    child: const Text(
-                      'SORTY',
-                      style: TextStyle(color: Colors.white, fontSize: 12),
-                    ),
+                  ),
+                  child: const Text(
+                    'SORTY',
+                    style: TextStyle(color: Colors.white, fontSize: 12),
                   ),
                 ),
               ],
@@ -483,7 +488,7 @@ class _PersonalScreenState extends State<PersonalScreen> {
                                                 const SizedBox(width: 8),
                                                 
                                                 Text(
-                                                  file.name.length > 10 ? '${file.name.substring(0, 10)}...' : file.name, 
+                                                  file.name.length > 20 ? '${file.name.substring(0, 20)}...' : file.name, 
                                                   style: const TextStyle(
                                                     fontSize: 12,
                                                     fontFamily: 'APPLESDGOTHICNEOR',
