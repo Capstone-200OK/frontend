@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:desktop_drop/desktop_drop.dart';
 import 'dart:io';
-import 'file_sorty.dart';
+
+=======
+//import 'file_sorty.dart';
+
 
 // 파일 정보 클래스
 class FileItem {
@@ -35,25 +38,21 @@ class PersonalScreen extends StatefulWidget {
 class _PersonalScreenState extends State<PersonalScreen> {
   // 파일 선택 상태 저장용 리스트
   List<FileItem> selectedFiles = [];
-  Set<String> fileNames = {}; // 중복 방지를 위한 파일 이름 저장용 집합
+  Set<String> fileNames = {}; // 🔹 중복 방지를 위한 파일 이름 저장용 집합
+
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
+
       appBar: PreferredSize(
         preferredSize: const Size.fromHeight(kToolbarHeight),
         child: AppBar(
           automaticallyImplyLeading: false, // 기본 뒤로가기/햄버거 제거
           backgroundColor: Colors.white,
           elevation: 0,
-          actions: [
-           const Icon(Icons.history, color: Color(0xFF263238)),
-           const SizedBox(width: 10),
-           const Icon(Icons.settings, color: Color(0xFF263238)),
-           const SizedBox(width: 10),
-          ],
-          // Drawer 버튼
+
           leading: Builder(
             builder:
                 (context) => IconButton(
@@ -284,7 +283,7 @@ class _PersonalScreenState extends State<PersonalScreen> {
               children: [
                 Expanded(
                   child: Padding(
-                    padding: const EdgeInsets.only(left: 90.0), // ← 원하는 만큼 조절
+                    padding: const EdgeInsets.only(left: 80.0), // ← 원하는 만큼 조절
                     child: Text(
                       '폴더',
                       style: TextStyle(
@@ -296,7 +295,7 @@ class _PersonalScreenState extends State<PersonalScreen> {
                 ),
                 Expanded(
                   child: Padding(
-                    padding: const EdgeInsets.only(left: 120.0),
+                    padding: const EdgeInsets.only(left: 110.0),
                     child: Text(
                       '파일',
                       style: TextStyle(
@@ -306,26 +305,25 @@ class _PersonalScreenState extends State<PersonalScreen> {
                     ),
                   ),
                 ),
-                ElevatedButton(
-                  onPressed: () {
-                    Navigator.push(
-                        context, MaterialPageRoute(
-                            builder: (context) => FileSortyScreen(files: selectedFiles),
-                        ),
-                    );
-                    selectedFiles.sort((a, b) => a.name.compareTo(b.name));
-                    setState(() {});
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.black87,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 6,
+
+                Padding(
+                  padding: const EdgeInsets.only(right: 100), // 원하는 만큼 왼쪽으로 밀기
+                  child: ElevatedButton(
+                    onPressed: () {
+                      selectedFiles.sort((a, b) => a.name.compareTo(b.name));
+                      setState(() {});
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.black87,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 6,
+                      ),
                     ),
-                  ),
-                  child: const Text(
-                    'SORTY',
-                    style: TextStyle(color: Colors.white, fontSize: 12),
+                    child: const Text(
+                      'SORTY',
+                      style: TextStyle(color: Colors.white, fontSize: 12),
+                    ),
                   ),
                 ),
               ],
@@ -341,6 +339,7 @@ class _PersonalScreenState extends State<PersonalScreen> {
                   // 폴더 리스트
                   Expanded(
                     child: Container(
+                      height: 425,
                       decoration: BoxDecoration(
                         color: Color(0xFFCFD8DC),
                         borderRadius: BorderRadius.circular(16),
@@ -393,6 +392,7 @@ class _PersonalScreenState extends State<PersonalScreen> {
                   // 파일 리스트
                   Expanded(
                     // DropTarget (파일 드래그 앤 드랍)
+
                     child: DropTarget(
                       onDragDone: (detail) {
                         for (final file in detail.files) {
@@ -419,7 +419,10 @@ class _PersonalScreenState extends State<PersonalScreen> {
                       },
                       child: Container(
                         margin: const EdgeInsets.symmetric(
-                            vertical: 12, horizontal: 16),
+                          vertical: 12,
+                          horizontal: 7,
+                        ),
+
                         padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
                           color: Color(0xFFECEFF1),
@@ -435,8 +438,11 @@ class _PersonalScreenState extends State<PersonalScreen> {
                                 itemBuilder: (context, index) {
                                   final file = selectedFiles[index];
                                   return Padding(
-                                    padding:
-                                        const EdgeInsets.symmetric(vertical: 0.1),
+
+                                    padding: const EdgeInsets.symmetric(
+                                      vertical: 0.1,
+                                    ),
+
                                     child: Row(
                                       crossAxisAlignment:
                                           CrossAxisAlignment.center,
@@ -456,13 +462,16 @@ class _PersonalScreenState extends State<PersonalScreen> {
                                           ),
                                           fillColor:
                                               MaterialStateProperty.resolveWith<
-                                                  Color>((states) {
-                                            if (states.contains(
-                                                MaterialState.disabled)) {
-                                              return Colors.white;
-                                            }
-                                            return Colors.white;
-                                          }),
+                                                Color
+                                              >((states) {
+                                                if (states.contains(
+                                                  MaterialState.disabled,
+                                                )) {
+                                                  return Colors.white;
+                                                }
+                                                return Colors.white;
+                                              }),
+
                                           checkColor: Color(0xff263238),
                                         ),
 
@@ -486,20 +495,25 @@ class _PersonalScreenState extends State<PersonalScreen> {
                                                   size: 15,
                                                 ),
                                                 const SizedBox(width: 8),
-                                                
+
+
                                                 Text(
-                                                  file.name.length > 20 ? '${file.name.substring(0, 20)}...' : file.name, 
+                                                  file.name.length > 10
+                                                      ? '${file.name.substring(0, 10)}...'
+                                                      : file.name,
+
                                                   style: const TextStyle(
                                                     fontSize: 12,
                                                     fontFamily: 'APPLESDGOTHICNEOR',
                                                   ),
-                                                  overflow: TextOverflow.ellipsis,
+                                                  overflow:
+                                                      TextOverflow.ellipsis,
+
                                                 ),
                                                 const Spacer(),
                                                 Text(
                                                   '${file.type} / ${file.sizeFormatted}',
-                                                  style:
-                                                      TextStyle(fontSize: 8),
+                                                  style: TextStyle(fontSize: 8),
                                                 ),
                                                 const SizedBox(width: 4),
                                                 const Icon(
@@ -510,8 +524,12 @@ class _PersonalScreenState extends State<PersonalScreen> {
                                                 GestureDetector(
                                                   onTap: () {
                                                     setState(() {
-                                                      fileNames.remove(file.name);
-                                                      selectedFiles.removeAt(index);
+                                                      fileNames.remove(
+                                                        file.name,
+                                                      );
+                                                      selectedFiles.removeAt(
+                                                        index,
+                                                      );
                                                     });
                                                   },
                                                   child: const Icon(
@@ -537,7 +555,7 @@ class _PersonalScreenState extends State<PersonalScreen> {
                 ],
               ),
             ),
-            const SizedBox(height: 18),
+            const SizedBox(height: 5),
 
             // 검색창
             Align(

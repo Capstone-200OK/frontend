@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-//import 'package:flutter_application_1/screens/login_screen.dart'; // 로그인 화면 불러오기
-import 'package:flutter_application_1/screens/login_screen.dart';
+import 'package:flutter_application_1/screens/home_screen.dart'; // 홈홈 화면 불러오기
+//import 'package:flutter_application_1/screens/login_screen.dart';
 
 void main() {
   runApp(const MyApp());
@@ -17,8 +17,8 @@ class MyApp extends StatelessWidget {
         primarySwatch: Colors.blue,
       ),
       //home: const PersonalScreen(username: '현서'), // 로그인 화면을 초기 화면으로 설정
-      //home: const HomeScreen(username: '현서'),
-      home: const LoginScreen(),
+      home: const HomeScreen(username: '현서'),
+      //home: const LoginScreen(),
     );
   }
 }

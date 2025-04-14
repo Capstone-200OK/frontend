@@ -331,7 +331,7 @@ class HomeScreen extends StatelessWidget {
               ],
             ),
 
-            const SizedBox(height: 250), // 요소 간의 간격 설정
+            const SizedBox(height: 237), // 요소 간의 간격 설정
             // 검색창(TextField) 부분
             Align(
               alignment: Alignment.center, // 센터 정렬
