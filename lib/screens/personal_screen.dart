@@ -1,5 +1,26 @@
 import 'package:flutter/material.dart';
-//개인파일폴더화면면
+import 'package:desktop_drop/desktop_drop.dart';
+import 'dart:io';
+
+// 파일 정보 클래스
+class FileItem {
+  final String name;
+  final String type;
+  final int sizeInBytes;
+  bool isSelected;
+
+  FileItem({
+    required this.name,
+    required this.type,
+    required this.sizeInBytes,
+    this.isSelected = false,
+  });
+
+  String get sizeFormatted {
+    if (sizeInBytes < 1024) return '${sizeInBytes}B';
+    return '${(sizeInBytes / 1024).toStringAsFixed(1)}KB';
+  }
+}
 
 class PersonalScreen extends StatefulWidget {
   final String username;
@@ -12,19 +33,20 @@ class PersonalScreen extends StatefulWidget {
 
 class _PersonalScreenState extends State<PersonalScreen> {
   // 파일 선택 상태 저장용 리스트
-  List<bool> selectedFiles = List.generate(6, (index) => false);
+  List<FileItem> selectedFiles = [];
+  Set<String> fileNames = {}; // 🔹 중복 방지를 위한 파일 이름 저장용 집합
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
+
       appBar: PreferredSize(
         preferredSize: const Size.fromHeight(kToolbarHeight),
         child: AppBar(
           automaticallyImplyLeading: false, // 기본 뒤로가기/햄버거 제거
           backgroundColor: Colors.white,
           elevation: 0,
-          // Drawer 버튼
           leading: Builder(
             builder:
                 (context) => IconButton(
@@ -255,7 +277,7 @@ class _PersonalScreenState extends State<PersonalScreen> {
               children: [
                 Expanded(
                   child: Padding(
-                    padding: const EdgeInsets.only(left: 90.0), // ← 원하는 만큼 조절
+                    padding: const EdgeInsets.only(left: 80.0), // ← 원하는 만큼 조절
                     child: Text(
                       '폴더',
                       style: TextStyle(
@@ -267,7 +289,7 @@ class _PersonalScreenState extends State<PersonalScreen> {
                 ),
                 Expanded(
                   child: Padding(
-                    padding: const EdgeInsets.only(left: 120.0),
+                    padding: const EdgeInsets.only(left: 110.0),
                     child: Text(
                       '파일',
                       style: TextStyle(
@@ -278,18 +300,17 @@ class _PersonalScreenState extends State<PersonalScreen> {
                   ),
                 ),
                 Padding(
-                  padding: const EdgeInsets.only(right: 90.0),
+                  padding: const EdgeInsets.only(right: 100), // 원하는 만큼 왼쪽으로 밀기
                   child: ElevatedButton(
-                    onPressed: () {},
+                    onPressed: () {
+                      selectedFiles.sort((a, b) => a.name.compareTo(b.name));
+                      setState(() {});
+                    },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.black87,
                       padding: const EdgeInsets.symmetric(
-                        horizontal: 50,
-                        vertical: 10,
-                      ),
-                      elevation: 0,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12), // ← 둥글기
+                        horizontal: 12,
+                        vertical: 6,
                       ),
                     ),
                     child: const Text(
@@ -311,6 +332,7 @@ class _PersonalScreenState extends State<PersonalScreen> {
                   // 폴더 리스트
                   Expanded(
                     child: Container(
+                      height: 425,
                       decoration: BoxDecoration(
                         color: Color(0xFFCFD8DC),
                         borderRadius: BorderRadius.circular(16),
@@ -362,132 +384,165 @@ class _PersonalScreenState extends State<PersonalScreen> {
 
                   // 파일 리스트
                   Expanded(
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: Color(0xFFCFD8DC),
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      child: Column(
-                        children: [
-                          // 파일 리스트뷰
-                          Expanded(
-                            child: ListView.builder(
-                              itemCount: selectedFiles.length,
-                              itemBuilder: (context, index) {
-                                return Padding(
-                                  padding: const EdgeInsets.symmetric(
-                                    vertical: 0.1,
-                                  ), // 각 줄 간격
-                                  child: Row(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.center,
-                                    children: [
-                                      // 체크박스 (배경 외부에 위치)
-                                      Checkbox(
-                                        value: selectedFiles[index],
-                                        onChanged: (value) {
-                                          setState(() {
-                                            selectedFiles[index] =
-                                                value ?? false;
-                                          });
-                                        },
-                                        activeColor: Color(
-                                          0xff263238,
-                                        ), // 체크되었을 때의 배경색
-                                        side: const BorderSide(
-                                          // 체크박스 외곽선
-                                          color: Colors.white,
-                                          width: 0.1,
-                                        ),
-                                        fillColor:
-                                            MaterialStateProperty.resolveWith<
-                                              Color
-                                            >((states) {
-                                              if (states.contains(
-                                                MaterialState.disabled,
-                                              )) {
-                                                return Colors
-                                                    .white; // 비활성일 때 흰색
-                                              }
-                                              return Colors.white; // 기본 체크박스 색
-                                            }),
-                                        checkColor: Color(0xff263238),
-                                      ),
-
-                                      // 나머지 내용 (하얀 배경 + 둥근 모서리)
-                                      Expanded(
-                                        child: Container(
-                                          padding: const EdgeInsets.all(
-                                            12,
-                                          ), // 내용과의 여백
-
-                                          margin: const EdgeInsets.symmetric(
-                                            // 각 줄의 외부 여백 (리스트 간 간격 조절)
-                                            horizontal: 12,
-                                            vertical: 6,
-                                          ),
-                                          decoration: BoxDecoration(
+                    // DropTarget (파일 드래그 앤 드랍)
+                    
+                    child: DropTarget(
+                      onDragDone: (detail) {
+                        for (final file in detail.files) {
+                          final fileName = file.name;
+                          if (!fileNames.contains(fileName)) {
+                            final fileType = fileName.split('.').last;
+                            final fileSize = File(file.path).lengthSync();
+                            final fileItem = FileItem(
+                              name: fileName,
+                              type: fileType,
+                              sizeInBytes: fileSize,
+                            );
+                            selectedFiles.add(fileItem);
+                            fileNames.add(fileName);
+                          }
+                        }
+                        setState(() {});
+                      },
+                      onDragEntered: (details) {
+                        print('드래그 시작');
+                      },
+                      onDragExited: (details) {
+                        print('드래그 종료');
+                      },
+                      child: Container(
+                        margin: const EdgeInsets.symmetric(
+                          vertical: 12,
+                          horizontal: 7,
+                        ),
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: Color(0xFFECEFF1),
+                          border: Border.all(color: Color(0xff90A4AE)),
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        child: Column(
+                          children: [
+                            // 파일 리스트뷰
+                            Expanded(
+                              child: ListView.builder(
+                                itemCount: selectedFiles.length,
+                                itemBuilder: (context, index) {
+                                  final file = selectedFiles[index];
+                                  return Padding(
+                                    padding: const EdgeInsets.symmetric(
+                                      vertical: 0.1,
+                                    ),
+                                    child: Row(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.center,
+                                      children: [
+                                        // 체크박스 (배경 외부에 위치)
+                                        Checkbox(
+                                          value: file.isSelected,
+                                          onChanged: (value) {
+                                            setState(() {
+                                              file.isSelected = value ?? false;
+                                            });
+                                          },
+                                          activeColor: Color(0xff263238),
+                                          side: const BorderSide(
                                             color: Colors.white,
-                                            borderRadius: BorderRadius.circular(
-                                              20, //모서리 둥글기기
-                                            ),
+                                            width: 0.1,
                                           ),
-                                          child: Row(
-                                            children: [
-                                              if (index == 0)
+                                          fillColor:
+                                              MaterialStateProperty.resolveWith<
+                                                Color
+                                              >((states) {
+                                                if (states.contains(
+                                                  MaterialState.disabled,
+                                                )) {
+                                                  return Colors.white;
+                                                }
+                                                return Colors.white;
+                                              }),
+                                          checkColor: Color(0xff263238),
+                                        ),
+
+                                        // 나머지 내용 (하얀 배경 + 둥근 모서리)
+                                        Expanded(
+                                          child: Container(
+                                            padding: const EdgeInsets.all(12),
+                                            margin: const EdgeInsets.symmetric(
+                                              horizontal: 12,
+                                              vertical: 6,
+                                            ),
+                                            decoration: BoxDecoration(
+                                              color: Colors.white,
+                                              borderRadius:
+                                                  BorderRadius.circular(20),
+                                            ),
+                                            child: Row(
+                                              children: [
                                                 const Icon(
                                                   Icons.description,
                                                   size: 15,
                                                 ),
-                                              if (index == 0)
                                                 const SizedBox(width: 8),
-                                              if (index == 0)
-                                                const Text(
-                                                  '회사 보고서_2025',
-                                                  style: TextStyle(
+
+                                                Text(
+                                                  file.name.length > 10
+                                                      ? '${file.name.substring(0, 10)}...'
+                                                      : file.name,
+                                                  style: const TextStyle(
                                                     fontSize: 12,
                                                     fontFamily:
                                                         'APPLESDGOTHICNEOR',
                                                   ),
+                                                  overflow:
+                                                      TextOverflow.ellipsis,
                                                 ),
-                                              if (index != 0)
-                                                const Expanded(
-                                                  child: SizedBox(),
+                                                const Spacer(),
+                                                Text(
+                                                  '${file.type} / ${file.sizeFormatted}',
+                                                  style: TextStyle(fontSize: 8),
                                                 ),
-
-                                              const Spacer(),
-                                              const Text(
-                                                'word / 2KB',
-                                                style: TextStyle(fontSize: 8),
-                                              ),
-                                              const SizedBox(width: 4),
-                                              const Icon(
-                                                Icons.star_border,
-                                                size: 10,
-                                              ),
-                                              const SizedBox(width: 4),
-                                              const Icon(
-                                                Icons.more_vert,
-                                                size: 10,
-                                              ),
-                                            ],
+                                                const SizedBox(width: 4),
+                                                const Icon(
+                                                  Icons.star_border,
+                                                  size: 10,
+                                                ),
+                                                const SizedBox(width: 4),
+                                                GestureDetector(
+                                                  onTap: () {
+                                                    setState(() {
+                                                      fileNames.remove(
+                                                        file.name,
+                                                      );
+                                                      selectedFiles.removeAt(
+                                                        index,
+                                                      );
+                                                    });
+                                                  },
+                                                  child: const Icon(
+                                                    Icons.close,
+                                                    size: 12,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
                                           ),
                                         ),
-                                      ),
-                                    ],
-                                  ),
-                                );
-                              },
+                                      ],
+                                    ),
+                                  );
+                                },
+                              ),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
                     ),
                   ),
                 ],
               ),
             ),
-            const SizedBox(height: 18),
+            const SizedBox(height: 5),
 
             // 검색창
             Align(
@@ -527,7 +582,8 @@ class _PersonalScreenState extends State<PersonalScreen> {
                     prefixIcon: Icon(
                       Icons.search,
                       color: Color(0xff263238),
-                    ), // 검색 아이콘을 왼쪽에에 추가
+                      // 검색 아이콘을 왼쪽에 추가
+                    ),
                     suffixIcon: Icon(
                       Icons.tune,
                       color: Color(0xff263238),
