@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/screens/login_screen.dart'; // 로그인 화면 불러오기
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 
 class SignUpScreen extends StatefulWidget {
   const SignUpScreen({Key? key}) : super(key: key);
@@ -13,9 +15,55 @@ class _SignUpScreenState extends State<SignUpScreen> {
   final _formKey = GlobalKey<FormState>();
 
   // 입력 필드를 위한 컨트롤러
-  final TextEditingController _idController = TextEditingController(); // 아이디 입력 컨트롤러
-  final TextEditingController _emailController = TextEditingController(); // 이메일 입력 컨트롤러
-  final TextEditingController _passwordController = TextEditingController(); // 비밀번호 입력 컨트롤러
+  final TextEditingController _idController =
+      TextEditingController(); // 아이디 입력 컨트롤러
+  final TextEditingController _emailController =
+      TextEditingController(); // 이메일 입력 컨트롤러
+  final TextEditingController _passwordController =
+      TextEditingController(); // 비밀번호 입력 컨트롤러
+
+  //회원가입 요청 함수
+  Future<void> _registerUser() async {
+    final String nickname = _idController.text;
+    final String email = _emailController.text;
+    final String password = _passwordController.text;
+
+    final url = Uri.parse(
+      'http://223.194.137.216:8080/user/signup',
+    ); // 스프링부트 회원가입 엔드포인트
+
+    try {
+      final response = await http.post(
+        url,
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'nickname': nickname,
+          'email': email,
+          'password': password,
+        }),
+      );
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        // 성공 시
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('회원가입 성공')));
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const LoginScreen()),
+        );
+      } else {
+        // 실패 시
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('회원가입 실패: ${response.body}')));
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('에러 발생: $e')));
+    }
+  }
 
   // 아이디 유효성 검사
   String? _idValidator(String? value) {
@@ -55,14 +103,22 @@ class _SignUpScreenState extends State<SignUpScreen> {
 
   // 폼 제출 처리 함수
   void _submitForm() {
-    if (_formKey.currentState!.validate()) {  // 폼 유효성 검사
+    if (_formKey.currentState!.validate()) {
+      if (_formKey.currentState!.validate()) {
+        _registerUser(); // → 스프링부트로 회원가입 요청 보내기
+      }
+      // 폼 유효성 검사
       // 모든 필드가 유효하면 성공 메시지 표시
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('회원가입 완료')));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('회원가입 완료')));
 
       // 회원가입 후 로그인 화면으로 이동
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (context) => const LoginScreen()), // 로그인 화면으로 전환
+        MaterialPageRoute(
+          builder: (context) => const LoginScreen(),
+        ), // 로그인 화면으로 전환
       );
     }
   }
@@ -91,10 +147,9 @@ class _SignUpScreenState extends State<SignUpScreen> {
                   labelText: '아이디', // 아이디 라벨 텍스트
                   border: OutlineInputBorder(), // 입력 필드 테두리
                 ),
-                validator: _idValidator,  // 아이디 유효성 검사 함수 연결
+                validator: _idValidator, // 아이디 유효성 검사 함수 연결
               ),
               const SizedBox(height: 20), // 입력 필드 간 간격 설정
-              
               // 이메일 입력 필드
               TextFormField(
                 controller: _emailController, // 이메일 입력 컨트롤러 연결
@@ -103,10 +158,9 @@ class _SignUpScreenState extends State<SignUpScreen> {
                   border: OutlineInputBorder(), // 이메일 입력 필드 테두리
                 ),
                 keyboardType: TextInputType.emailAddress, // 이메일 형식 입력 키보드
-                validator: _emailValidator,  // 이메일 유효성 검사 함수 연결
+                validator: _emailValidator, // 이메일 유효성 검사 함수 연결
               ),
               const SizedBox(height: 20), // 입력 필드 간 간격 설정
-              
               // 비밀번호 입력 필드
               TextFormField(
                 controller: _passwordController, // 비밀번호 입력 컨트롤러 연결
@@ -115,16 +169,19 @@ class _SignUpScreenState extends State<SignUpScreen> {
                   border: OutlineInputBorder(), // 비밀번호 입력 필드 테두리
                 ),
                 obscureText: true, // 비밀번호는 가려서 표시
-                validator: _passwordValidator,  // 비밀번호 유효성 검사 함수 연결
+                validator: _passwordValidator, // 비밀번호 유효성 검사 함수 연결
               ),
               const SizedBox(height: 20), // 입력 필드 간 간격 설정
-              
               // 회원가입 버튼
               ElevatedButton(
                 onPressed: _submitForm, // 버튼 클릭 시 폼 제출 처리
                 style: ButtonStyle(
-                  backgroundColor: MaterialStateProperty.all(Colors.grey[300]), // 버튼 배경색 연한 회색
-                  foregroundColor: MaterialStateProperty.all(Colors.black), // 버튼 글씨 색상 검정색
+                  backgroundColor: MaterialStateProperty.all(
+                    Colors.grey[300],
+                  ), // 버튼 배경색 연한 회색
+                  foregroundColor: MaterialStateProperty.all(
+                    Colors.black,
+                  ), // 버튼 글씨 색상 검정색
                 ),
                 child: const Text('회원가입'), // 버튼 텍스트
               ),
