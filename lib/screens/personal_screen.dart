@@ -2,6 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:desktop_drop/desktop_drop.dart';
 import 'dart:io';
 
+=======
+//import 'file_sorty.dart';
+
+
 // 파일 정보 클래스
 class FileItem {
   final String name;
@@ -36,6 +40,7 @@ class _PersonalScreenState extends State<PersonalScreen> {
   List<FileItem> selectedFiles = [];
   Set<String> fileNames = {}; // 🔹 중복 방지를 위한 파일 이름 저장용 집합
 
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -47,6 +52,7 @@ class _PersonalScreenState extends State<PersonalScreen> {
           automaticallyImplyLeading: false, // 기본 뒤로가기/햄버거 제거
           backgroundColor: Colors.white,
           elevation: 0,
+
           leading: Builder(
             builder:
                 (context) => IconButton(
@@ -127,7 +133,7 @@ class _PersonalScreenState extends State<PersonalScreen> {
 
       drawer: Drawer(
         shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.zero, // 🔸 모서리 각지게
+          borderRadius: BorderRadius.zero, // 모서리 각지게
         ),
         child: Container(
           color: Color(0xFF455A64),
@@ -299,6 +305,7 @@ class _PersonalScreenState extends State<PersonalScreen> {
                     ),
                   ),
                 ),
+
                 Padding(
                   padding: const EdgeInsets.only(right: 100), // 원하는 만큼 왼쪽으로 밀기
                   child: ElevatedButton(
@@ -342,11 +349,11 @@ class _PersonalScreenState extends State<PersonalScreen> {
                         itemCount: 8,
                         gridDelegate:
                             const SliverGridDelegateWithFixedCrossAxisCount(
-                              crossAxisCount: 2,
-                              mainAxisSpacing: 12,
-                              crossAxisSpacing: 12,
-                              childAspectRatio: 1.5,
-                            ),
+                          crossAxisCount: 2,
+                          mainAxisSpacing: 12,
+                          crossAxisSpacing: 12,
+                          childAspectRatio: 1.5,
+                        ),
                         itemBuilder: (context, index) {
                           if (index == 0) {
                             return ElevatedButton.icon(
@@ -385,7 +392,7 @@ class _PersonalScreenState extends State<PersonalScreen> {
                   // 파일 리스트
                   Expanded(
                     // DropTarget (파일 드래그 앤 드랍)
-                    
+
                     child: DropTarget(
                       onDragDone: (detail) {
                         for (final file in detail.files) {
@@ -415,6 +422,7 @@ class _PersonalScreenState extends State<PersonalScreen> {
                           vertical: 12,
                           horizontal: 7,
                         ),
+
                         padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
                           color: Color(0xFFECEFF1),
@@ -430,9 +438,11 @@ class _PersonalScreenState extends State<PersonalScreen> {
                                 itemBuilder: (context, index) {
                                   final file = selectedFiles[index];
                                   return Padding(
+
                                     padding: const EdgeInsets.symmetric(
                                       vertical: 0.1,
                                     ),
+
                                     child: Row(
                                       crossAxisAlignment:
                                           CrossAxisAlignment.center,
@@ -461,6 +471,7 @@ class _PersonalScreenState extends State<PersonalScreen> {
                                                 }
                                                 return Colors.white;
                                               }),
+
                                           checkColor: Color(0xff263238),
                                         ),
 
@@ -485,17 +496,19 @@ class _PersonalScreenState extends State<PersonalScreen> {
                                                 ),
                                                 const SizedBox(width: 8),
 
+
                                                 Text(
                                                   file.name.length > 10
                                                       ? '${file.name.substring(0, 10)}...'
                                                       : file.name,
+
                                                   style: const TextStyle(
                                                     fontSize: 12,
-                                                    fontFamily:
-                                                        'APPLESDGOTHICNEOR',
+                                                    fontFamily: 'APPLESDGOTHICNEOR',
                                                   ),
                                                   overflow:
                                                       TextOverflow.ellipsis,
+
                                                 ),
                                                 const Spacer(),
                                                 Text(
