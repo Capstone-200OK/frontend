@@ -3,6 +3,7 @@ import 'package:desktop_drop/desktop_drop.dart';
 import 'dart:io';
 
 //import 'file_sorty.dart';
+import 'file_uploader.dart';
 
 
 // 파일 정보 클래스
