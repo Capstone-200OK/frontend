@@ -525,8 +525,8 @@ class _PersonalScreenState extends State<PersonalScreen> {
 
 
                                                 Text(
-                                                  file.name.length > 10
-                                                      ? '${file.name.substring(0, 10)}...'
+                                                  file.name.length > 30
+                                                      ? '${file.name.substring(0, 30)}...'
                                                       : file.name,
 
                                                   style: const TextStyle(

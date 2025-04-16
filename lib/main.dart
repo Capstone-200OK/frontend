@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/screens/home_screen.dart'; // 홈홈 화면 불러오기
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 //import 'package:flutter_application_1/screens/login_screen.dart';
 
-void main() {
+
+void main() async{
+  WidgetsFlutterBinding.ensureInitialized();  // 1번코드
+  await dotenv.load(fileName: ".env");    // 2번코드
   runApp(const MyApp());
 }
 
