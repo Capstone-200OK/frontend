@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:desktop_drop/desktop_drop.dart';
 import 'dart:io';
-import 'file_uploader.dart';
+import 'package:flutter_application_1/screens/file_uploader.dart';
 import 'package:flutter_application_1/screens/file_sorty.dart';
 import 'package:flutter_application_1/screens/file_item.dart';
 
@@ -19,6 +19,8 @@ class _PersonalScreenState extends State<PersonalScreen> {
   List<FileItem> selectedFiles = [];
   Set<String> fileNames = {}; // 중복 방지를 위한 파일 이름 저장용 집합
 
+  // 업로더 인스턴스 생성
+  final uploader = FileUploader(baseUrl: 'http://223.194.139.233:8080');
 
   @override
   Widget build(BuildContext context) {
@@ -384,22 +386,57 @@ class _PersonalScreenState extends State<PersonalScreen> {
                     // DropTarget (파일 드래그 앤 드랍)
 
                     child: DropTarget(
-                      onDragDone: (detail) {
-                        for (final file in detail.files) {
-                          final fileName = file.name;
-                          if (!fileNames.contains(fileName)) {
-                            final fileType = fileName.split('.').last;
-                            final fileSize = File(file.path).lengthSync();
-                            final fileItem = FileItem(
-                              name: fileName,
-                              type: fileType,
-                              sizeInBytes: fileSize,
-                            );
-                            selectedFiles.add(fileItem);
-                            fileNames.add(fileName);
-                          }
+                      onDragDone: (detail) async{
+                        List<File> droppedFiles = detail.files.map((f) => File(f.path)).toList();
+
+                        List<FileItem> newFileItems = [];
+
+                        // 드래그 앤 드롭한 파일이 비어있는지 확인
+                        if(droppedFiles.isEmpty){
+                            print('드래그된 파일이 없습니다.');
+                            return;
                         }
-                        setState(() {});
+
+                        // 중복 체크 및 파일 정보 업데이트
+                        for (final file in detail.files) {
+                            final fileName = file.name;
+
+                            if (!fileNames.contains(fileName)) {
+                                final fileType = fileName.split('.').last;
+                                final fileSize = File(file.path).lengthSync();
+                                final fileItem = FileItem(
+                                    name: fileName,
+                                    type: fileType,
+                                    sizeInBytes: fileSize,
+                                ); 
+                                newFileItems.add(fileItem);
+                                fileNames.add(fileName);
+                            }
+                        }
+
+                        setState(() {
+                            selectedFiles.addAll(newFileItems);
+                        });
+
+                        try{
+                            // 업로드 호출
+                            await uploader.uploadFiles(
+                                file: droppedFiles[0], 
+                                userId: 1,
+                                folderId: 2,
+                            );
+                            ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text('${droppedFiles.length}개의 파일 업로드 완료!')),
+                            );
+                        }
+                        catch (e) {
+                            // 예외 발생 시 처리
+                            print('파일 업로드 중 오류 발생: $e');
+                            ScaffoldMessenger.of(context).showSnackBar(
+                               SnackBar(content: Text('파일 업로드 실패: $e')),
+                            );
+                        }
+
                       },
                       onDragEntered: (details) {
                         print('드래그 시작');
