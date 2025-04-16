@@ -1,30 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:desktop_drop/desktop_drop.dart';
 import 'dart:io';
-
-//import 'file_sorty.dart';
 import 'file_uploader.dart';
+import 'package:flutter_application_1/screens/file_sorty.dart';
 
-
-// 파일 정보 클래스
-class FileItem {
-  final String name;
-  final String type;
-  final int sizeInBytes;
-  bool isSelected;
-
-  FileItem({
-    required this.name,
-    required this.type,
-    required this.sizeInBytes,
-    this.isSelected = false,
-  });
-
-  String get sizeFormatted {
-    if (sizeInBytes < 1024) return '${sizeInBytes}B';
-    return '${(sizeInBytes / 1024).toStringAsFixed(1)}KB';
-  }
-}
 
 class PersonalScreen extends StatefulWidget {
   final String username;
@@ -38,7 +17,7 @@ class PersonalScreen extends StatefulWidget {
 class _PersonalScreenState extends State<PersonalScreen> {
   // 파일 선택 상태 저장용 리스트
   List<FileItem> selectedFiles = [];
-  Set<String> fileNames = {}; // 🔹 중복 방지를 위한 파일 이름 저장용 집합
+  Set<String> fileNames = {}; // 중복 방지를 위한 파일 이름 저장용 집합
 
 
   @override
@@ -237,7 +216,7 @@ class _PersonalScreenState extends State<PersonalScreen> {
                 onTap: () => Navigator.pop(context),
               ),
               ListTile(
-                leading: Icon(
+                leading: Icon( 
                   Icons.check,
                   size: 24, // 아이콘 크기 (기본값: 24)
                   color: Colors.white,
@@ -307,25 +286,36 @@ class _PersonalScreenState extends State<PersonalScreen> {
                 ),
 
                 Padding(
-                  padding: const EdgeInsets.only(right: 100), // 원하는 만큼 왼쪽으로 밀기
-                  child: ElevatedButton(
-                    onPressed: () {
-                      selectedFiles.sort((a, b) => a.name.compareTo(b.name));
-                      setState(() {});
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.black87,
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 6,
-                      ),
+                    padding: const EdgeInsets.only(right: 100),
+                    child: ElevatedButton(
+                        onPressed: () {
+                            // 선택한 파일 정렬
+                            selectedFiles.sort((a, b) => a.name.compareTo(b.name));
+                            // file_sorty.dart로 이동하면서 selectedFiles 전달
+                             Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                    builder: (context) => FileSortyScreen(
+                                        files: selectedFiles,
+                                        username: widget.username, 
+                                    ),
+                                ),
+                            );
+                        },
+                        style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.black87,
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 12, 
+                                vertical: 6,
+                            ),
+                        ),
+                        child: const Text(
+                            'SORTY',
+                            style: TextStyle(color: Colors.white, fontSize: 12),
+                        ),
                     ),
-                    child: const Text(
-                      'SORTY',
-                      style: TextStyle(color: Colors.white, fontSize: 12),
-                    ),
-                  ),
                 ),
+
               ],
             ),
             const SizedBox(height: 8),
