@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:flutter_application_1/screens/file_uploader.dart';
 import 'package:flutter_application_1/screens/file_sorty.dart';
 import 'package:flutter_application_1/screens/file_item.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 class PersonalScreen extends StatefulWidget {
   final String username;
@@ -18,9 +19,15 @@ class _PersonalScreenState extends State<PersonalScreen> {
   // 파일 선택 상태 저장용 리스트
   List<FileItem> selectedFiles = [];
   Set<String> fileNames = {}; // 중복 방지를 위한 파일 이름 저장용 집합
+  late String url;
+  late FileUploader uploader;
 
-  // 업로더 인스턴스 생성
-  final uploader = FileUploader(baseUrl: 'http://223.194.139.233:8080');
+  @override
+  void initState() {
+    super.initState();
+    url = dotenv.get("BaseUrl");
+    uploader = FileUploader(baseUrl: url);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -218,7 +225,7 @@ class _PersonalScreenState extends State<PersonalScreen> {
                 onTap: () => Navigator.pop(context),
               ),
               ListTile(
-                leading: Icon( 
+                leading: Icon(
                   Icons.check,
                   size: 24, // 아이콘 크기 (기본값: 24)
                   color: Colors.white,
@@ -288,36 +295,36 @@ class _PersonalScreenState extends State<PersonalScreen> {
                 ),
 
                 Padding(
-                    padding: const EdgeInsets.only(right: 100),
-                    child: ElevatedButton(
-                        onPressed: () {
-                            // 선택한 파일 정렬
-                            selectedFiles.sort((a, b) => a.name.compareTo(b.name));
-                            // file_sorty.dart로 이동하면서 selectedFiles 전달
-                             Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                    builder: (context) => FileSortyScreen(
-                                        files: selectedFiles,
-                                        username: widget.username, 
-                                    ),
-                                ),
-                            );
-                        },
-                        style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.black87,
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 12, 
-                                vertical: 6,
-                            ),
+                  padding: const EdgeInsets.only(right: 100),
+                  child: ElevatedButton(
+                    onPressed: () {
+                      // 선택한 파일 정렬
+                      selectedFiles.sort((a, b) => a.name.compareTo(b.name));
+                      // file_sorty.dart로 이동하면서 selectedFiles 전달
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder:
+                              (context) => FileSortyScreen(
+                                files: selectedFiles,
+                                username: widget.username,
+                              ),
                         ),
-                        child: const Text(
-                            'SORTY',
-                            style: TextStyle(color: Colors.white, fontSize: 12),
-                        ),
+                      );
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.black87,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 6,
+                      ),
                     ),
+                    child: const Text(
+                      'SORTY',
+                      style: TextStyle(color: Colors.white, fontSize: 12),
+                    ),
+                  ),
                 ),
-
               ],
             ),
             const SizedBox(height: 8),
@@ -341,11 +348,11 @@ class _PersonalScreenState extends State<PersonalScreen> {
                         itemCount: 8,
                         gridDelegate:
                             const SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: 2,
-                          mainAxisSpacing: 12,
-                          crossAxisSpacing: 12,
-                          childAspectRatio: 1.5,
-                        ),
+                              crossAxisCount: 2,
+                              mainAxisSpacing: 12,
+                              crossAxisSpacing: 12,
+                              childAspectRatio: 1.5,
+                            ),
                         itemBuilder: (context, index) {
                           if (index == 0) {
                             return ElevatedButton.icon(
@@ -384,59 +391,61 @@ class _PersonalScreenState extends State<PersonalScreen> {
                   // 파일 리스트
                   Expanded(
                     // DropTarget (파일 드래그 앤 드랍)
-
                     child: DropTarget(
-                      onDragDone: (detail) async{
-                        List<File> droppedFiles = detail.files.map((f) => File(f.path)).toList();
+                      onDragDone: (detail) async {
+                        List<File> droppedFiles =
+                            detail.files.map((f) => File(f.path)).toList();
 
                         List<FileItem> newFileItems = [];
 
                         // 드래그 앤 드롭한 파일이 비어있는지 확인
-                        if(droppedFiles.isEmpty){
-                            print('드래그된 파일이 없습니다.');
-                            return;
+                        if (droppedFiles.isEmpty) {
+                          print('드래그된 파일이 없습니다.');
+                          return;
                         }
 
                         // 중복 체크 및 파일 정보 업데이트
                         for (final file in detail.files) {
-                            final fileName = file.name;
+                          final fileName = file.name;
 
-                            if (!fileNames.contains(fileName)) {
-                                final fileType = fileName.split('.').last;
-                                final fileSize = File(file.path).lengthSync();
-                                final fileItem = FileItem(
-                                    name: fileName,
-                                    type: fileType,
-                                    sizeInBytes: fileSize,
-                                ); 
-                                newFileItems.add(fileItem);
-                                fileNames.add(fileName);
-                            }
+                          if (!fileNames.contains(fileName)) {
+                            final fileType = fileName.split('.').last;
+                            final fileSize = File(file.path).lengthSync();
+                            final fileItem = FileItem(
+                              name: fileName,
+                              type: fileType,
+                              sizeInBytes: fileSize,
+                            );
+                            newFileItems.add(fileItem);
+                            fileNames.add(fileName);
+                          }
                         }
 
                         setState(() {
-                            selectedFiles.addAll(newFileItems);
+                          selectedFiles.addAll(newFileItems);
                         });
 
-                        try{
-                            // 업로드 호출
-                            await uploader.uploadFiles(
-                                file: droppedFiles[0], 
-                                userId: 1,
-                                folderId: 2,
-                            );
-                            ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text('${droppedFiles.length}개의 파일 업로드 완료!')),
-                            );
+                        try {
+                          // 업로드 호출
+                          await uploader.uploadFiles(
+                            file: droppedFiles[0],
+                            userId: 1,
+                            folderId: 2,
+                          );
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(
+                                '${droppedFiles.length}개의 파일 업로드 완료!',
+                              ),
+                            ),
+                          );
+                        } catch (e) {
+                          // 예외 발생 시 처리
+                          print('파일 업로드 중 오류 발생: $e');
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text('파일 업로드 실패: $e')),
+                          );
                         }
-                        catch (e) {
-                            // 예외 발생 시 처리
-                            print('파일 업로드 중 오류 발생: $e');
-                            ScaffoldMessenger.of(context).showSnackBar(
-                               SnackBar(content: Text('파일 업로드 실패: $e')),
-                            );
-                        }
-
                       },
                       onDragEntered: (details) {
                         print('드래그 시작');
@@ -465,7 +474,6 @@ class _PersonalScreenState extends State<PersonalScreen> {
                                 itemBuilder: (context, index) {
                                   final file = selectedFiles[index];
                                   return Padding(
-
                                     padding: const EdgeInsets.symmetric(
                                       vertical: 0.1,
                                     ),
@@ -523,7 +531,6 @@ class _PersonalScreenState extends State<PersonalScreen> {
                                                 ),
                                                 const SizedBox(width: 8),
 
-
                                                 Text(
                                                   file.name.length > 30
                                                       ? '${file.name.substring(0, 30)}...'
@@ -531,11 +538,11 @@ class _PersonalScreenState extends State<PersonalScreen> {
 
                                                   style: const TextStyle(
                                                     fontSize: 12,
-                                                    fontFamily: 'APPLESDGOTHICNEOR',
+                                                    fontFamily:
+                                                        'APPLESDGOTHICNEOR',
                                                   ),
                                                   overflow:
                                                       TextOverflow.ellipsis,
-
                                                 ),
                                                 const Spacer(),
                                                 Text(

@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
-
-void main() async{
 import 'package:provider/provider.dart';
-//import 'package:flutter_application_1/screens/home_screen.dart'; // 홈홈 화면 불러오기
+import 'package:flutter_application_1/screens/home_screen.dart'; // 홈홈 화면 불러오기
 import 'models/counter_model.dart'; // provider 모델 import
-import 'package:flutter_application_1/screens/folder_create.dart';
+//import 'package:flutter_application_1/screens/folder_create.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 //import 'package:flutter_application_1/screens/login_screen.dart';
 
@@ -24,8 +22,8 @@ class MyApp extends StatelessWidget {
       child: MaterialApp(
         title: 'Flutter 로그인 앱',
         theme: ThemeData(primarySwatch: Colors.blue),
-        //home: const HomeScreen(username: '현서'),
-        home: const FolderCreateScreen(),
+        home: const HomeScreen(username: '현서'),
+        //home: const FolderCreateScreen(),
       ),
     );
   }
