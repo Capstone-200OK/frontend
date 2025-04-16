@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_application_1/screens/file_item.dart';
+import 'package:flutter_application_1/models/file_item.dart';
 
 class FileSortyScreen extends StatelessWidget {
   final List<FileItem> files;
