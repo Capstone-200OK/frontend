@@ -21,7 +21,11 @@ class PersonalScreen extends StatefulWidget {
 class _PersonalScreenState extends State<PersonalScreen> {
   // 파일 선택 상태 저장용 리스트
   List<FileItem> selectedFiles = [];
-  
+  String? selectedFolderName;
+  int? startFolderId;
+  int? destFolderId;
+  bool isStartSelected = false;
+  bool isDestSelected = false;
   // 폴더 목록 상태 관리
   List<String> folders = [];
 
@@ -390,7 +394,7 @@ class _PersonalScreenState extends State<PersonalScreen> {
               children: [
                 Expanded(
                   child: Padding(
-                    padding: const EdgeInsets.only(left: 80.0), // ← 원하는 만큼 조절
+                    padding: const EdgeInsets.only(left: 80.0),
                     child: Text(
                       '폴더',
                       style: TextStyle(
@@ -412,36 +416,68 @@ class _PersonalScreenState extends State<PersonalScreen> {
                     ),
                   ),
                 ),
-
                 Padding(
-                  padding: const EdgeInsets.only(right: 100),
-                  child: ElevatedButton(
-                    onPressed: () {
-                      // 선택한 파일 정렬
-                      selectedFiles.sort((a, b) => a.name.compareTo(b.name));
-                      // file_sorty.dart로 이동하면서 selectedFiles 전달
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder:
-                              (context) => FileSortyScreen(
-                                files: selectedFiles,
-                                username: widget.username,
-                              ),
+                  padding: const EdgeInsets.only(right: 10),
+                  child: Row(
+                    children: [
+                      // 🔹 Start 버튼
+                      ElevatedButton(
+                        onPressed: selectedFolderName != null && !isStartSelected
+                            ? () {
+                                setState(() {
+                                  startFolderId = folderNameToId[selectedFolderName!];
+                                  isStartSelected = true;
+                                });
+                              }
+                            : null,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.teal,
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                         ),
-                      );
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.black87,
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 6,
+                        child: const Text("Start", style: TextStyle(color: Colors.white, fontSize: 12)),
                       ),
-                    ),
-                    child: const Text(
-                      'SORTY',
-                      style: TextStyle(color: Colors.white, fontSize: 12),
-                    ),
+                      const SizedBox(width: 8),
+
+                      // 🔹 Dest 버튼
+                      ElevatedButton(
+                        onPressed: selectedFolderName != null && !isDestSelected
+                            ? () {
+                                setState(() {
+                                  destFolderId = folderNameToId[selectedFolderName!];
+                                  isDestSelected = true;
+                                });
+                              }
+                            : null,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.indigo,
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                        ),
+                        child: const Text("Dest", style: TextStyle(color: Colors.white, fontSize: 12)),
+                      ),
+                      const SizedBox(width: 8),
+
+                      // 🔹 Sorty 버튼
+                      ElevatedButton(
+                        onPressed: isStartSelected && isDestSelected
+                            ? () {
+                                showDialog(
+                                  context: context,
+                                  builder: (context) => FileSortyScreen(
+                                    files: selectedFiles,
+                                    username: widget.username,
+                                    sourceFolderId: startFolderId!,
+                                    destinationFolderId: destFolderId!,
+                                  ),
+                                );
+                              }
+                            : null,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.black87,
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                        ),
+                        child: const Text("SORTY", style: TextStyle(color: Colors.white, fontSize: 12)),
+                      ),
+                    ],
                   ),
                 ),
               ],
@@ -474,30 +510,40 @@ class _PersonalScreenState extends State<PersonalScreen> {
                             ),
                         itemBuilder: (context, index) {
                           final folderName = folders[index];
-                          return ElevatedButton.icon(
-                            onPressed: () {
-                              final folderId = folderNameToId[folderName]; // 폴더 이름 → ID
-                              if (folderId != null) {
-                              fetchFolderHierarchy(folderId);
-                              }
-                            },
-                            icon: const Icon(
-                              Icons.folder,
-                              color: Color(0xFF263238),
-                            ),
-                            label: Text(
-                              folderName,
-                              style: const TextStyle(
-                                color: Colors.black,
-                                fontFamily: 'APPLESDGOTHICNEOR',
+                          final folderId = folderNameToId[folderName];
+
+                          return Row(
+                            children: [
+                              Checkbox(
+                                value: selectedFolderName == folderName,
+                                onChanged: (value) {
+                                  setState(() {
+                                    selectedFolderName = value == true ? folderName : null;
+                                  });
+                                },
                               ),
-                            ),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.white,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
+                              Expanded(
+                                child: ElevatedButton.icon(
+                                  onPressed: () {
+                                    if (folderId != null) fetchFolderHierarchy(folderId);
+                                  },
+                                  icon: const Icon(Icons.folder, color: Color(0xFF263238)),
+                                  label: Text(
+                                    folderName,
+                                    style: const TextStyle(
+                                      color: Colors.black,
+                                      fontFamily: 'APPLESDGOTHICNEOR',
+                                    ),
+                                  ),
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: Colors.white,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                  ),
+                                ),
                               ),
-                            ),
+                            ],
                           );
                         },
                       ),

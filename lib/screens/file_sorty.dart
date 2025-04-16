@@ -1,11 +1,36 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/models/file_item.dart';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
-class FileSortyScreen extends StatelessWidget {
+class FileSortyScreen extends StatefulWidget {
   final List<FileItem> files;
   final String username;
+  final int sourceFolderId;
+  final int destinationFolderId;
 
-  const FileSortyScreen({super.key, required this.files, required this.username});
+  const FileSortyScreen({
+    super.key,
+    required this.files,
+    required this.username,
+    required this.sourceFolderId,
+    required this.destinationFolderId,
+  });
+
+  @override
+  State<FileSortyScreen> createState() => _FileSortyScreenState();
+}
+
+class _FileSortyScreenState extends State<FileSortyScreen> {
+  String? selectedMode;
+  late String url;
+
+  @override
+  void initState() {
+    super.initState();
+    url = dotenv.get("BaseUrl");
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -83,14 +108,14 @@ class FileSortyScreen extends StatelessWidget {
                       spacing: 10,
                       runSpacing: 10,
                       children: [
-                        _sortButton('내용'),
-                        _sortButton('제목'),
-                        _sortButton('날짜'),
-                        _sortButton('유형'),
+                        _sortButton(context, '내용', 'content'),
+                        _sortButton(context, '제목', 'title'),
+                        _sortButton(context, '날짜', 'date'),
+                        _sortButton(context, '유형', 'type'),
                       ],
-                    )
+                    ),
                   ],
-                )
+                ),
               ],
             ),
             const Spacer(),
@@ -100,46 +125,76 @@ class FileSortyScreen extends StatelessWidget {
                 SizedBox(
                   width: 250,
                   child: TextFormField(
-                    decoration: const InputDecoration(
-                      labelText: '파일 저장 위치',
-                    ),
+                    decoration: const InputDecoration(labelText: '파일 저장 위치'),
                   ),
                 ),
                 ElevatedButton.icon(
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF45525B),
-                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 24,
+                      vertical: 14,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
                   ),
-                  onPressed: () {
+                  onPressed: () async {
+                    if (selectedMode == null) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('정렬 기준을 선택해 주세요.')),
+                      );
+                      return;
+                    }
+
+                    final response = await http.post(
+                      Uri.parse('$url/organize/start'),
+                      headers: {'Content-Type': 'application/json'},
+                      body: jsonEncode({
+                        "folderId": widget.sourceFolderId,
+                        "mode": selectedMode,
+                        "destinationFolderId": widget.destinationFolderId,
+                      }),
+                    );
+
                     Navigator.of(context).pop();
-                    // 정리 로직 실행
+
+                    if (response.statusCode == 200) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('자동 정리가 시작되었습니다.')),
+                      );
+                    } else {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('정리 요청 실패: ${response.statusCode}')),
+                      );
+                    }
                   },
                   icon: const Icon(Icons.flight_takeoff, color: Colors.white),
                   label: const Text(
                     '정리하기',
                     style: TextStyle(color: Colors.white),
                   ),
-                )
+                ),
               ],
-            )
+            ),
           ],
         ),
       ),
     );
   }
 
-  Widget _sortButton(String label) {
+  Widget _sortButton(BuildContext context, String label, String mode) {
     return ElevatedButton(
       style: ElevatedButton.styleFrom(
-        backgroundColor: Colors.white,
-        foregroundColor: Colors.black,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
-        ),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        backgroundColor: selectedMode == mode ? Colors.black : Colors.white,
+        foregroundColor: selectedMode == mode ? Colors.white : Colors.black,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       ),
-      onPressed: () {},
+      onPressed: () {
+        setState(() {
+          selectedMode = mode;
+        });
+      },
       child: Text(label),
     );
   }
