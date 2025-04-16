@@ -4,6 +4,8 @@ import 'dart:io';
 import 'package:flutter_application_1/screens/file_uploader.dart';
 import 'package:flutter_application_1/screens/file_sorty.dart';
 import 'package:flutter_application_1/screens/file_item.dart';
+import 'package:flutter_application_1/screens/folder_create.dart';
+
 
 class PersonalScreen extends StatefulWidget {
   final String username;
@@ -17,10 +19,21 @@ class PersonalScreen extends StatefulWidget {
 class _PersonalScreenState extends State<PersonalScreen> {
   // 파일 선택 상태 저장용 리스트
   List<FileItem> selectedFiles = [];
+  
+  // 폴더 목록 상태 관리
+  List<String> folders = [];
+
   Set<String> fileNames = {}; // 중복 방지를 위한 파일 이름 저장용 집합
 
   // 업로더 인스턴스 생성
   final uploader = FileUploader(baseUrl: 'http://223.194.139.233:8080');
+
+  
+  void addFolder(String name){
+    setState(() {
+      folders.add(name);
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -181,8 +194,65 @@ class _PersonalScreenState extends State<PersonalScreen> {
                   ),
                 ),
                 tileColor: Color(0xFF455A64),
-                onTap: () => Navigator.pop(context),
+                onTap: () async {
+                  // 짧은 딜레이 후 팝업 표시 ( 드로어 닫힘 타이밍 맞추기 )
+                  await Future.delayed(const Duration(milliseconds: 100));
+                  
+                  final RenderBox overlay = Overlay.of(context).context.findRenderObject() as RenderBox;
+                  final RelativeRect position = RelativeRect.fromLTRB(
+                    100, // 좌측에서 거리
+                    210, // 위에서 거리
+                    overlay.size.width - 100,
+                    0,
+                  );
+                  final selected = await showMenu<String>(
+                    context: context,
+                    position: position,
+                    items: [
+                      const PopupMenuItem(
+                        value: 'new_folder',
+                        child: Text('새 폴더'),
+                      ),
+                      const PopupMenuItem(
+                        value: 'upload_file',
+                        child: Text('파일 업로드'),
+                      ),
+                      const PopupMenuItem(
+                        value: 'upload_folder',
+                        child: Text('폴더 업로드'),
+                      ),
+                    ],
+                  ). then((selected) async { 
+                    // folder_create를 불러와서 폴더 생성하는 팝업창
+                    if(selected == 'new_folder'){ 
+                      final result = await showDialog (
+                        context: context,
+                        builder: (BuildContext context){
+                          return Dialog (
+                            child: Container(
+                              width: 300, // 너비 설정
+                              height: 280, // 높이 설정
+                              child: FolderCreateScreen(
+                                onCreateFolder: (folderName){
+                                  setState((){
+                                    folders.add(folderName);
+                                  });
+                                  Navigator.of(context).pop();
+                                },
+                              ), // 실제 내용
+                            ),
+                          );
+                        },
+                      );
+                      if(result == true){
+                        print('새 폴더 생성 완료');
+                      }
+                    }
+                    // 다른 항목은 여기에 맞게 처리
+                  });
+                }
               ),
+
               ListTile(
                 leading: Icon(
                   Icons.star_border,
@@ -338,7 +408,7 @@ class _PersonalScreenState extends State<PersonalScreen> {
                       ),
                       padding: const EdgeInsets.all(12),
                       child: GridView.builder(
-                        itemCount: 8,
+                        itemCount: folders.length,
                         gridDelegate:
                             const SliverGridDelegateWithFixedCrossAxisCount(
                           crossAxisCount: 2,
@@ -347,32 +417,25 @@ class _PersonalScreenState extends State<PersonalScreen> {
                           childAspectRatio: 1.5,
                         ),
                         itemBuilder: (context, index) {
-                          if (index == 0) {
-                            return ElevatedButton.icon(
-                              onPressed: () {},
-                              icon: const Icon(
-                                Icons.folder,
-                                color: Color(0xFF263238),
+                          final folderName = folders[index];
+                          return ElevatedButton.icon(
+                            onPressed: () {},
+                            icon: const Icon(
+                              Icons.folder,
+                              color: Color(0xFF263238),
+                            ),
+                            label: Text(
+                              folderName,
+                              style: const TextStyle(
+                                color: Colors.black,
+                                fontFamily: 'APPLESDGOTHICNEOR',
                               ),
-                              label: const Text(
-                                '학생회',
-                                style: TextStyle(
-                                  color: Colors.black,
-                                  fontFamily: 'APPLESDGOTHICNEOR',
-                                ),
+                            ),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.white,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
                               ),
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.white,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                              ),
-                            );
-                          }
-                          return Container(
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(12),
                             ),
                           );
                         },
