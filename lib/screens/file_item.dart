@@ -1,3 +1,5 @@
+import 'package:flutter/material.dart';
+
 // 파일 정보 클래스
 class FileItem {
   final String name;
