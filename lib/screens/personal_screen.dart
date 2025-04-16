@@ -3,9 +3,8 @@ import 'package:desktop_drop/desktop_drop.dart';
 import 'dart:io';
 import 'package:flutter_application_1/screens/file_uploader.dart';
 import 'package:flutter_application_1/screens/file_sorty.dart';
-import 'package:flutter_application_1/screens/file_item.dart';
+import 'package:flutter_application_1/models/file_item.dart';
 
-import 'package:flutter_application_1/screens/folder_create.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 
