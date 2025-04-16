@@ -44,7 +44,7 @@ class _LoginScreenState extends State<LoginScreen> {
     String email = _emailController.text;
     String password = _passwordController.text;
     
-    final url = Uri.parse("http://223.194.131.145:8080/user/login");
+    //final url = Uri.parse("http://223.194.131.101.145:8080/user/login");
 
     try {
       final response = await http.post(
