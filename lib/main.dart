@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+
+void main() async{
 import 'package:provider/provider.dart';
 //import 'package:flutter_application_1/screens/home_screen.dart'; // 홈홈 화면 불러오기
 import 'models/counter_model.dart'; // provider 모델 import
