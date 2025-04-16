@@ -4,9 +4,10 @@ import 'dart:io';
 import 'package:flutter_application_1/screens/file_uploader.dart';
 import 'package:flutter_application_1/screens/file_sorty.dart';
 import 'package:flutter_application_1/models/file_item.dart';
-
+import 'package:flutter_application_1/screens/folder_create.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-
+import 'dart:convert';
+import 'package:http/http.dart' as http;
 
 class PersonalScreen extends StatefulWidget {
   final String username;
@@ -27,15 +28,63 @@ class _PersonalScreenState extends State<PersonalScreen> {
   Set<String> fileNames = {}; // 중복 방지를 위한 파일 이름 저장용 집합
   late String url;
   late FileUploader uploader;
+  int currentFolderId = 101; // 시작 폴더 ID (예: 2번 루트)
+  List<int> folderStack = []; // 상위 폴더 경로 추적
+  Map<String, int> folderNameToId = {};
 
   @override
   void initState() {
     super.initState();
     url = dotenv.get("BaseUrl");
     uploader = FileUploader(baseUrl: url);
+    fetchFolderHierarchy(1); // 루트 폴더 ID
   }
 
-  
+  Future<void> fetchFolderHierarchy(int folderId, {bool pushToStack = true}) async {
+  final response = await http.get(
+    Uri.parse('$url/folder/hierarchy/$folderId'),
+    headers: {"Content-Type": "application/json"},
+  );
+
+  if (response.statusCode == 200) {
+    final data = jsonDecode(response.body);
+
+    // 🔹 여기! folderList와 folderNameToId를 먼저 만든 뒤
+    List<Map<String, dynamic>> folderList = List<Map<String, dynamic>>.from(data['subFolders']);
+    folderNameToId = {
+      for (var f in folderList) f['name']: f['id']
+    };
+
+    setState(() {
+      if (pushToStack && currentFolderId != folderId) {
+        folderStack.add(currentFolderId);
+      }
+
+      currentFolderId = folderId;
+
+      // 🔸 folder 이름 리스트만 추출하여 UI용으로 저장
+      folders = folderList.map((f) => f['name'] as String).toList();
+
+      selectedFiles = List<FileItem>.from(
+        data['files'].map((f) => FileItem(
+              name: f['name'],
+              type: f['fileType'],
+              sizeInBytes: f['size'],
+            )),
+      );
+
+      fileNames = selectedFiles.map((f) => f.name).toSet();
+      folderNameToId = {
+        for (var f in folderList) f['name']: f['id']
+      };
+
+      // 🔸 folderNameToId도 저장하고 싶다면 상태 변수로 따로 관리 가능
+    });
+  } else {
+    print('폴더 계층 불러오기 실패: ${response.statusCode}');
+  }
+}
+
   void addFolder(String name){
     setState(() {
       folders.add(name);
@@ -426,7 +475,12 @@ class _PersonalScreenState extends State<PersonalScreen> {
                         itemBuilder: (context, index) {
                           final folderName = folders[index];
                           return ElevatedButton.icon(
-                            onPressed: () {},
+                            onPressed: () {
+                              final folderId = folderNameToId[folderName]; // 폴더 이름 → ID
+                              if (folderId != null) {
+                              fetchFolderHierarchy(folderId);
+                              }
+                            },
                             icon: const Icon(
                               Icons.folder,
                               color: Color(0xFF263238),
