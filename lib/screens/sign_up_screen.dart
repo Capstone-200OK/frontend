@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_application_1/screens/login_screen.dart'; // 로그인 화면 불러오기
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 class SignUpScreen extends StatefulWidget {
   const SignUpScreen({Key? key}) : super(key: key);
@@ -21,6 +22,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
       TextEditingController(); // 이메일 입력 컨트롤러
   final TextEditingController _passwordController =
       TextEditingController(); // 비밀번호 입력 컨트롤러
+        String urlAddress = dotenv.get("BaseUrl");
 
   //회원가입 요청 함수
   Future<void> _registerUser() async {
@@ -28,9 +30,9 @@ class _SignUpScreenState extends State<SignUpScreen> {
     final String email = _emailController.text;
     final String password = _passwordController.text;
 
-    final url = Uri.parse(
-      'http://223.194.137.216:8080/user/signup',
-    ); // 스프링부트 회원가입 엔드포인트
+
+    // 스프링부트 회원가입 엔드포인트
+    final url = Uri.parse('$urlAddress/user/signup');
 
     try {
       final response = await http.post(

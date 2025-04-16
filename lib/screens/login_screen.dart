@@ -3,6 +3,7 @@ import 'package:flutter_application_1/screens/home_screen.dart';
 import 'package:flutter_application_1/screens/sign_up_screen.dart'; // 회원가입 화면 불러오기
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 // 사용자 정보를 담을 클래스
 class User {
@@ -15,7 +16,9 @@ class User {
 }
 
 class LoginScreen extends StatefulWidget {
+  
   const LoginScreen({Key? key}) : super(key: key);
+  
 
   @override
   _LoginScreenState createState() => _LoginScreenState();
@@ -29,6 +32,8 @@ class _LoginScreenState extends State<LoginScreen> {
       TextEditingController(); // 이메일 입력 컨트롤러
   final TextEditingController _passwordController =
       TextEditingController(); // 비밀번호 입력 컨트롤러
+
+       String url = dotenv.get("BaseUrl");
 
   // 사용자 정보 리스트 (로그인할 때 비교할 데이터)
   List<User> users = [
@@ -44,11 +49,12 @@ class _LoginScreenState extends State<LoginScreen> {
     String email = _emailController.text;
     String password = _passwordController.text;
     
-    //final url = Uri.parse("http://223.194.131.101.145:8080/user/login");
+    final URL = Uri.parse('$url/user/login');
+    
 
     try {
       final response = await http.post(
-        url,
+        URL,
         headers: {"Content-Type": "application/json"},
         body: json.encode({
           "email": email,
