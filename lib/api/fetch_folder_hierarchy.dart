@@ -11,8 +11,10 @@ Future<FolderItem?> fetchFolderHierarchy(int folderId) async {
     final response = await http.get(url);
 
     if (response.statusCode == 200) {
-      final jsonData = jsonDecode(response.body);
-      return FolderItem.fromJson(jsonData);
+      final decoded = utf8.decode(response.bodyBytes); // 한국어 안깨지게 만들기 
+      final data = jsonDecode(decoded);
+      print(data);
+      return FolderItem.fromJson(data);
     } else {
       print("❌ 서버 오류: ${response.statusCode} - ${response.body}");
       return null;
