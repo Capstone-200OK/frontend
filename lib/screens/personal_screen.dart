@@ -37,13 +37,23 @@ class _PersonalScreenState extends State<PersonalScreen> {
   int currentFolderId = 101; // 시작 폴더 ID (예: 2번 루트)
   List<int> folderStack = []; // 상위 폴더 경로 추적
   Map<String, int> folderNameToId = {};
-
+  Map<int, String> folderIdToName = {};
+  late String s3BaseUrl;
   @override
   void initState() {
     super.initState();
     url = dotenv.get("BaseUrl");
-    uploader = FileUploader(baseUrl: url);
-    fetchFolderHierarchy(1); // 루트 폴더 ID
+    s3BaseUrl = dotenv.get("S3BaseUrl");
+    uploader = FileUploader(baseUrl: url, s3BaseUrl: s3BaseUrl);
+    folderIdToName[1] = 'Root';
+    fetchFolderHierarchy(1,pushToStack: false); // 루트 폴더 ID
+  }
+  String getCurrentFolderPath() {
+    List<int> pathIds = [...folderStack, currentFolderId];
+    List<String> pathNames = pathIds
+        .map((id) => folderIdToName[id] ?? 'Unknown')
+        .toList();
+    return pathNames.join('/');
   }
 
   Future<void> fetchFolderHierarchy(
@@ -57,12 +67,13 @@ class _PersonalScreenState extends State<PersonalScreen> {
 
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);
+      List<Map<String, dynamic>> folderList =
+          List<Map<String, dynamic>>.from(data['subFolders']);
 
-      // 🔹 여기! folderList와 folderNameToId를 먼저 만든 뒤
-      List<Map<String, dynamic>> folderList = List<Map<String, dynamic>>.from(
-        data['subFolders'],
-      );
       folderNameToId = {for (var f in folderList) f['name']: f['id']};
+
+      // ✅ 덮어쓰기 제거하고 addAll만 사용
+      folderIdToName.addAll({for (var f in folderList) f['id']: f['name']});
 
       setState(() {
         if (pushToStack && currentFolderId != folderId) {
@@ -71,7 +82,6 @@ class _PersonalScreenState extends State<PersonalScreen> {
 
         currentFolderId = folderId;
 
-        // 🔸 folder 이름 리스트만 추출하여 UI용으로 저장
         folders = folderList.map((f) => f['name'] as String).toList();
 
         selectedFiles = List<FileItem>.from(
@@ -85,14 +95,12 @@ class _PersonalScreenState extends State<PersonalScreen> {
         );
 
         fileNames = selectedFiles.map((f) => f.name).toSet();
-        folderNameToId = {for (var f in folderList) f['name']: f['id']};
-
-        // 🔸 folderNameToId도 저장하고 싶다면 상태 변수로 따로 관리 가능
       });
     } else {
       print('폴더 계층 불러오기 실패: ${response.statusCode}');
     }
   }
+
 
   void addFolder(String name) {
     setState(() {
@@ -685,11 +693,17 @@ class _PersonalScreenState extends State<PersonalScreen> {
                         });
 
                         try {
+                          final currentFolderPath = getCurrentFolderPath();
                           // 업로드 호출
+                          print('📦 folderIdToName: $folderIdToName');
+                          print('📁 folderStack: $folderStack');
+                          print('📁 currentFolderId: $currentFolderId');
+                          print('📁 경로: $currentFolderPath');
                           await uploader.uploadFiles(
                             file: droppedFiles[0],
                             userId: 1,
                             folderId: currentFolderId,
+                            currentFolderPath: currentFolderPath,
                           );
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(
