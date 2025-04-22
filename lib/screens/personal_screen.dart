@@ -3,6 +3,7 @@ import 'package:desktop_drop/desktop_drop.dart';
 import 'dart:io';
 import 'package:flutter_application_1/api/file_uploader.dart';
 import 'package:flutter_application_1/screens/file_sorty.dart';
+import 'package:flutter_application_1/screens/recent_file_screen.dart';
 import 'package:flutter_application_1/models/file_item.dart';
 import 'package:flutter_application_1/models/folder_item.dart';
 import 'package:flutter_application_1/api/folder_create.dart';
@@ -142,9 +143,9 @@ class _PersonalScreenState extends State<PersonalScreen> {
                 child: Text(
                   '${widget.username}님의 파일함',
                   style: const TextStyle(
-                    color: Colors.black,
                     fontSize: 18,
-                    fontWeight: FontWeight.bold,
+                    //fontWeight: FontWeight.bold,
+                    fontFamily: 'APPLESDGOTHICNEOEB',
                   ),
                 ),
               ),
@@ -170,14 +171,22 @@ class _PersonalScreenState extends State<PersonalScreen> {
                       ), //최근항목아이콘
                       onPressed: () {
                         // 최근 항목 페이지 이동 로직
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder:
+                                (context) => RecentFileScreen(username: "현서"),
+                          ),
+                        );
                         print('최근 항목 눌림');
+                        
                       },
                     ),
                     IconButton(
                       icon: const Icon(
                         Icons.notifications,
                         color: Color(0xff263238),
-                      ), //d알림 버튼튼
+                      ), //알림 버튼튼
                       onPressed: () {
                         print('알림 눌림');
                       },
@@ -514,7 +523,8 @@ class _PersonalScreenState extends State<PersonalScreen> {
                           "SORTY",
                           style: TextStyle(color: Colors.white, fontSize: 12),
                         ),
-                      ),  
+
+                      ),
                     ],
                   ),
                 ),
