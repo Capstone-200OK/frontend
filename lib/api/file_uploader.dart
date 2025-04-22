@@ -26,7 +26,7 @@ class FileUploader {
     final meta = {
       "name": fileName,
       "filePath": "/Root/$fileName", // 실제로는 덮어씌워질 예정
-      "fileType": mimeType,
+      "fileType": fileExt,
       "size": fileSize,
       "userId": userId,
       "folderId": folderId,

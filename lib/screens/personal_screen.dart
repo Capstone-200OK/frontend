@@ -35,6 +35,8 @@ class _PersonalScreenState extends State<PersonalScreen> {
   late String url;
   late FileUploader uploader;
   int currentFolderId = 101; // 시작 폴더 ID (예: 2번 루트)
+  String currentFolderName = 'ROOT'; // 현재 폴더명 ( ROOT로 시작 )
+  List<String> breadcrumbPath = ['ROOT']; // 폴더명을 저장하는 List
   List<int> folderStack = []; // 상위 폴더 경로 추적
   Map<String, int> folderNameToId = {};
 
@@ -65,10 +67,18 @@ class _PersonalScreenState extends State<PersonalScreen> {
       folderNameToId = {for (var f in folderList) f['name']: f['id']};
 
       setState(() {
+        currentFolderName = data['name'] ?? 'ROOT';
+
         if (pushToStack && currentFolderId != folderId) {
           folderStack.add(currentFolderId);
+          breadcrumbPath.add(currentFolderName);
+        } 
+        else if(!pushToStack){
+          if(breadcrumbPath.length > 1){
+            breadcrumbPath.removeLast();
+          }
         }
-
+        
         currentFolderId = folderId;
 
         // 🔸 folder 이름 리스트만 추출하여 UI용으로 저장
@@ -86,6 +96,7 @@ class _PersonalScreenState extends State<PersonalScreen> {
 
         fileNames = selectedFiles.map((f) => f.name).toSet();
         folderNameToId = {for (var f in folderList) f['name']: f['id']};
+        print('폴더 계층 불러오기 성공');
 
         // 🔸 folderNameToId도 저장하고 싶다면 상태 변수로 따로 관리 가능
       });
@@ -399,14 +410,29 @@ class _PersonalScreenState extends State<PersonalScreen> {
             // 폴더 & 파일 레이블
             Row(
               children: [
+                // ROOT 텍스트를 누르면 personal_screen.dart기본 화면으로 이동
                 Expanded(
                   child: Padding(
-                    padding: const EdgeInsets.only(left: 100.0),
-                    child: Text(
-                      '폴더',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontFamily: 'APPLESDGOTHICNEOR',
+                    padding: const EdgeInsets.only(left: 150.0),
+                    child: GestureDetector(
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => PersonalScreen(username: widget.username), // PersonalScreen()으로 이동
+                          ),
+                        );
+                      },
+                      child: Row(
+                        children: [
+                         Text(
+                          '${breadcrumbPath.join("  >  ")}',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontFamily: 'APPLESDGOTHICNEOR',
+                          ),
+                         ), 
+                        ]
                       ),
                     ),
                   ),
@@ -622,12 +648,13 @@ class _PersonalScreenState extends State<PersonalScreen> {
                                       ),
                                     ),
                                   ),
-                                  IconButton(
+                                  IconButton( 
                                     onPressed: () {
                                       if (folderId != null)
                                         fetchFolderHierarchy(folderId);
+
                                     },
-                                    icon: const Icon(
+                                    icon: const Icon( 
                                       Icons.navigate_next,
                                       size: 20,
                                     ),
@@ -686,7 +713,7 @@ class _PersonalScreenState extends State<PersonalScreen> {
                           await uploader.uploadFiles(
                             file: droppedFiles[0],
                             userId: 1,
-                            folderId: 2,
+                            folderId: currentFolderId,
                           );
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(
