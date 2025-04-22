@@ -242,4 +242,3 @@ class _FileSortyScreenState extends State<FileSortyScreen> {
     );
   }
 }
-
