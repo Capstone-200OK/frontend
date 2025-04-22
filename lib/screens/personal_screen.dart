@@ -3,6 +3,7 @@ import 'package:desktop_drop/desktop_drop.dart';
 import 'dart:io';
 import 'package:flutter_application_1/api/file_uploader.dart';
 import 'package:flutter_application_1/screens/file_sorty.dart';
+import 'package:flutter_application_1/screens/recent_file_screen.dart';
 import 'package:flutter_application_1/models/file_item.dart';
 import 'package:flutter_application_1/models/folder_item.dart';
 import 'package:flutter_application_1/api/folder_create.dart';
@@ -35,6 +36,8 @@ class _PersonalScreenState extends State<PersonalScreen> {
   late String url;
   late FileUploader uploader;
   int currentFolderId = 101; // 시작 폴더 ID (예: 2번 루트)
+  String currentFolderName = 'ROOT'; // 현재 폴더명 ( ROOT로 시작 )
+  List<String> breadcrumbPath = ['ROOT']; // 폴더명을 저장하는 List
   List<int> folderStack = []; // 상위 폴더 경로 추적
   Map<String, int> folderNameToId = {};
   Map<int, String> folderIdToName = {};
@@ -76,10 +79,18 @@ class _PersonalScreenState extends State<PersonalScreen> {
       folderIdToName.addAll({for (var f in folderList) f['id']: f['name']});
 
       setState(() {
+        currentFolderName = data['name'] ?? 'ROOT';
+
         if (pushToStack && currentFolderId != folderId) {
           folderStack.add(currentFolderId);
+          breadcrumbPath.add(currentFolderName);
+        } 
+        else if(!pushToStack){
+          if(breadcrumbPath.length > 1){
+            breadcrumbPath.removeLast();
+          }
         }
-
+        
         currentFolderId = folderId;
 
         folders = folderList.map((f) => f['name'] as String).toList();
@@ -150,9 +161,9 @@ class _PersonalScreenState extends State<PersonalScreen> {
                 child: Text(
                   '${widget.username}님의 파일함',
                   style: const TextStyle(
-                    color: Colors.black,
                     fontSize: 18,
-                    fontWeight: FontWeight.bold,
+                    //fontWeight: FontWeight.bold,
+                    fontFamily: 'APPLESDGOTHICNEOEB',
                   ),
                 ),
               ),
@@ -178,14 +189,22 @@ class _PersonalScreenState extends State<PersonalScreen> {
                       ), //최근항목아이콘
                       onPressed: () {
                         // 최근 항목 페이지 이동 로직
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder:
+                                (context) => RecentFileScreen(username: "현서"),
+                          ),
+                        );
                         print('최근 항목 눌림');
+                        
                       },
                     ),
                     IconButton(
                       icon: const Icon(
                         Icons.notifications,
                         color: Color(0xff263238),
-                      ), //d알림 버튼튼
+                      ), //알림 버튼튼
                       onPressed: () {
                         print('알림 눌림');
                       },
@@ -297,6 +316,9 @@ class _PersonalScreenState extends State<PersonalScreen> {
                         child: Text('폴더 업로드'),
                       ),
                     ],
+                    elevation: 8, // 그림자 깊이 설정
+                    color: Colors.white, // 위젯 배경 흰색
+
                   ).then((selected) async {
                     // folder_create를 불러와서 폴더 생성하는 팝업창
                     if (selected == 'new_folder') {
@@ -305,8 +327,9 @@ class _PersonalScreenState extends State<PersonalScreen> {
                         builder: (BuildContext context) {
                           return Dialog(
                             child: Container(
-                              width: 300, // 너비 설정
+                              width: 280, // 너비 설정
                               height: 280, // 높이 설정
+                              color: Colors.white,
                               child: FolderCreateScreen(
                                 onCreateFolder: (folderName) {
                                   setState(() {
@@ -407,14 +430,29 @@ class _PersonalScreenState extends State<PersonalScreen> {
             // 폴더 & 파일 레이블
             Row(
               children: [
+                // ROOT 텍스트를 누르면 personal_screen.dart기본 화면으로 이동
                 Expanded(
                   child: Padding(
-                    padding: const EdgeInsets.only(left: 100.0),
-                    child: Text(
-                      '폴더',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontFamily: 'APPLESDGOTHICNEOR',
+                    padding: const EdgeInsets.only(left: 150.0),
+                    child: GestureDetector(
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => PersonalScreen(username: widget.username), // PersonalScreen()으로 이동
+                          ),
+                        );
+                      },
+                      child: Row(
+                        children: [
+                         Text(
+                          '${breadcrumbPath.join("  >  ")}',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontFamily: 'APPLESDGOTHICNEOR',
+                          ),
+                         ), 
+                        ]
                       ),
                     ),
                   ),
@@ -523,6 +561,7 @@ class _PersonalScreenState extends State<PersonalScreen> {
                           style: TextStyle(color: Colors.white, fontSize: 12),
                         ),
                       ),  
+
                     ],
                   ),
                 ),
@@ -633,12 +672,13 @@ class _PersonalScreenState extends State<PersonalScreen> {
                                       ),
                                     ),
                                   ),
-                                  IconButton(
+                                  IconButton( 
                                     onPressed: () {
                                       if (folderId != null)
                                         fetchFolderHierarchy(folderId);
+
                                     },
-                                    icon: const Icon(
+                                    icon: const Icon( 
                                       Icons.navigate_next,
                                       size: 20,
                                     ),
