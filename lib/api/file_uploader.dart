@@ -6,13 +6,14 @@ import 'package:mime/mime.dart';
 
 class FileUploader {
   final String baseUrl;
-
-  FileUploader({required this.baseUrl});
+  final String s3BaseUrl;
+  FileUploader({required this.baseUrl, required this.s3BaseUrl});
 
   Future<void> uploadFiles({
     required File file,
     required int userId,
     required int folderId,
+    required String currentFolderPath,
   }) async {
     final uri = Uri.parse('$baseUrl/file/upload');
 
@@ -23,13 +24,16 @@ class FileUploader {
     final fileSize = await file.length();
     final fileExt = fileName.contains('.') ? fileName.split('.').last : '';
 
+    final fileUrl = "$s3BaseUrl$fileName";
+    
     final meta = {
       "name": fileName,
-      "filePath": "/Root/$fileName", // 실제로는 덮어씌워질 예정
+      "filePath": "$currentFolderPath/$fileName", // 실제로는 덮어씌워질 예정
       "fileType": fileExt,
       "size": fileSize,
       "userId": userId,
       "folderId": folderId,
+      "fileUrl": fileUrl,
     };
 
     final request = http.MultipartRequest('POST', uri);
