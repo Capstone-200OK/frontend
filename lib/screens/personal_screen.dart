@@ -686,7 +686,7 @@ class _PersonalScreenState extends State<PersonalScreen> {
                           await uploader.uploadFiles(
                             file: droppedFiles[0],
                             userId: 1,
-                            folderId: 2,
+                            folderId: currentFolderId,
                           );
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(
