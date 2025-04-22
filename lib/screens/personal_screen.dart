@@ -510,24 +510,18 @@ class _PersonalScreenState extends State<PersonalScreen> {
                             ),
                         itemBuilder: (context, index) {
                           final folderName = folders[index];
+                          final folderId = folderNameToId[folderName];
 
-                          return ElevatedButton.icon(
-                            onPressed: () {
-                              final folderId = folderNameToId[folderName]; // 폴더 이름 → ID
-                              if (folderId != null) {
-                              fetchFolderHierarchy(folderId);
-                              }
-                            },
-                            icon: const Icon(
-                              Icons.folder,
-                              color: Color(0xFF263238),
-                            ),
-                            label: Text(
-                              folderName,
-                              style: const TextStyle(
-                                color: Colors.black,
-                                fontFamily: 'APPLESDGOTHICNEOR',
-                             ),
+                          return Row(
+                            children: [
+                              Checkbox(
+                                value: selectedFolderName == folderName,
+                                onChanged: (value) {
+                                  setState(() {
+                                    selectedFolderName = value == true ? folderName : null;
+                                  });
+                                },
+                              ),
                               Expanded(
                                 child: ElevatedButton.icon(
                                   onPressed: () {
