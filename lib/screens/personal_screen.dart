@@ -481,37 +481,40 @@ class _PersonalScreenState extends State<PersonalScreen> {
 
                       // 🔹 Sorty 버튼
                      ElevatedButton(
-  onPressed: selectedFolderNames.isNotEmpty
-      ? () {
-          showDialog(
-            context: context,
-            builder: (context) => FileSortyScreen(
-              folders: selectedFolderNames.map((folderName) {
-                return FolderItem(
-                  name: folderName,
-                  id: folderNameToId[folderName]!, // 폴더의 ID를 매핑
-                );
-              }).toList(), // selectedFolderNames에서 폴더 정보를 리스트로 변환
-              username: widget.username,
-              sourceFolderId: folderNameToId[selectedFolderNames.first]!,
-              destinationFolderId: folderNameToId[selectedFolderNames.first]!,
-            ),
-          );
-        }
-      : null, // selectedFolderNames가 비어 있으면 버튼 비활성화
-  style: ElevatedButton.styleFrom(
-    backgroundColor: const Color(0xFF2E24E0),
-    padding: const EdgeInsets.symmetric(
-      horizontal: 24,
-      vertical: 6,
-    ),
-  ),
-  child: const Text(
-    "SORTY",
-    style: TextStyle(color: Colors.white, fontSize: 12),
-  ),
-),
+                      onPressed: selectedFolderNames.isNotEmpty
+                          ? () {
+                              final selectedFolderItems = selectedFolderNames.map((name) {
+                                return FolderItem(
+                                  name: name,
+                                  id: folderNameToId[name]!,
+                                );
+                              }).toList();
 
+                              final selectedFolderIds = selectedFolderItems.map((f) => f.id).toList();
+
+                              showDialog(
+                                context: context,
+                                builder: (context) => FileSortyScreen(
+                                  folders: selectedFolderItems,
+                                  username: widget.username,
+                                  sourceFolderIds: selectedFolderIds, // ✅ 이제 리스트로 전달
+                                  destinationFolderId: -1, // 목적지는 내부에서 선택함
+                                ),
+                              );
+                            }
+                          : null, // selectedFolderNames가 비어 있으면 버튼 비활성화
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF2E24E0),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 24,
+                            vertical: 6,
+                          ),
+                        ),
+                        child: const Text(
+                          "SORTY",
+                          style: TextStyle(color: Colors.white, fontSize: 12),
+                        ),
+                      ),  
                     ],
                   ),
                 ),
