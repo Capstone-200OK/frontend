@@ -4,7 +4,6 @@ import 'dart:io';
 import 'package:flutter_application_1/api/file_uploader.dart';
 import 'package:flutter_application_1/screens/file_sorty.dart';
 import 'package:flutter_application_1/models/file_item.dart';
-import 'package:flutter_application_1/models/folder_item.dart';
 import 'package:flutter_application_1/api/folder_create.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'dart:convert';
@@ -413,7 +412,7 @@ class _PersonalScreenState extends State<PersonalScreen> {
                 ),
                 Expanded(
                   child: Padding(
-                    padding: const EdgeInsets.only(left: 110.0),
+                    padding: const EdgeInsets.only(left: 10.0),
                     child: Text(
                       '파일',
                       style: TextStyle(
@@ -480,38 +479,36 @@ class _PersonalScreenState extends State<PersonalScreen> {
                       // const SizedBox(width: 8),
 
                       // 🔹 Sorty 버튼
-                     ElevatedButton(
-  onPressed: selectedFolderNames.isNotEmpty
-      ? () {
-          showDialog(
-            context: context,
-            builder: (context) => FileSortyScreen(
-              folders: selectedFolderNames.map((folderName) {
-                return FolderItem(
-                  name: folderName,
-                  id: folderNameToId[folderName]!, // 폴더의 ID를 매핑
-                );
-              }).toList(), // selectedFolderNames에서 폴더 정보를 리스트로 변환
-              username: widget.username,
-              sourceFolderId: folderNameToId[selectedFolderNames.first]!,
-              destinationFolderId: folderNameToId[selectedFolderNames.first]!,
-            ),
-          );
-        }
-      : null, // selectedFolderNames가 비어 있으면 버튼 비활성화
-  style: ElevatedButton.styleFrom(
-    backgroundColor: const Color(0xFF2E24E0),
-    padding: const EdgeInsets.symmetric(
-      horizontal: 24,
-      vertical: 6,
-    ),
-  ),
-  child: const Text(
-    "SORTY",
-    style: TextStyle(color: Colors.white, fontSize: 12),
-  ),
-),
-
+                      ElevatedButton(
+                        onPressed:
+                            selectedFolderName != null
+                                ? () {
+                                  showDialog(
+                                    context: context,
+                                    builder:
+                                        (context) => FileSortyScreen(
+                                          files: selectedFiles,
+                                          username: widget.username,
+                                          sourceFolderId:
+                                              folderNameToId[selectedFolderName!]!,
+                                          destinationFolderId:
+                                              folderNameToId[selectedFolderName!]!, // 동일 폴더로도 가능하게
+                                        ),
+                                  );
+                                }
+                                : null,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Color(0xff2E24E0),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 24,
+                            vertical: 6,
+                          ),
+                        ),
+                        child: const Text(
+                          "SORTY",
+                          style: TextStyle(color: Colors.white, fontSize: 12),
+                        ),
+                      ),
                     ],
                   ),
                 ),
@@ -547,18 +544,13 @@ class _PersonalScreenState extends State<PersonalScreen> {
                           final folderName = folders[index];
                           final folderId = folderNameToId[folderName];
 
-                          final isSelected = selectedFolderNames.contains(
-                            folderName,
-                          );
+                          final isSelected = selectedFolderName == folderName;
 
                           return GestureDetector(
                             onTap: () {
                               setState(() {
-                                if (selectedFolderNames.contains(folderName)) {
-                                  selectedFolderNames.remove(folderName);
-                                } else {
-                                  selectedFolderNames.add(folderName);
-                                }
+                                selectedFolderName =
+                                    isSelected ? null : folderName;
                               });
                             },
                             child: Container(
@@ -571,7 +563,7 @@ class _PersonalScreenState extends State<PersonalScreen> {
                                 borderRadius: BorderRadius.circular(12),
                                 border: Border.all(
                                   color:
-                                      selectedFolderNames.contains(folderName)
+                                      isSelected
                                           ? Colors.blueGrey
                                           : Colors.grey.shade400,
                                   width: 1.5,
@@ -587,21 +579,13 @@ class _PersonalScreenState extends State<PersonalScreen> {
                               child: Row(
                                 children: [
                                   Transform.scale(
-                                    scale: 0.6,
-                                    //폴더 선택
+                                    scale: 0.6, // 숫자가 크면 커지고, 1.0 이 기본
                                     child: Checkbox(
-                                      value: selectedFolderNames.contains(
-                                        folderName,
-                                      ),
+                                      value: isSelected,
                                       onChanged: (value) {
                                         setState(() {
-                                          if (value == true) {
-                                            selectedFolderNames.add(folderName);
-                                          } else {
-                                            selectedFolderNames.remove(
-                                              folderName,
-                                            );
-                                          }
+                                          selectedFolderName =
+                                              value == true ? folderName : null;
                                         });
                                       },
                                     ),
@@ -723,38 +707,112 @@ class _PersonalScreenState extends State<PersonalScreen> {
                         ),
                         child: Column(
                           children: [
+                            // 파일 리스트뷰
                             Expanded(
                               child: ListView.builder(
-                                itemCount: selectedFiles.length,
+                                itemCount: folders.length,
                                 itemBuilder: (context, index) {
-                                  final file = selectedFiles[index];
+                                  final folderName = folders[index];
+                                  final isSelected = selectedFolderNames
+                                      .contains(folderName);
+
                                   return Padding(
                                     padding: const EdgeInsets.symmetric(
-                                      vertical: 4.0,
+                                      vertical: 0.1,
                                     ),
-                                    child: ListTile(
-                                      leading: const Icon(
-                                        Icons.insert_drive_file,
-                                        size: 20,
-                                      ),
-                                      title: Text(
-                                        file.name,
-                                        overflow: TextOverflow.ellipsis,
-                                        style: const TextStyle(fontSize: 13),
-                                      ),
-                                      subtitle: Text(
-                                        '${file.type} • ${(file.sizeInBytes / 1024).toStringAsFixed(1)} KB',
-                                        style: const TextStyle(fontSize: 11),
-                                      ),
-                                      trailing: IconButton(
-                                        icon: const Icon(Icons.close, size: 16),
-                                        onPressed: () {
-                                          setState(() {
-                                            selectedFiles.removeAt(index);
-                                            fileNames.remove(file.name);
-                                          });
-                                        },
-                                      ),
+                                    child: Row(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.center,
+                                      children: [
+                                        // ✅ 폴더 선택용 체크박스
+                                        Checkbox(
+                                          value: isSelected,
+                                          onChanged: (value) {
+                                            setState(() {
+                                              if (value == true) {
+                                                if (!selectedFolderNames
+                                                    .contains(folderName)) {
+                                                  selectedFolderNames.add(
+                                                    folderName,
+                                                  );
+                                                }
+                                              } else {
+                                                selectedFolderNames.remove(
+                                                  folderName,
+                                                );
+                                              }
+                                            });
+                                          },
+                                          activeColor: const Color(0xff263238),
+                                          side: const BorderSide(
+                                            color: Colors.white,
+                                            width: 0.1,
+                                          ),
+                                          fillColor:
+                                              MaterialStateProperty.resolveWith<
+                                                Color
+                                              >((states) {
+                                                if (states.contains(
+                                                  MaterialState.disabled,
+                                                )) {
+                                                  return Colors.white;
+                                                }
+                                                return Colors.white;
+                                              }),
+                                          checkColor: const Color(0xff263238),
+                                        ),
+
+                                        // ✅ 폴더 이름 및 UI 꾸밈
+                                        Expanded(
+                                          child: Container(
+                                            padding: const EdgeInsets.all(12),
+                                            margin: const EdgeInsets.symmetric(
+                                              horizontal: 12,
+                                              vertical: 6,
+                                            ),
+                                            decoration: BoxDecoration(
+                                              color: Colors.white,
+                                              borderRadius:
+                                                  BorderRadius.circular(20),
+                                            ),
+                                            child: Row(
+                                              children: [
+                                                const Icon(
+                                                  Icons.folder,
+                                                  size: 15,
+                                                ),
+                                                const SizedBox(width: 8),
+                                                Text(
+                                                  folderName.length > 30
+                                                      ? '${folderName.substring(0, 30)}...'
+                                                      : folderName,
+                                                  style: const TextStyle(
+                                                    fontSize: 12,
+                                                    fontFamily:
+                                                        'APPLESDGOTHICNEOR',
+                                                  ),
+                                                  overflow:
+                                                      TextOverflow.ellipsis,
+                                                ),
+                                                const Spacer(),
+                                                GestureDetector(
+                                                  onTap: () {
+                                                    setState(() {
+                                                      folders.removeAt(index);
+                                                      selectedFolderNames
+                                                          .remove(folderName);
+                                                    });
+                                                  },
+                                                  child: const Icon(
+                                                    Icons.close,
+                                                    size: 12,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        ),
+                                      ],
                                     ),
                                   );
                                 },

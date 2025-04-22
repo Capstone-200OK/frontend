@@ -1,18 +1,19 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_application_1/models/file_item.dart';
+import 'package:flutter_application_1/models/folder_item.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
+
 class FileSortyScreen extends StatefulWidget {
-  final List<FileItem> files;
+  final List<FolderItem> folders;  // 폴더 리스트로 변경
   final String username;
   final int sourceFolderId;
   final int destinationFolderId;
 
   const FileSortyScreen({
     super.key,
-    required this.files,
+    required this.folders,  // 폴더 리스트 받기
     required this.username,
     required this.sourceFolderId,
     required this.destinationFolderId,
@@ -51,11 +52,10 @@ class _FileSortyScreenState extends State<FileSortyScreen> {
               width: double.infinity,
               decoration: BoxDecoration(
                 color: const Color(0xFF45525B),
-                //borderRadius: BorderRadius.circular(10),
               ),
               child: const Center(
                 child: Text(
-                  '파일 분류를 시작합니다 !',
+                  '폴더 정리를 시작합니다!',
                   style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
@@ -68,10 +68,10 @@ class _FileSortyScreenState extends State<FileSortyScreen> {
 
             // 본문 레이아웃: 좌우 분할
             SizedBox(
-              height: 400, // 직접 높이를 제한해야 ListView 안에서 Row가 제대로 작동함
+              height: 400,
               child: Row(
                 children: [
-                  // 왼쪽: 선택된 파일 리스트
+                  // 왼쪽: 선택된 폴더 리스트
                   Expanded(
                     child: Container(
                       padding: const EdgeInsets.all(10),
@@ -82,7 +82,7 @@ class _FileSortyScreenState extends State<FileSortyScreen> {
                       child: Column(
                         children: [
                           const Text(
-                            'start',
+                            '선택된 폴더',
                             style: TextStyle(
                               fontSize: 18,
                               fontWeight: FontWeight.bold,
@@ -91,13 +91,12 @@ class _FileSortyScreenState extends State<FileSortyScreen> {
                           const SizedBox(height: 10),
                           Expanded(
                             child: ListView.builder(
-                              itemCount: widget.files.length,
+                              itemCount: widget.folders.length,
                               itemBuilder: (context, index) {
-                                final file = widget.files[index];
+                                final folder = widget.folders[index];
                                 return ListTile(
-                                  title: Text(file.name),
-                                  subtitle: Text(file.type),
-                                  leading: const Icon(Icons.insert_drive_file),
+                                  title: Text(folder.name),
+                                  leading: const Icon(Icons.folder),
                                 );
                               },
                             ),
@@ -106,8 +105,7 @@ class _FileSortyScreenState extends State<FileSortyScreen> {
                           Center(
                             child: IconButton(
                               onPressed: () {
-                                // TODO: 파일 추가 기능
-                                print("파일 추가!");
+                                print("폴더 추가!");
                               },
                               icon: const Icon(Icons.add_circle_outline),
                               iconSize: 30,
@@ -117,7 +115,6 @@ class _FileSortyScreenState extends State<FileSortyScreen> {
                       ),
                     ),
                   ),
-
                   const SizedBox(width: 20),
 
                   // 오른쪽: 정리 옵션 + 버튼
@@ -245,3 +242,4 @@ class _FileSortyScreenState extends State<FileSortyScreen> {
     );
   }
 }
+

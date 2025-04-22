@@ -5,16 +5,16 @@ import 'package:flutter_application_1/models/file_item.dart';
 class FolderItem {
   final int id;
   final String name;
-  final bool isDeleted;
-  final List<FileItem> files;
-  final List<FolderItem> subFolders;
+  final bool ?isDeleted;
+  final List<FileItem>? files;
+  final List<FolderItem>? subFolders;
 
   FolderItem({
     required this.id,
     required this.name,
-    required this.isDeleted,
-    required this.files,
-    required this.subFolders,
+     this.isDeleted,
+     this.files,
+     this.subFolders,
   });
 
   /// JSON -> FolderItem 객체로 변환 (재귀 구조 처리)
