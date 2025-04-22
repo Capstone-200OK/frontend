@@ -8,14 +8,14 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 class FileSortyScreen extends StatefulWidget {
   final List<FolderItem> folders;  // 폴더 리스트로 변경
   final String username;
-  final int sourceFolderId;
+  final List<int> sourceFolderIds;
   final int destinationFolderId;
 
   const FileSortyScreen({
     super.key,
     required this.folders,  // 폴더 리스트 받기
     required this.username,
-    required this.sourceFolderId,
+    required this.sourceFolderIds,
     required this.destinationFolderId,
   });
 
@@ -26,7 +26,7 @@ class FileSortyScreen extends StatefulWidget {
 class _FileSortyScreenState extends State<FileSortyScreen> {
   String? selectedMode;
   late String url;
-
+  FolderItem? selectedDestinationFolder;
   @override
   void initState() {
     super.initState();
@@ -116,41 +116,81 @@ class _FileSortyScreenState extends State<FileSortyScreen> {
                     ),
                   ),
                   const SizedBox(width: 20),
-
-                  // 오른쪽: 정리 옵션 + 버튼
-                  Expanded(
-                    child: Container(
-                      padding: const EdgeInsets.all(8),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text(
-                            '정리 기준을 선택해 주세요!',
-                            style: TextStyle(fontWeight: FontWeight.bold),
-                          ),
-                          const SizedBox(height: 12),
-                          Wrap(
-                            spacing: 10,
-                            runSpacing: 10,
-                            children: [
-                              _sortButton(context, '내용', 'content'),
-                              _sortButton(context, '제목', 'title'),
-                              _sortButton(context, '날짜', 'date'),
-                              _sortButton(context, '유형', 'type'),
-                            ],
-                          ),
-                          const Spacer(),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              IconButton(
-                                onPressed: () {
-                                  print("폴더 추가!");
-                                },
-                                icon: const Icon(Icons.add_circle_outline),
-                                iconSize: 30,
+                    // 오른쪽: 목적지 폴더 + 정리 기준 + 정리하기 버튼
+                    Expanded(
+                      child: Container(
+                        padding: const EdgeInsets.all(8),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            // ① 목적지 폴더 표시
+                            const Text(
+                              '목적지 폴더',
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16,
                               ),
-                              ElevatedButton.icon(
+                            ),
+                            const SizedBox(height: 8),
+                            Container(
+                              padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                border: Border.all(color: Colors.grey.shade400),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Row(
+                                children: [
+                                  Icon(Icons.folder, color: Color(0xFF45525B)),
+                                  const SizedBox(width: 10),
+                                  Expanded(
+                                    child: Text(
+                                      selectedDestinationFolder?.name ?? "폴더를 선택해주세요",
+                                      style: const TextStyle(fontSize: 16),
+                                    ),
+                                  ),
+                                  IconButton(
+                                    icon: const Icon(Icons.add_circle_outline),
+                                    onPressed: () async {
+                                      final result = await showDialog<FolderItem>(
+                                        context: context,
+                                        builder: (context) => const FolderSelectDialog(),  // 폴더 선택 팝업 호출
+                                      );
+                                      if (result != null) {
+                                        setState(() {
+                                          selectedDestinationFolder = result;
+                                        });
+                                      }
+                                    },
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(height: 20),
+
+                            // ② 정리 기준 선택
+                            const Text(
+                              '정리 기준을 선택해 주세요!',
+                              style: TextStyle(fontWeight: FontWeight.bold),
+                            ),
+                            const SizedBox(height: 12),
+                            Wrap(
+                              spacing: 10,
+                              runSpacing: 10,
+                              children: [
+                                _sortButton(context, '내용', 'content'),
+                                _sortButton(context, '제목', 'title'),
+                                _sortButton(context, '날짜', 'date'),
+                                _sortButton(context, '유형', 'type'),
+                              ],
+                            ),
+
+                            const Spacer(),
+
+                            // ③ 정리하기 버튼
+                            Align(
+                              alignment: Alignment.bottomRight,
+                              child: ElevatedButton.icon(
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: const Color(0xFF45525B),
                                   padding: const EdgeInsets.symmetric(
@@ -173,14 +213,11 @@ class _FileSortyScreenState extends State<FileSortyScreen> {
 
                                   final response = await http.post(
                                     Uri.parse('$url/organize/start'),
-                                    headers: {
-                                      'Content-Type': 'application/json',
-                                    },
+                                    headers: {'Content-Type': 'application/json'},
                                     body: jsonEncode({
-                                      "folderId": widget.sourceFolderId,
+                                      "folderIds": widget.sourceFolderIds,
                                       "mode": selectedMode,
-                                      "destinationFolderId":
-                                          widget.destinationFolderId,
+                                      "destinationFolderId": selectedDestinationFolder!.id,
                                     }),
                                   );
 
@@ -188,35 +225,22 @@ class _FileSortyScreenState extends State<FileSortyScreen> {
 
                                   if (response.statusCode == 200) {
                                     ScaffoldMessenger.of(context).showSnackBar(
-                                      const SnackBar(
-                                        content: Text('자동 정리가 시작되었습니다.'),
-                                      ),
+                                      const SnackBar(content: Text('자동 정리가 시작되었습니다.')),
                                     );
                                   } else {
                                     ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(
-                                        content: Text(
-                                          '정리 요청 실패: ${response.statusCode}',
-                                        ),
-                                      ),
+                                      SnackBar(content: Text('정리 요청 실패: ${response.statusCode}')),
                                     );
                                   }
                                 },
-                                icon: const Icon(
-                                  Icons.auto_fix_high,
-                                  color: Colors.white,
-                                ),
-                                label: const Text(
-                                  '정리하기',
-                                  style: TextStyle(color: Colors.white),
-                                ),
+                                icon: const Icon(Icons.auto_fix_high, color: Colors.white),
+                                label: const Text('정리하기', style: TextStyle(color: Colors.white)),
                               ),
-                            ],
-                          ),
-                        ],
+                            ),
+                          ],
+                        ),
                       ),
                     ),
-                  ),
                 ],
               ),
             ),
@@ -239,6 +263,133 @@ class _FileSortyScreenState extends State<FileSortyScreen> {
         });
       },
       child: Text(label),
+    );
+  }
+}
+
+class FolderSelectDialog extends StatefulWidget {
+  const FolderSelectDialog({Key? key}) : super(key: key);
+
+  @override
+  State<FolderSelectDialog> createState() => _FolderSelectDialogState();
+}
+
+class _FolderSelectDialogState extends State<FolderSelectDialog> {
+  List<FolderItem> currentFolders = [];
+  List<int> folderStack = [];
+  FolderItem? selected;
+
+  late String url;
+
+  @override
+  void initState() {
+    super.initState();
+    url = dotenv.get("BaseUrl");
+    loadFolders(1); // 루트 폴더 ID
+  }
+
+  Future<void> loadFolders(int folderId) async {
+    final response = await http.get(
+      Uri.parse('$url/folder/hierarchy/$folderId'),
+      headers: {"Content-Type": "application/json"},
+    );
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      final subFolders = List<Map<String, dynamic>>.from(data['subFolders']);
+      setState(() {
+        currentFolders = subFolders
+            .map((f) => FolderItem(id: f['id'], name: f['name']))
+            .toList();
+
+        if (folderStack.isEmpty || folderStack.last != folderId) {
+          folderStack.add(folderId);
+        }
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: Row(
+        children: [
+          if (folderStack.length > 1)
+            IconButton(
+              icon: const Icon(Icons.arrow_back),
+              onPressed: () {
+                if (folderStack.length > 1) {
+                  folderStack.removeLast();
+                  loadFolders(folderStack.last);
+                }
+              },
+            ),
+          const Text("폴더 선택"),
+        ],
+      ),
+      content: SizedBox(
+        width: 400,
+        height: 300,
+        child: GridView.builder(
+          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: 2,
+            childAspectRatio: 2.5,
+            crossAxisSpacing: 12,
+            mainAxisSpacing: 12,
+          ),
+          itemCount: currentFolders.length,
+          itemBuilder: (context, index) {
+            final folder = currentFolders[index];
+            final isSelected = selected?.id == folder.id;
+
+            return GestureDetector(
+              onTap: () => setState(() => selected = folder),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: isSelected ? Colors.deepPurple.shade100 : Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: isSelected ? Colors.deepPurple : Colors.grey.shade400,
+                    width: 1.5,
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    Checkbox(
+                      value: isSelected,
+                      onChanged: (_) => setState(() => selected = folder),
+                    ),
+                    const Icon(Icons.folder, color: Colors.black87),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        folder.name,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.chevron_right),
+                      onPressed: () => loadFolders(folder.id),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context, null),
+          child: const Text("취소"),
+        ),
+        ElevatedButton(
+          onPressed: selected != null
+              ? () => Navigator.pop(context, selected)
+              : null,
+          child: const Text("확인"),
+        ),
+      ],
     );
   }
 }
