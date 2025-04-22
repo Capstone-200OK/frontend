@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/api/folder_create.dart';
 import 'package:flutter_application_1/api/sorting_rollback_service.dart';
+import 'package:flutter_application_1/screens/show_filemove_dialog.dart';
+import 'package:flutter_application_1/api/sorting_history_service.dart';
 
 class RecentFileScreen extends StatefulWidget {
   final String username;
@@ -61,15 +63,7 @@ class _RecentFileScreenState extends State<RecentFileScreen> {
           automaticallyImplyLeading: false,
           backgroundColor: Colors.white,
           elevation: 0,
-          leading: Builder(
-            builder:
-                (context) => IconButton(
-                  icon: const Icon(Icons.menu, color: Colors.black),
-                  onPressed: () {
-                    Scaffold.of(context).openDrawer();
-                  },
-                ),
-          ),
+
           title: Row(
             children: [
               // 뒤로가기 버튼
@@ -94,208 +88,6 @@ class _RecentFileScreenState extends State<RecentFileScreen> {
                     fontFamily: 'APPLESDGOTHICNEOEB',
                   ),
                 ),
-              ),
-            ],
-          ),
-        ),
-      ),
-      drawer: Drawer(
-        shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.zero, // 모서리 각지게
-        ),
-        child: Container(
-          color: Color(0xFF455A64),
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 40),
-          child: ListView(
-            padding: EdgeInsets.zero,
-            children: [
-              Container(
-                color: Color(0xFF455A64),
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 20,
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        CircleAvatar(
-                          radius: 18, // 원 크기
-                          backgroundColor: Colors.white,
-                          child: Icon(
-                            Icons.person,
-                            size: 20,
-                            color: Color(0xFF455A64),
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Text(
-                          widget.username,
-                          style: const TextStyle(
-                            fontSize: 18,
-                            color: Colors.white,
-                            fontFamily: 'APPLESDGOTHICNEOEB',
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 6),
-                    Text(
-                      '${widget.username}@example.com',
-                      style: const TextStyle(
-                        fontSize: 13,
-                        color: Colors.white70,
-                        fontFamily: 'APPLESDGOTHICNEOR',
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 70), //사이 간격
-              ListTile(
-                leading: Icon(
-                  Icons.file_upload,
-                  size: 24, // 아이콘 크기 (기본값: 24)
-                  color: Colors.white,
-                ),
-                title: Text(
-                  '업로드',
-                  style: TextStyle(
-                    fontSize: 12, // 글씨 크기
-                    color: Colors.white, // 글씨 색
-                    fontFamily: 'APPLESDGOTHICNEOR', // 원하는 폰트 사용 가능
-                  ),
-                ),
-                tileColor: Color(0xFF455A64),
-                onTap: () async {
-                  // 짧은 딜레이 후 팝업 표시 ( 드로어 닫힘 타이밍 맞추기 )
-                  await Future.delayed(const Duration(milliseconds: 100));
-
-                  final RenderBox overlay =
-                      Overlay.of(context).context.findRenderObject()
-                          as RenderBox;
-                  final RelativeRect position = RelativeRect.fromLTRB(
-                    100, // 좌측에서 거리
-                    210, // 위에서 거리
-                    overlay.size.width - 100,
-                    0,
-                  );
-                  final selected = await showMenu<String>(
-                    context: context,
-                    position: position,
-                    items: [
-                      const PopupMenuItem(
-                        value: 'new_folder',
-                        child: Text('새 폴더'),
-                      ),
-                      const PopupMenuItem(
-                        value: 'upload_file',
-                        child: Text('파일 업로드'),
-                      ),
-                      const PopupMenuItem(
-                        value: 'upload_folder',
-                        child: Text('폴더 업로드'),
-                      ),
-                    ],
-                  ).then((selected) async {
-                    // folder_create를 불러와서 폴더 생성하는 팝업창
-                    if (selected == 'new_folder') {
-                      final result = await showDialog(
-                        context: context,
-                        builder: (BuildContext context) {
-                          return Dialog(
-                            child: Container(
-                              width: 300, // 너비 설정
-                              height: 280, // 높이 설정
-                              child: FolderCreateScreen(
-                                onCreateFolder: (folderName) {
-                                  setState(() {
-                                    folders.add(folderName);
-                                  });
-                                  Navigator.of(context).pop();
-                                },
-                              ), // 실제 내용
-                            ),
-                          );
-                        },
-                      );
-                      if (result == true) {
-                        print('새 폴더 생성 완료');
-                      }
-                    }
-                    // 다른 항목은 여기에 맞게 처리
-                  });
-                },
-              ),
-
-              ListTile(
-                leading: Icon(
-                  Icons.star_border,
-                  size: 24, // 아이콘 크기 (기본값: 24)
-                  color: Colors.white,
-                ),
-                title: Text(
-                  '중요문서함',
-                  style: TextStyle(
-                    fontSize: 12, // 글씨 크기
-                    color: Colors.white, // 글씨 색
-                    fontFamily: 'APPLESDGOTHICNEOR', // 원하는 폰트 사용 가능
-                  ),
-                ),
-                tileColor: Color(0xFF455A64),
-                onTap: () => Navigator.pop(context),
-              ),
-              ListTile(
-                leading: Icon(
-                  Icons.delete,
-                  size: 24, // 아이콘 크기 (기본값: 24)
-                  color: Colors.white,
-                ),
-                title: Text(
-                  '휴지통',
-                  style: TextStyle(
-                    fontSize: 12, // 글씨 크기
-                    color: Colors.white, // 글씨 색
-                    fontFamily: 'APPLESDGOTHICNEOR', // 원하는 폰트 사용 가능
-                  ),
-                ),
-                tileColor: Color(0xFF455A64),
-                onTap: () => Navigator.pop(context),
-              ),
-              ListTile(
-                leading: Icon(
-                  Icons.check,
-                  size: 24, // 아이콘 크기 (기본값: 24)
-                  color: Colors.white,
-                ),
-                title: Text(
-                  '예약하기',
-                  style: TextStyle(
-                    fontSize: 12, // 글씨 크기
-                    color: Colors.white, // 글씨 색
-                    fontFamily: 'APPLESDGOTHICNEOR', // 원하는 폰트 사용 가능
-                  ),
-                ),
-                tileColor: Color(0xFF455A64),
-                onTap: () => Navigator.pop(context),
-              ),
-              ListTile(
-                leading: Icon(
-                  Icons.sd_storage,
-                  size: 24, // 아이콘 크기 (기본값: 24)
-                  color: Colors.white,
-                ),
-                title: Text(
-                  '저장용량',
-                  style: TextStyle(
-                    fontSize: 12, // 글씨 크기
-                    color: Colors.white, // 글씨 색
-                    fontFamily: 'APPLESDGOTHICNEOR', // 원하는 폰트 사용 가능
-                  ),
-                ),
-                tileColor: Color(0xFF455A64),
-                onTap: () => Navigator.pop(context),
               ),
             ],
           ),
@@ -332,10 +124,29 @@ class _RecentFileScreenState extends State<RecentFileScreen> {
                               onExit:
                                   (_) => setState(() => _isHovering = false),
                               child: GestureDetector(
-                                onTap: () {
+                                onTap: () async {
                                   print('텍스트 버튼 클릭됨');
-                                  // 여기에 원하는 동작 넣기
+                                  final histories =
+                                      await SortingHistoryService.fetchSortingHistory(
+                                        48,
+                                      ); // 예시 sortingId
+
+                                  if (histories.isNotEmpty) {
+                                    final fromPath =
+                                        histories.first['previousPath'] ?? '';
+                                    final toPath =
+                                        histories.first['currentPath'] ?? '';
+                                    final fileName =
+                                        histories.first['fileName'] ?? '';
+                                    showFileMoveDialog(
+                                      context,
+                                      fromPath,
+                                      toPath,
+                                      fileName,
+                                    );
+                                  }
                                 },
+
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
@@ -442,26 +253,33 @@ class _RecentFileScreenState extends State<RecentFileScreen> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             const SizedBox(height: 8),
-                            ...pastDates.map(
-                              (date) => Padding(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 105.0,
-                                  vertical: 3,
-                                ),
-                                child: Container(
-                                  height: 40,
-                                  alignment: Alignment.centerLeft,
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 16,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: const Color(0xFFECECEC),
-                                  ),
-                                  child: Text(
-                                    formatDate(date),
-                                    style: const TextStyle(fontSize: 12),
-                                  ),
-                                ),
+                            SizedBox(
+                              height: 130, // 40(height) * 3 + 여백 약간
+                              child: ListView.builder(
+                                itemCount: pastDates.length,
+                                itemBuilder: (context, index) {
+                                  final date = pastDates[index];
+                                  return Padding(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 105.0,
+                                      vertical: 3,
+                                    ),
+                                    child: Container(
+                                      height: 40,
+                                      alignment: Alignment.centerLeft,
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 16,
+                                      ),
+                                      decoration: const BoxDecoration(
+                                        color: Color(0xFFECECEC),
+                                      ),
+                                      child: Text(
+                                        formatDate(date),
+                                        style: const TextStyle(fontSize: 12),
+                                      ),
+                                    ),
+                                  );
+                                },
                               ),
                             ),
                           ],
@@ -469,7 +287,7 @@ class _RecentFileScreenState extends State<RecentFileScreen> {
                       ),
                     ),
 
-                    const SizedBox(height: 10),
+                    //const SizedBox(height: 10),
                     // 검색창
                     Align(
                       alignment: Alignment.center, // 센터 정렬
