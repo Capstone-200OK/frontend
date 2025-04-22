@@ -71,11 +71,14 @@ class _FolderCreateScreenState extends State<FolderCreateScreen> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
+      backgroundColor: Colors.white,
       title: const Text(
         '새 폴더 생성',
+        textAlign: TextAlign.center,
         style: TextStyle(
           fontSize: 18,
           fontWeight: FontWeight.bold,
+          color: Colors.black,
         ),
       ),
       content: SizedBox(
@@ -87,6 +90,7 @@ class _FolderCreateScreenState extends State<FolderCreateScreen> {
               controller: _folderNameController,
               decoration: const InputDecoration(
                 labelText: '폴더 이름',
+                labelStyle: TextStyle(color: Colors.black),
                 border: OutlineInputBorder(),
               ),
             ),
@@ -98,21 +102,29 @@ class _FolderCreateScreenState extends State<FolderCreateScreen> {
                 padding: const EdgeInsets.only(top: 8),
                 child: Text(
                   _message,
-                  style: const TextStyle(color: Colors.red),
+                  style: const TextStyle(color: Colors.black),
                 ),
               ),
+              const SizedBox(height: 3),
           ],
         ),
       ),
+      actionsAlignment: MainAxisAlignment.center,
       actions: [
         TextButton(
           onPressed: () {
             Navigator.pop(context); // 닫기
           },
+          style: TextButton.styleFrom(
+            foregroundColor: Colors.black,
+          ),
           child: const Text('취소'),
         ),
-        ElevatedButton(
+        TextButton(
           onPressed: createFolder,
+          style: TextButton.styleFrom(
+            foregroundColor: Colors.black,
+          ),
           child: const Text('만들기'),
         ),
       ],

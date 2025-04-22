@@ -309,6 +309,9 @@ class _PersonalScreenState extends State<PersonalScreen> {
                         child: Text('폴더 업로드'),
                       ),
                     ],
+                    elevation: 8, // 그림자 깊이 설정
+                    color: Colors.white, // 위젯 배경 흰색
+
                   ).then((selected) async {
                     // folder_create를 불러와서 폴더 생성하는 팝업창
                     if (selected == 'new_folder') {
@@ -317,8 +320,9 @@ class _PersonalScreenState extends State<PersonalScreen> {
                         builder: (BuildContext context) {
                           return Dialog(
                             child: Container(
-                              width: 300, // 너비 설정
+                              width: 280, // 너비 설정
                               height: 280, // 높이 설정
+                              color: Colors.white,
                               child: FolderCreateScreen(
                                 onCreateFolder: (folderName) {
                                   setState(() {
