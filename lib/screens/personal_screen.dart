@@ -553,8 +553,8 @@ class _PersonalScreenState extends State<PersonalScreen> {
                           "SORTY",
                           style: TextStyle(color: Colors.white, fontSize: 12),
                         ),
+                      ),  
 
-                      ),
                     ],
                   ),
                 ),
