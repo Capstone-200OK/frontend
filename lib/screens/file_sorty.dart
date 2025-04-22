@@ -8,14 +8,14 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 class FileSortyScreen extends StatefulWidget {
   final List<FolderItem> folders;  // 폴더 리스트로 변경
   final String username;
-  final int sourceFolderId;
+  final List<int> sourceFolderIds;
   final int destinationFolderId;
 
   const FileSortyScreen({
     super.key,
     required this.folders,  // 폴더 리스트 받기
     required this.username,
-    required this.sourceFolderId,
+    required this.sourceFolderIds,
     required this.destinationFolderId,
   });
 
@@ -215,9 +215,9 @@ class _FileSortyScreenState extends State<FileSortyScreen> {
                                     Uri.parse('$url/organize/start'),
                                     headers: {'Content-Type': 'application/json'},
                                     body: jsonEncode({
-                                      "folderId": widget.sourceFolderId,
+                                      "folderIds": widget.sourceFolderIds,
                                       "mode": selectedMode,
-                                      "destinationFolderId": widget.destinationFolderId,
+                                      "destinationFolderId": selectedDestinationFolder!.id,
                                     }),
                                   );
 
