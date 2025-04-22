@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:desktop_drop/desktop_drop.dart';
 import 'dart:io';
-import 'package:flutter_application_1/api/file_uploader.dart';
+import 'package:flutter_application_1/screens/file_uploader.dart';
 import 'package:flutter_application_1/screens/file_sorty.dart';
 import 'package:flutter_application_1/models/file_item.dart';
-import 'package:flutter_application_1/api/folder_create.dart';
+import 'package:flutter_application_1/screens/folder_create.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
@@ -21,7 +21,6 @@ class PersonalScreen extends StatefulWidget {
 class _PersonalScreenState extends State<PersonalScreen> {
   // 파일 선택 상태 저장용 리스트
   List<FileItem> selectedFiles = [];
-  //Set<String> selectedFolderNames = {};
   String? selectedFolderName;
   int? startFolderId;
   int? destFolderId;
@@ -45,55 +44,52 @@ class _PersonalScreenState extends State<PersonalScreen> {
     fetchFolderHierarchy(1); // 루트 폴더 ID
   }
 
-  Future<void> fetchFolderHierarchy(
-    int folderId, {
-    bool pushToStack = true,
-  }) async {
-    final response = await http.get(
-      Uri.parse('$url/folder/hierarchy/$folderId'),
-      headers: {"Content-Type": "application/json"},
-    );
+  Future<void> fetchFolderHierarchy(int folderId, {bool pushToStack = true}) async {
+  final response = await http.get(
+    Uri.parse('$url/folder/hierarchy/$folderId'),
+    headers: {"Content-Type": "application/json"},
+  );
 
-    if (response.statusCode == 200) {
-      final data = jsonDecode(response.body);
+  if (response.statusCode == 200) {
+    final data = jsonDecode(response.body);
 
-      // 🔹 여기! folderList와 folderNameToId를 먼저 만든 뒤
-      List<Map<String, dynamic>> folderList = List<Map<String, dynamic>>.from(
-        data['subFolders'],
-      );
-      folderNameToId = {for (var f in folderList) f['name']: f['id']};
+    // 🔹 여기! folderList와 folderNameToId를 먼저 만든 뒤
+    List<Map<String, dynamic>> folderList = List<Map<String, dynamic>>.from(data['subFolders']);
+    folderNameToId = {
+      for (var f in folderList) f['name']: f['id']
+    };
 
-      setState(() {
-        if (pushToStack && currentFolderId != folderId) {
-          folderStack.add(currentFolderId);
-        }
+    setState(() {
+      if (pushToStack && currentFolderId != folderId) {
+        folderStack.add(currentFolderId);
+      }
 
-        currentFolderId = folderId;
+      currentFolderId = folderId;
 
-        // 🔸 folder 이름 리스트만 추출하여 UI용으로 저장
-        folders = folderList.map((f) => f['name'] as String).toList();
+      // 🔸 folder 이름 리스트만 추출하여 UI용으로 저장
+      folders = folderList.map((f) => f['name'] as String).toList();
 
-        selectedFiles = List<FileItem>.from(
-          data['files'].map(
-            (f) => FileItem(
+      selectedFiles = List<FileItem>.from(
+        data['files'].map((f) => FileItem(
               name: f['name'],
               type: f['fileType'],
               sizeInBytes: f['size'],
-            ),
-          ),
-        );
+            )),
+      );
 
-        fileNames = selectedFiles.map((f) => f.name).toSet();
-        folderNameToId = {for (var f in folderList) f['name']: f['id']};
+      fileNames = selectedFiles.map((f) => f.name).toSet();
+      folderNameToId = {
+        for (var f in folderList) f['name']: f['id']
+      };
 
-        // 🔸 folderNameToId도 저장하고 싶다면 상태 변수로 따로 관리 가능
-      });
-    } else {
-      print('폴더 계층 불러오기 실패: ${response.statusCode}');
-    }
+      // 🔸 folderNameToId도 저장하고 싶다면 상태 변수로 따로 관리 가능
+    });
+  } else {
+    print('폴더 계층 불러오기 실패: ${response.statusCode}');
   }
+}
 
-  void addFolder(String name) {
+  void addFolder(String name){
     setState(() {
       folders.add(name);
     });
@@ -261,10 +257,8 @@ class _PersonalScreenState extends State<PersonalScreen> {
                 onTap: () async {
                   // 짧은 딜레이 후 팝업 표시 ( 드로어 닫힘 타이밍 맞추기 )
                   await Future.delayed(const Duration(milliseconds: 100));
-
-                  final RenderBox overlay =
-                      Overlay.of(context).context.findRenderObject()
-                          as RenderBox;
+                  
+                  final RenderBox overlay = Overlay.of(context).context.findRenderObject() as RenderBox;
                   final RelativeRect position = RelativeRect.fromLTRB(
                     100, // 좌측에서 거리
                     210, // 위에서 거리
@@ -288,19 +282,19 @@ class _PersonalScreenState extends State<PersonalScreen> {
                         child: Text('폴더 업로드'),
                       ),
                     ],
-                  ).then((selected) async {
+                  ). then((selected) async { 
                     // folder_create를 불러와서 폴더 생성하는 팝업창
-                    if (selected == 'new_folder') {
-                      final result = await showDialog(
+                    if(selected == 'new_folder'){ 
+                      final result = await showDialog (
                         context: context,
-                        builder: (BuildContext context) {
-                          return Dialog(
+                        builder: (BuildContext context){
+                          return Dialog (
                             child: Container(
                               width: 300, // 너비 설정
                               height: 280, // 높이 설정
                               child: FolderCreateScreen(
-                                onCreateFolder: (folderName) {
-                                  setState(() {
+                                onCreateFolder: (folderName){
+                                  setState((){
                                     folders.add(folderName);
                                   });
                                   Navigator.of(context).pop();
@@ -310,13 +304,13 @@ class _PersonalScreenState extends State<PersonalScreen> {
                           );
                         },
                       );
-                      if (result == true) {
+                      if(result == true){
                         print('새 폴더 생성 완료');
                       }
                     }
                     // 다른 항목은 여기에 맞게 처리
                   });
-                },
+                }
               ),
 
               ListTile(
@@ -400,7 +394,7 @@ class _PersonalScreenState extends State<PersonalScreen> {
               children: [
                 Expanded(
                   child: Padding(
-                    padding: const EdgeInsets.only(left: 100.0),
+                    padding: const EdgeInsets.only(left: 80.0),
                     child: Text(
                       '폴더',
                       style: TextStyle(
@@ -412,7 +406,7 @@ class _PersonalScreenState extends State<PersonalScreen> {
                 ),
                 Expanded(
                   child: Padding(
-                    padding: const EdgeInsets.only(left: 10.0),
+                    padding: const EdgeInsets.only(left: 110.0),
                     child: Text(
                       '파일',
                       style: TextStyle(
@@ -423,91 +417,65 @@ class _PersonalScreenState extends State<PersonalScreen> {
                   ),
                 ),
                 Padding(
-                  padding: const EdgeInsets.only(right: 101),
+                  padding: const EdgeInsets.only(right: 10),
                   child: Row(
                     children: [
-                      // // 🔹 Start 버튼
-                      // ElevatedButton(
-                      //   onPressed:
-                      //       selectedFolderName != null && !isStartSelected
-                      //           ? () {
-                      //             setState(() {
-                      //               startFolderId =
-                      //                   folderNameToId[selectedFolderName!];
-                      //               isStartSelected = true;
-                      //             });
-                      //           }
-                      //           : null,
-                      //   style: ElevatedButton.styleFrom(
-                      //     backgroundColor: Colors.teal,
-                      //     padding: const EdgeInsets.symmetric(
-                      //       horizontal: 12,
-                      //       vertical: 6,
-                      //     ),
-                      //   ),
-                      //   child: const Text(
-                      //     "Start",
-                      //     style: TextStyle(color: Colors.white, fontSize: 12),
-                      //   ),
-                      // ),
-                      // const SizedBox(width: 8),
+                      // 🔹 Start 버튼
+                      ElevatedButton(
+                        onPressed: selectedFolderName != null && !isStartSelected
+                            ? () {
+                                setState(() {
+                                  startFolderId = folderNameToId[selectedFolderName!];
+                                  isStartSelected = true;
+                                });
+                              }
+                            : null,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.teal,
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                        ),
+                        child: const Text("Start", style: TextStyle(color: Colors.white, fontSize: 12)),
+                      ),
+                      const SizedBox(width: 8),
 
-                      // // 🔹 Dest 버튼
-                      // ElevatedButton(
-                      //   onPressed:
-                      //       selectedFolderName != null && !isDestSelected
-                      //           ? () {
-                      //             setState(() {
-                      //               destFolderId =
-                      //                   folderNameToId[selectedFolderName!];
-                      //               isDestSelected = true;
-                      //             });
-                      //           }
-                      //           : null,
-                      //   style: ElevatedButton.styleFrom(
-                      //     backgroundColor: Colors.indigo,
-                      //     padding: const EdgeInsets.symmetric(
-                      //       horizontal: 12,
-                      //       vertical: 6,
-                      //     ),
-                      //   ),
-                      //   child: const Text(
-                      //     "Dest",
-                      //     style: TextStyle(color: Colors.white, fontSize: 12),
-                      //   ),
-                      // ),
-                      // const SizedBox(width: 8),
+                      // 🔹 Dest 버튼
+                      ElevatedButton(
+                        onPressed: selectedFolderName != null && !isDestSelected
+                            ? () {
+                                setState(() {
+                                  destFolderId = folderNameToId[selectedFolderName!];
+                                  isDestSelected = true;
+                                });
+                              }
+                            : null,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.indigo,
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                        ),
+                        child: const Text("Dest", style: TextStyle(color: Colors.white, fontSize: 12)),
+                      ),
+                      const SizedBox(width: 8),
 
                       // 🔹 Sorty 버튼
                       ElevatedButton(
-                        onPressed:
-                            selectedFolderName != null
-                                ? () {
-                                  showDialog(
-                                    context: context,
-                                    builder:
-                                        (context) => FileSortyScreen(
-                                          files: selectedFiles,
-                                          username: widget.username,
-                                          sourceFolderId:
-                                              folderNameToId[selectedFolderName!]!,
-                                          destinationFolderId:
-                                              folderNameToId[selectedFolderName!]!, // 동일 폴더로도 가능하게
-                                        ),
-                                  );
-                                }
-                                : null,
+                        onPressed: isStartSelected && isDestSelected
+                            ? () {
+                                showDialog(
+                                  context: context,
+                                  builder: (context) => FileSortyScreen(
+                                    files: selectedFiles,
+                                    username: widget.username,
+                                    sourceFolderId: startFolderId!,
+                                    destinationFolderId: destFolderId!,
+                                  ),
+                                );
+                              }
+                            : null,
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: Color(0xff2E24E0),
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 24,
-                            vertical: 6,
-                          ),
+                          backgroundColor: Colors.black87,
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                         ),
-                        child: const Text(
-                          "SORTY",
-                          style: TextStyle(color: Colors.white, fontSize: 12),
-                        ),
+                        child: const Text("SORTY", style: TextStyle(color: Colors.white, fontSize: 12)),
                       ),
                     ],
                   ),
@@ -538,89 +506,44 @@ class _PersonalScreenState extends State<PersonalScreen> {
                               crossAxisCount: 2,
                               mainAxisSpacing: 12,
                               crossAxisSpacing: 12,
-                              childAspectRatio: 2.0,
+                              childAspectRatio: 1.5,
                             ),
                         itemBuilder: (context, index) {
                           final folderName = folders[index];
                           final folderId = folderNameToId[folderName];
 
-                          final isSelected = selectedFolderName == folderName;
-
-                          return GestureDetector(
-                            onTap: () {
-                              setState(() {
-                                selectedFolderName =
-                                    isSelected ? null : folderName;
-                              });
-                            },
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 12,
-                                vertical: 8,
+                          return Row(
+                            children: [
+                              Checkbox(
+                                value: selectedFolderName == folderName,
+                                onChanged: (value) {
+                                  setState(() {
+                                    selectedFolderName = value == true ? folderName : null;
+                                  });
+                                },
                               ),
-                              decoration: BoxDecoration(
-                                color: Colors.white,
-                                borderRadius: BorderRadius.circular(12),
-                                border: Border.all(
-                                  color:
-                                      isSelected
-                                          ? Colors.blueGrey
-                                          : Colors.grey.shade400,
-                                  width: 1.5,
+                              Expanded(
+                                child: ElevatedButton.icon(
+                                  onPressed: () {
+                                    if (folderId != null) fetchFolderHierarchy(folderId);
+                                  },
+                                  icon: const Icon(Icons.folder, color: Color(0xFF263238)),
+                                  label: Text(
+                                    folderName,
+                                    style: const TextStyle(
+                                      color: Colors.black,
+                                      fontFamily: 'APPLESDGOTHICNEOR',
+                                    ),
+                                  ),
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: Colors.white,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                  ),
                                 ),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.black12,
-                                    blurRadius: 3,
-                                    offset: Offset(0, 2),
-                                  ),
-                                ],
                               ),
-                              child: Row(
-                                children: [
-                                  Transform.scale(
-                                    scale: 0.6, // 숫자가 크면 커지고, 1.0 이 기본
-                                    child: Checkbox(
-                                      value: isSelected,
-                                      onChanged: (value) {
-                                        setState(() {
-                                          selectedFolderName =
-                                              value == true ? folderName : null;
-                                        });
-                                      },
-                                    ),
-                                  ),
-                                  const Icon(
-                                    Icons.folder,
-                                    color: Color(0xFF263238),
-                                  ),
-                                  const SizedBox(width: 8),
-                                  Expanded(
-                                    child: Text(
-                                      folderName,
-                                      overflow: TextOverflow.ellipsis,
-                                      style: const TextStyle(
-                                        fontSize: 14,
-                                        fontFamily: 'APPLESDGOTHICNEOR',
-                                        color: Colors.black87,
-                                      ),
-                                    ),
-                                  ),
-                                  IconButton(
-                                    onPressed: () {
-                                      if (folderId != null)
-                                        fetchFolderHierarchy(folderId);
-                                    },
-                                    icon: const Icon(
-                                      Icons.navigate_next,
-                                      size: 20,
-                                    ),
-                                    padding: EdgeInsets.zero,
-                                    constraints: const BoxConstraints(),
-                                  ),
-                                ],
-                              ),
-                            ),
+                            ],
                           );
                         },
                       ),

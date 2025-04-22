@@ -24,16 +24,15 @@ class FileOrganizer {
     try {
       final response = await http.post(
         uri,
-        headers: {"Content-Type": "application/json"},
+        headers: {
+          "Content-Type": "application/json",
+        },
         body: body,
       );
 
       // 응답 처리
       if (response.statusCode == 200) {
-        final decoded = utf8.decode(response.bodyBytes); // 한국어 안깨지게 만들기
-        final data = jsonDecode(decoded);
-        print(data);
-        final responseBody = jsonDecode(data);
+        final responseBody = jsonDecode(response.body);
         print("✅ ${responseBody['message']}"); // 성공 메시지 출력
       } else {
         final responseBody = jsonDecode(response.body);
