@@ -3,6 +3,7 @@ import 'package:desktop_drop/desktop_drop.dart';
 import 'dart:io';
 import 'package:flutter_application_1/api/file_uploader.dart';
 import 'package:flutter_application_1/screens/file_sorty.dart';
+import 'package:flutter_application_1/screens/recent_file_screen.dart';
 import 'package:flutter_application_1/models/file_item.dart';
 import 'package:flutter_application_1/models/folder_item.dart';
 import 'package:flutter_application_1/api/folder_create.dart';
@@ -142,9 +143,9 @@ class _PersonalScreenState extends State<PersonalScreen> {
                 child: Text(
                   '${widget.username}님의 파일함',
                   style: const TextStyle(
-                    color: Colors.black,
                     fontSize: 18,
-                    fontWeight: FontWeight.bold,
+                    //fontWeight: FontWeight.bold,
+                    fontFamily: 'APPLESDGOTHICNEOEB',
                   ),
                 ),
               ),
@@ -170,14 +171,22 @@ class _PersonalScreenState extends State<PersonalScreen> {
                       ), //최근항목아이콘
                       onPressed: () {
                         // 최근 항목 페이지 이동 로직
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder:
+                                (context) => RecentFileScreen(username: "현서"),
+                          ),
+                        );
                         print('최근 항목 눌림');
+                        
                       },
                     ),
                     IconButton(
                       icon: const Icon(
                         Icons.notifications,
                         color: Color(0xff263238),
-                      ), //d알림 버튼튼
+                      ), //알림 버튼튼
                       onPressed: () {
                         print('알림 눌림');
                       },
@@ -480,38 +489,46 @@ class _PersonalScreenState extends State<PersonalScreen> {
                       // const SizedBox(width: 8),
 
                       // 🔹 Sorty 버튼
-                     ElevatedButton(
-  onPressed: selectedFolderNames.isNotEmpty
-      ? () {
-          showDialog(
-            context: context,
-            builder: (context) => FileSortyScreen(
-              folders: selectedFolderNames.map((folderName) {
-                return FolderItem(
-                  name: folderName,
-                  id: folderNameToId[folderName]!, // 폴더의 ID를 매핑
-                );
-              }).toList(), // selectedFolderNames에서 폴더 정보를 리스트로 변환
-              username: widget.username,
-              sourceFolderId: folderNameToId[selectedFolderNames.first]!,
-              destinationFolderId: folderNameToId[selectedFolderNames.first]!,
-            ),
-          );
-        }
-      : null, // selectedFolderNames가 비어 있으면 버튼 비활성화
-  style: ElevatedButton.styleFrom(
-    backgroundColor: const Color(0xFF2E24E0),
-    padding: const EdgeInsets.symmetric(
-      horizontal: 24,
-      vertical: 6,
-    ),
-  ),
-  child: const Text(
-    "SORTY",
-    style: TextStyle(color: Colors.white, fontSize: 12),
-  ),
-),
-
+                      ElevatedButton(
+                        onPressed:
+                            selectedFolderNames.isNotEmpty
+                                ? () {
+                                  showDialog(
+                                    context: context,
+                                    builder:
+                                        (context) => FileSortyScreen(
+                                          folders:
+                                              selectedFolderNames.map((
+                                                folderName,
+                                              ) {
+                                                return FolderItem(
+                                                  name: folderName,
+                                                  id: folderNameToId[folderName]!, // 폴더의 ID를 매핑
+                                                );
+                                              }).toList(), // selectedFolderNames에서 폴더 정보를 리스트로 변환
+                                          username: widget.username,
+                                          sourceFolderId:
+                                              folderNameToId[selectedFolderNames
+                                                  .first]!,
+                                          destinationFolderId:
+                                              folderNameToId[selectedFolderNames
+                                                  .first]!,
+                                        ),
+                                  );
+                                }
+                                : null, // selectedFolderNames가 비어 있으면 버튼 비활성화
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF2E24E0),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 24,
+                            vertical: 6,
+                          ),
+                        ),
+                        child: const Text(
+                          "SORTY",
+                          style: TextStyle(color: Colors.white, fontSize: 12),
+                        ),
+                      ),
                     ],
                   ),
                 ),
@@ -686,7 +703,7 @@ class _PersonalScreenState extends State<PersonalScreen> {
                           await uploader.uploadFiles(
                             file: droppedFiles[0],
                             userId: 1,
-                            folderId: 2,
+                            folderId: currentFolderId,
                           );
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(
