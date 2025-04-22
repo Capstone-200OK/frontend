@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:desktop_drop/desktop_drop.dart';
 import 'dart:io';
-import 'package:flutter_application_1/screens/file_uploader.dart';
+import 'package:flutter_application_1/api/file_uploader.dart';
 import 'package:flutter_application_1/screens/file_sorty.dart';
 import 'package:flutter_application_1/models/file_item.dart';
-import 'package:flutter_application_1/screens/folder_create.dart';
+import 'package:flutter_application_1/models/folder_item.dart';
+import 'package:flutter_application_1/api/folder_create.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
@@ -21,6 +22,7 @@ class PersonalScreen extends StatefulWidget {
 class _PersonalScreenState extends State<PersonalScreen> {
   // 파일 선택 상태 저장용 리스트
   List<FileItem> selectedFiles = [];
+  List<String> selectedFolderNames = [];
   String? selectedFolderName;
   int? startFolderId;
   int? destFolderId;
@@ -44,52 +46,55 @@ class _PersonalScreenState extends State<PersonalScreen> {
     fetchFolderHierarchy(1); // 루트 폴더 ID
   }
 
-  Future<void> fetchFolderHierarchy(int folderId, {bool pushToStack = true}) async {
-  final response = await http.get(
-    Uri.parse('$url/folder/hierarchy/$folderId'),
-    headers: {"Content-Type": "application/json"},
-  );
+  Future<void> fetchFolderHierarchy(
+    int folderId, {
+    bool pushToStack = true,
+  }) async {
+    final response = await http.get(
+      Uri.parse('$url/folder/hierarchy/$folderId'),
+      headers: {"Content-Type": "application/json"},
+    );
 
-  if (response.statusCode == 200) {
-    final data = jsonDecode(response.body);
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
 
-    // 🔹 여기! folderList와 folderNameToId를 먼저 만든 뒤
-    List<Map<String, dynamic>> folderList = List<Map<String, dynamic>>.from(data['subFolders']);
-    folderNameToId = {
-      for (var f in folderList) f['name']: f['id']
-    };
+      // 🔹 여기! folderList와 folderNameToId를 먼저 만든 뒤
+      List<Map<String, dynamic>> folderList = List<Map<String, dynamic>>.from(
+        data['subFolders'],
+      );
+      folderNameToId = {for (var f in folderList) f['name']: f['id']};
 
-    setState(() {
-      if (pushToStack && currentFolderId != folderId) {
-        folderStack.add(currentFolderId);
-      }
+      setState(() {
+        if (pushToStack && currentFolderId != folderId) {
+          folderStack.add(currentFolderId);
+        }
 
-      currentFolderId = folderId;
+        currentFolderId = folderId;
 
-      // 🔸 folder 이름 리스트만 추출하여 UI용으로 저장
-      folders = folderList.map((f) => f['name'] as String).toList();
+        // 🔸 folder 이름 리스트만 추출하여 UI용으로 저장
+        folders = folderList.map((f) => f['name'] as String).toList();
 
-      selectedFiles = List<FileItem>.from(
-        data['files'].map((f) => FileItem(
+        selectedFiles = List<FileItem>.from(
+          data['files'].map(
+            (f) => FileItem(
               name: f['name'],
               type: f['fileType'],
               sizeInBytes: f['size'],
-            )),
-      );
+            ),
+          ),
+        );
 
-      fileNames = selectedFiles.map((f) => f.name).toSet();
-      folderNameToId = {
-        for (var f in folderList) f['name']: f['id']
-      };
+        fileNames = selectedFiles.map((f) => f.name).toSet();
+        folderNameToId = {for (var f in folderList) f['name']: f['id']};
 
-      // 🔸 folderNameToId도 저장하고 싶다면 상태 변수로 따로 관리 가능
-    });
-  } else {
-    print('폴더 계층 불러오기 실패: ${response.statusCode}');
+        // 🔸 folderNameToId도 저장하고 싶다면 상태 변수로 따로 관리 가능
+      });
+    } else {
+      print('폴더 계층 불러오기 실패: ${response.statusCode}');
+    }
   }
-}
 
-  void addFolder(String name){
+  void addFolder(String name) {
     setState(() {
       folders.add(name);
     });
@@ -257,8 +262,10 @@ class _PersonalScreenState extends State<PersonalScreen> {
                 onTap: () async {
                   // 짧은 딜레이 후 팝업 표시 ( 드로어 닫힘 타이밍 맞추기 )
                   await Future.delayed(const Duration(milliseconds: 100));
-                  
-                  final RenderBox overlay = Overlay.of(context).context.findRenderObject() as RenderBox;
+
+                  final RenderBox overlay =
+                      Overlay.of(context).context.findRenderObject()
+                          as RenderBox;
                   final RelativeRect position = RelativeRect.fromLTRB(
                     100, // 좌측에서 거리
                     210, // 위에서 거리
@@ -282,19 +289,19 @@ class _PersonalScreenState extends State<PersonalScreen> {
                         child: Text('폴더 업로드'),
                       ),
                     ],
-                  ). then((selected) async { 
+                  ).then((selected) async {
                     // folder_create를 불러와서 폴더 생성하는 팝업창
-                    if(selected == 'new_folder'){ 
-                      final result = await showDialog (
+                    if (selected == 'new_folder') {
+                      final result = await showDialog(
                         context: context,
-                        builder: (BuildContext context){
-                          return Dialog (
+                        builder: (BuildContext context) {
+                          return Dialog(
                             child: Container(
                               width: 300, // 너비 설정
                               height: 280, // 높이 설정
                               child: FolderCreateScreen(
-                                onCreateFolder: (folderName){
-                                  setState((){
+                                onCreateFolder: (folderName) {
+                                  setState(() {
                                     folders.add(folderName);
                                   });
                                   Navigator.of(context).pop();
@@ -304,13 +311,13 @@ class _PersonalScreenState extends State<PersonalScreen> {
                           );
                         },
                       );
-                      if(result == true){
+                      if (result == true) {
                         print('새 폴더 생성 완료');
                       }
                     }
                     // 다른 항목은 여기에 맞게 처리
                   });
-                }
+                },
               ),
 
               ListTile(
@@ -394,7 +401,7 @@ class _PersonalScreenState extends State<PersonalScreen> {
               children: [
                 Expanded(
                   child: Padding(
-                    padding: const EdgeInsets.only(left: 80.0),
+                    padding: const EdgeInsets.only(left: 100.0),
                     child: Text(
                       '폴더',
                       style: TextStyle(
@@ -417,66 +424,94 @@ class _PersonalScreenState extends State<PersonalScreen> {
                   ),
                 ),
                 Padding(
-                  padding: const EdgeInsets.only(right: 10),
+                  padding: const EdgeInsets.only(right: 101),
                   child: Row(
                     children: [
-                      // 🔹 Start 버튼
-                      ElevatedButton(
-                        onPressed: selectedFolderName != null && !isStartSelected
-                            ? () {
-                                setState(() {
-                                  startFolderId = folderNameToId[selectedFolderName!];
-                                  isStartSelected = true;
-                                });
-                              }
-                            : null,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.teal,
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                        ),
-                        child: const Text("Start", style: TextStyle(color: Colors.white, fontSize: 12)),
-                      ),
-                      const SizedBox(width: 8),
+                      // // 🔹 Start 버튼
+                      // ElevatedButton(
+                      //   onPressed:
+                      //       selectedFolderName != null && !isStartSelected
+                      //           ? () {
+                      //             setState(() {
+                      //               startFolderId =
+                      //                   folderNameToId[selectedFolderName!];
+                      //               isStartSelected = true;
+                      //             });
+                      //           }
+                      //           : null,
+                      //   style: ElevatedButton.styleFrom(
+                      //     backgroundColor: Colors.teal,
+                      //     padding: const EdgeInsets.symmetric(
+                      //       horizontal: 12,
+                      //       vertical: 6,
+                      //     ),
+                      //   ),
+                      //   child: const Text(
+                      //     "Start",
+                      //     style: TextStyle(color: Colors.white, fontSize: 12),
+                      //   ),
+                      // ),
+                      // const SizedBox(width: 8),
 
-                      // 🔹 Dest 버튼
-                      ElevatedButton(
-                        onPressed: selectedFolderName != null && !isDestSelected
-                            ? () {
-                                setState(() {
-                                  destFolderId = folderNameToId[selectedFolderName!];
-                                  isDestSelected = true;
-                                });
-                              }
-                            : null,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.indigo,
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                        ),
-                        child: const Text("Dest", style: TextStyle(color: Colors.white, fontSize: 12)),
-                      ),
-                      const SizedBox(width: 8),
+                      // // 🔹 Dest 버튼
+                      // ElevatedButton(
+                      //   onPressed:
+                      //       selectedFolderName != null && !isDestSelected
+                      //           ? () {
+                      //             setState(() {
+                      //               destFolderId =
+                      //                   folderNameToId[selectedFolderName!];
+                      //               isDestSelected = true;
+                      //             });
+                      //           }
+                      //           : null,
+                      //   style: ElevatedButton.styleFrom(
+                      //     backgroundColor: Colors.indigo,
+                      //     padding: const EdgeInsets.symmetric(
+                      //       horizontal: 12,
+                      //       vertical: 6,
+                      //     ),
+                      //   ),
+                      //   child: const Text(
+                      //     "Dest",
+                      //     style: TextStyle(color: Colors.white, fontSize: 12),
+                      //   ),
+                      // ),
+                      // const SizedBox(width: 8),
 
                       // 🔹 Sorty 버튼
-                      ElevatedButton(
-                        onPressed: isStartSelected && isDestSelected
-                            ? () {
-                                showDialog(
-                                  context: context,
-                                  builder: (context) => FileSortyScreen(
-                                    files: selectedFiles,
-                                    username: widget.username,
-                                    sourceFolderId: startFolderId!,
-                                    destinationFolderId: destFolderId!,
-                                  ),
-                                );
-                              }
-                            : null,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.black87,
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                        ),
-                        child: const Text("SORTY", style: TextStyle(color: Colors.white, fontSize: 12)),
-                      ),
+                     ElevatedButton(
+  onPressed: selectedFolderNames.isNotEmpty
+      ? () {
+          showDialog(
+            context: context,
+            builder: (context) => FileSortyScreen(
+              folders: selectedFolderNames.map((folderName) {
+                return FolderItem(
+                  name: folderName,
+                  id: folderNameToId[folderName]!, // 폴더의 ID를 매핑
+                );
+              }).toList(), // selectedFolderNames에서 폴더 정보를 리스트로 변환
+              username: widget.username,
+              sourceFolderId: folderNameToId[selectedFolderNames.first]!,
+              destinationFolderId: folderNameToId[selectedFolderNames.first]!,
+            ),
+          );
+        }
+      : null, // selectedFolderNames가 비어 있으면 버튼 비활성화
+  style: ElevatedButton.styleFrom(
+    backgroundColor: const Color(0xFF2E24E0),
+    padding: const EdgeInsets.symmetric(
+      horizontal: 24,
+      vertical: 6,
+    ),
+  ),
+  child: const Text(
+    "SORTY",
+    style: TextStyle(color: Colors.white, fontSize: 12),
+  ),
+),
+
                     ],
                   ),
                 ),
@@ -506,44 +541,102 @@ class _PersonalScreenState extends State<PersonalScreen> {
                               crossAxisCount: 2,
                               mainAxisSpacing: 12,
                               crossAxisSpacing: 12,
-                              childAspectRatio: 1.5,
+                              childAspectRatio: 2.0,
                             ),
                         itemBuilder: (context, index) {
                           final folderName = folders[index];
                           final folderId = folderNameToId[folderName];
 
-                          return Row(
-                            children: [
-                              Checkbox(
-                                value: selectedFolderName == folderName,
-                                onChanged: (value) {
-                                  setState(() {
-                                    selectedFolderName = value == true ? folderName : null;
-                                  });
-                                },
+                          final isSelected = selectedFolderNames.contains(
+                            folderName,
+                          );
+
+                          return GestureDetector(
+                            onTap: () {
+                              setState(() {
+                                if (selectedFolderNames.contains(folderName)) {
+                                  selectedFolderNames.remove(folderName);
+                                } else {
+                                  selectedFolderNames.add(folderName);
+                                }
+                              });
+                            },
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 8,
                               ),
-                              Expanded(
-                                child: ElevatedButton.icon(
-                                  onPressed: () {
-                                    if (folderId != null) fetchFolderHierarchy(folderId);
-                                  },
-                                  icon: const Icon(Icons.folder, color: Color(0xFF263238)),
-                                  label: Text(
-                                    folderName,
-                                    style: const TextStyle(
-                                      color: Colors.black,
-                                      fontFamily: 'APPLESDGOTHICNEOR',
-                                    ),
-                                  ),
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: Colors.white,
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(12),
-                                    ),
-                                  ),
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(
+                                  color:
+                                      selectedFolderNames.contains(folderName)
+                                          ? Colors.blueGrey
+                                          : Colors.grey.shade400,
+                                  width: 1.5,
                                 ),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black12,
+                                    blurRadius: 3,
+                                    offset: Offset(0, 2),
+                                  ),
+                                ],
                               ),
-                            ],
+                              child: Row(
+                                children: [
+                                  Transform.scale(
+                                    scale: 0.6,
+                                    //폴더 선택
+                                    child: Checkbox(
+                                      value: selectedFolderNames.contains(
+                                        folderName,
+                                      ),
+                                      onChanged: (value) {
+                                        setState(() {
+                                          if (value == true) {
+                                            selectedFolderNames.add(folderName);
+                                          } else {
+                                            selectedFolderNames.remove(
+                                              folderName,
+                                            );
+                                          }
+                                        });
+                                      },
+                                    ),
+                                  ),
+                                  const Icon(
+                                    Icons.folder,
+                                    color: Color(0xFF263238),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Expanded(
+                                    child: Text(
+                                      folderName,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: const TextStyle(
+                                        fontSize: 14,
+                                        fontFamily: 'APPLESDGOTHICNEOR',
+                                        color: Colors.black87,
+                                      ),
+                                    ),
+                                  ),
+                                  IconButton(
+                                    onPressed: () {
+                                      if (folderId != null)
+                                        fetchFolderHierarchy(folderId);
+                                    },
+                                    icon: const Icon(
+                                      Icons.navigate_next,
+                                      size: 20,
+                                    ),
+                                    padding: EdgeInsets.zero,
+                                    constraints: const BoxConstraints(),
+                                  ),
+                                ],
+                              ),
+                            ),
                           );
                         },
                       ),
@@ -630,7 +723,6 @@ class _PersonalScreenState extends State<PersonalScreen> {
                         ),
                         child: Column(
                           children: [
-                            // 파일 리스트뷰
                             Expanded(
                               child: ListView.builder(
                                 itemCount: selectedFiles.length,
@@ -638,107 +730,31 @@ class _PersonalScreenState extends State<PersonalScreen> {
                                   final file = selectedFiles[index];
                                   return Padding(
                                     padding: const EdgeInsets.symmetric(
-                                      vertical: 0.1,
+                                      vertical: 4.0,
                                     ),
-
-                                    child: Row(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.center,
-                                      children: [
-                                        // 체크박스 (배경 외부에 위치)
-                                        Checkbox(
-                                          value: file.isSelected,
-                                          onChanged: (value) {
-                                            setState(() {
-                                              file.isSelected = value ?? false;
-                                            });
-                                          },
-                                          activeColor: Color(0xff263238),
-                                          side: const BorderSide(
-                                            color: Colors.white,
-                                            width: 0.1,
-                                          ),
-                                          fillColor:
-                                              MaterialStateProperty.resolveWith<
-                                                Color
-                                              >((states) {
-                                                if (states.contains(
-                                                  MaterialState.disabled,
-                                                )) {
-                                                  return Colors.white;
-                                                }
-                                                return Colors.white;
-                                              }),
-
-                                          checkColor: Color(0xff263238),
-                                        ),
-
-                                        // 나머지 내용 (하얀 배경 + 둥근 모서리)
-                                        Expanded(
-                                          child: Container(
-                                            padding: const EdgeInsets.all(12),
-                                            margin: const EdgeInsets.symmetric(
-                                              horizontal: 12,
-                                              vertical: 6,
-                                            ),
-                                            decoration: BoxDecoration(
-                                              color: Colors.white,
-                                              borderRadius:
-                                                  BorderRadius.circular(20),
-                                            ),
-                                            child: Row(
-                                              children: [
-                                                const Icon(
-                                                  Icons.description,
-                                                  size: 15,
-                                                ),
-                                                const SizedBox(width: 8),
-
-                                                Text(
-                                                  file.name.length > 30
-                                                      ? '${file.name.substring(0, 30)}...'
-                                                      : file.name,
-
-                                                  style: const TextStyle(
-                                                    fontSize: 12,
-                                                    fontFamily:
-                                                        'APPLESDGOTHICNEOR',
-                                                  ),
-                                                  overflow:
-                                                      TextOverflow.ellipsis,
-                                                ),
-                                                const Spacer(),
-                                                Text(
-                                                  '${file.type} / ${file.sizeFormatted}',
-                                                  style: TextStyle(fontSize: 8),
-                                                ),
-                                                const SizedBox(width: 4),
-                                                const Icon(
-                                                  Icons.star_border,
-                                                  size: 10,
-                                                ),
-                                                const SizedBox(width: 4),
-                                                GestureDetector(
-                                                  onTap: () {
-                                                    setState(() {
-                                                      fileNames.remove(
-                                                        file.name,
-                                                      );
-                                                      selectedFiles.removeAt(
-                                                        index,
-                                                      );
-                                                    });
-                                                  },
-                                                  child: const Icon(
-                                                    Icons.close,
-                                                    size: 12,
-                                                  ),
-                                                ),
-                                              ],
-                                            ),
-                                          ),
-                                        ),
-                                      ],
+                                    child: ListTile(
+                                      leading: const Icon(
+                                        Icons.insert_drive_file,
+                                        size: 20,
+                                      ),
+                                      title: Text(
+                                        file.name,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: const TextStyle(fontSize: 13),
+                                      ),
+                                      subtitle: Text(
+                                        '${file.type} • ${(file.sizeInBytes / 1024).toStringAsFixed(1)} KB',
+                                        style: const TextStyle(fontSize: 11),
+                                      ),
+                                      trailing: IconButton(
+                                        icon: const Icon(Icons.close, size: 16),
+                                        onPressed: () {
+                                          setState(() {
+                                            selectedFiles.removeAt(index);
+                                            fileNames.remove(file.name);
+                                          });
+                                        },
+                                      ),
                                     ),
                                   );
                                 },
