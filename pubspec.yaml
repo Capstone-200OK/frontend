@@ -42,6 +42,10 @@ dependencies:
   flutter_dotenv: ^5.2.1
   mime: ^2.0.0
   http_parser: ^4.1.2
+  url_launcher: ^6.3.1
+  syncfusion_flutter_pdfviewer: ^29.1.39
+  webview_flutter: ^4.11.0
+  webview_windows: ^0.4.0
   
 dev_dependencies:
   flutter_test:

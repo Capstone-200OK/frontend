@@ -5,6 +5,9 @@
 list(APPEND FLUTTER_PLUGIN_LIST
   desktop_drop
   screen_retriever_windows
+  syncfusion_pdfviewer_windows
+  url_launcher_windows
+  webview_windows
   window_manager
 )
 

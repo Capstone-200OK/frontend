@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:desktop_drop/desktop_drop.dart';
 import 'dart:io';
+import 'dart:async';
 import 'package:flutter_application_1/api/file_uploader.dart';
 import 'package:flutter_application_1/screens/file_sorty.dart';
 import 'package:flutter_application_1/screens/recent_file_screen.dart';
@@ -10,6 +11,8 @@ import 'package:flutter_application_1/api/folder_create.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:flutter_application_1/screens/file_view_dialog.dart';
+import 'package:syncfusion_flutter_pdfviewer/pdfviewer.dart';
 
 class PersonalScreen extends StatefulWidget {
   final String username;
@@ -31,11 +34,15 @@ class _PersonalScreenState extends State<PersonalScreen> {
   bool isDestSelected = false;
   // 폴더 목록 상태 관리
   List<String> folders = [];
+// 클래스 맨 위에 추가
+  final GlobalKey _previewKey = GlobalKey();
+  OverlayEntry? _previewOverlay;
+  Timer? _hoverTimer;
 
   Set<String> fileNames = {}; // 중복 방지를 위한 파일 이름 저장용 집합
   late String url;
   late FileUploader uploader;
-  int currentFolderId = 101; // 시작 폴더 ID (예: 2번 루트)
+  int currentFolderId = 1; // 시작 폴더 ID (예: 2번 루트)
   String currentFolderName = 'ROOT'; // 현재 폴더명 ( ROOT로 시작 )
   List<String> breadcrumbPath = ['ROOT']; // 폴더명을 저장하는 List
   List<int> folderStack = []; // 상위 폴더 경로 추적
@@ -101,6 +108,8 @@ class _PersonalScreenState extends State<PersonalScreen> {
               name: f['name'],
               type: f['fileType'],
               sizeInBytes: f['size'],
+              fileUrl: f['fileUrl'],
+              fileThumbnail: f['fileThumbUrl'],
             ),
           ),
         );
@@ -111,6 +120,89 @@ class _PersonalScreenState extends State<PersonalScreen> {
       print('폴더 계층 불러오기 실패: ${response.statusCode}');
     }
   }
+void _showPreviewOverlay(BuildContext context, String? url, String type, GlobalKey key) {
+  final renderBox = key.currentContext?.findRenderObject() as RenderBox?;
+  if (renderBox == null || url == null) return;
+
+  final overlay = Overlay.of(context);
+  final offset = renderBox.localToGlobal(Offset.zero);
+
+  _previewOverlay = OverlayEntry(
+    builder: (context) => Positioned(
+      left: offset.dx + renderBox.size.width + 10,
+      top: offset.dy,
+      child: Material(
+        elevation: 4,
+        child: Container(
+          width: 240,
+          height: 240,
+          color: Colors.white,
+          child: _buildPreviewContent(url, type),
+        ),
+      ),
+    ),
+  );
+
+  overlay.insert(_previewOverlay!);
+}
+  Widget _buildPreviewContent(String url, String type, {String? thumbnailUrl}) {
+  final lower = type.toLowerCase();
+
+  // 이미지 확장자면 원본 URL 사용
+  if (["png", "jpg", "jpeg", "gif", "bmp"].contains(lower)) {
+    return Image.network(url, fit: BoxFit.contain);
+  }
+
+  // 썸네일 URL이 있으면 우선 사용
+  if (thumbnailUrl != null && thumbnailUrl.isNotEmpty) {
+    return Image.network(thumbnailUrl, fit: BoxFit.contain);
+  }
+
+  // fallback: 직접 렌더링 시도
+  if (lower == "pdf") {
+    return SfPdfViewer.network(url); // PDF 지원
+  } else if (["doc", "docx", "xls", "xlsx", "ppt", "pptx"].contains(lower)) {
+    return OfficeViewerWindows(fileUrl: url); // 오피스
+  }
+
+  return const Center(child: Text("미리보기를 지원하지 않는 형식입니다."));
+}
+
+  void _removePreviewOverlay() {
+    _previewOverlay?.remove();
+    _previewOverlay = null;
+  }
+void _showPreviewOverlayAtPosition(
+  BuildContext context,
+  String? url,
+  String type,
+  Offset position, {
+  String? thumbnailUrl,
+}) {
+  if (url == null) return;
+
+  _removePreviewOverlay();
+
+  _previewOverlay = OverlayEntry(
+    builder: (context) => Positioned(
+      left: position.dx,
+      top: position.dy - 250,
+      child: Material(
+        elevation: 4,
+        borderRadius: BorderRadius.circular(8),
+        child: Container(
+          width: 240,
+          height: 240,
+          padding: const EdgeInsets.all(8),
+          color: Colors.white,
+          child: _buildPreviewContent(url, type, thumbnailUrl: thumbnailUrl),
+        ),
+      ),
+    ),
+  );
+
+  Overlay.of(context).insert(_previewOverlay!);
+}
 
 
   void addFolder(String name) {
@@ -785,10 +877,19 @@ class _PersonalScreenState extends State<PersonalScreen> {
                                 itemCount: selectedFiles.length,
                                 itemBuilder: (context, index) {
                                   final file = selectedFiles[index];
-                                  return Padding(
-                                    padding: const EdgeInsets.symmetric(
-                                      vertical: 4.0,
-                                    ),
+                                  final fileKey = GlobalKey();
+                                  return MouseRegion(
+                                    key: fileKey, 
+                                    onEnter: (event) {
+                                        _hoverTimer = Timer(const Duration(milliseconds: 500), () {
+                                          final position = event.position; // 마우스 위치
+                                          _showPreviewOverlayAtPosition(context, file.fileUrl, file.type, position, thumbnailUrl: file.fileThumbnail);
+                                        });
+                                      },
+                                    onExit: (_) {
+                                      _hoverTimer?.cancel();
+                                      _removePreviewOverlay();
+                                    },
                                     child: ListTile(
                                       leading: const Icon(
                                         Icons.insert_drive_file,
@@ -812,6 +913,13 @@ class _PersonalScreenState extends State<PersonalScreen> {
                                           });
                                         },
                                       ),
+                                      onTap: () {
+                                        print('[파일 미리보기 요청] file.name=${file.name}, fileUrl=${file.fileUrl}, type=${file.type}');
+                                        showDialog(
+                                          context: context, 
+                                          builder: (_) => FilePreviewDialog(fileUrl: file.fileUrl!, fileType: file.type),
+                                        );
+                                      },
                                     ),
                                   );
                                 },
