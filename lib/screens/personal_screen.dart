@@ -836,6 +836,7 @@ class _PersonalScreenState extends State<PersonalScreen> {
                             folderId: currentFolderId,
                             currentFolderPath: currentFolderPath,
                           );
+
                           setState(() {
                             //파일 추가 후 selectedFiles 초기화화
                             selectedFiles.clear();
