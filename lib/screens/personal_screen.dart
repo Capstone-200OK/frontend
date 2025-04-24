@@ -837,6 +837,9 @@ void _showPreviewOverlayAtPosition(
                             folderId: currentFolderId,
                             currentFolderPath: currentFolderPath,
                           );
+                          // ✅ 파일 업로드 후 폴더 다시 불러오기
+                          await fetchFolderHierarchy(currentFolderId, pushToStack: false);
+                          await Future.delayed(Duration(seconds: 1));
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(
                               content: Text(
