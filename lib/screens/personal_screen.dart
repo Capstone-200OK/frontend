@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:flutter_application_1/api/file_uploader.dart';
 import 'package:flutter_application_1/screens/file_sorty.dart';
 import 'package:flutter_application_1/screens/recent_file_screen.dart';
+import 'package:flutter_application_1/screens/file_reservation_screen.dart';
 import 'package:flutter_application_1/models/file_item.dart';
 import 'package:flutter_application_1/models/folder_item.dart';
 import 'package:flutter_application_1/api/folder_create.dart';
@@ -49,13 +50,13 @@ class _PersonalScreenState extends State<PersonalScreen> {
     s3BaseUrl = dotenv.get("S3BaseUrl");
     uploader = FileUploader(baseUrl: url, s3BaseUrl: s3BaseUrl);
     folderIdToName[1] = 'Root';
-    fetchFolderHierarchy(1,pushToStack: false); // 루트 폴더 ID
+    fetchFolderHierarchy(1, pushToStack: false); // 루트 폴더 ID
   }
+
   String getCurrentFolderPath() {
     List<int> pathIds = [...folderStack, currentFolderId];
-    List<String> pathNames = pathIds
-        .map((id) => folderIdToName[id] ?? 'Unknown')
-        .toList();
+    List<String> pathNames =
+        pathIds.map((id) => folderIdToName[id] ?? 'Unknown').toList();
     return pathNames.join('/');
   }
 
@@ -70,8 +71,9 @@ class _PersonalScreenState extends State<PersonalScreen> {
 
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);
-      List<Map<String, dynamic>> folderList =
-          List<Map<String, dynamic>>.from(data['subFolders']);
+      List<Map<String, dynamic>> folderList = List<Map<String, dynamic>>.from(
+        data['subFolders'],
+      );
 
       folderNameToId = {for (var f in folderList) f['name']: f['id']};
 
@@ -84,15 +86,15 @@ class _PersonalScreenState extends State<PersonalScreen> {
         if (pushToStack && currentFolderId != folderId) {
           folderStack.add(currentFolderId);
           breadcrumbPath.add(currentFolderName);
-        } 
-        else if(!pushToStack){
-          if(breadcrumbPath.length > 1){
+        } else if (!pushToStack) {
+          if (breadcrumbPath.length > 1) {
             breadcrumbPath.removeLast();
           }
         }
-        
+
         currentFolderId = folderId;
 
+        // 🔸 folder 이름 리스트만 추출하여 UI용으로 저장
         folders = folderList.map((f) => f['name'] as String).toList();
 
         selectedFiles = List<FileItem>.from(
@@ -111,7 +113,6 @@ class _PersonalScreenState extends State<PersonalScreen> {
       print('폴더 계층 불러오기 실패: ${response.statusCode}');
     }
   }
-
 
   void addFolder(String name) {
     setState(() {
@@ -197,7 +198,6 @@ class _PersonalScreenState extends State<PersonalScreen> {
                           ),
                         );
                         print('최근 항목 눌림');
-                        
                       },
                     ),
                     IconButton(
@@ -318,7 +318,6 @@ class _PersonalScreenState extends State<PersonalScreen> {
                     ],
                     elevation: 8, // 그림자 깊이 설정
                     color: Colors.white, // 위젯 배경 흰색
-
                   ).then((selected) async {
                     // folder_create를 불러와서 폴더 생성하는 팝업창
                     if (selected == 'new_folder') {
@@ -386,22 +385,27 @@ class _PersonalScreenState extends State<PersonalScreen> {
                 onTap: () => Navigator.pop(context),
               ),
               ListTile(
-                leading: Icon(
-                  Icons.check,
-                  size: 24, // 아이콘 크기 (기본값: 24)
-                  color: Colors.white,
-                ),
+                leading: Icon(Icons.check, size: 24, color: Colors.white),
                 title: Text(
                   '예약하기',
                   style: TextStyle(
-                    fontSize: 12, // 글씨 크기
-                    color: Colors.white, // 글씨 색
-                    fontFamily: 'APPLESDGOTHICNEOR', // 원하는 폰트 사용 가능
+                    fontSize: 12,
+                    color: Colors.white,
+                    fontFamily: 'APPLESDGOTHICNEOR',
                   ),
                 ),
                 tileColor: Color(0xFF455A64),
-                onTap: () => Navigator.pop(context),
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder:
+                          (context) => FileReservationScreen(), // ⬅️ 이동할 화면
+                    ),
+                  );
+                },
               ),
+
               ListTile(
                 leading: Icon(
                   Icons.sd_storage,
@@ -439,20 +443,23 @@ class _PersonalScreenState extends State<PersonalScreen> {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (context) => PersonalScreen(username: widget.username), // PersonalScreen()으로 이동
+                            builder:
+                                (context) => PersonalScreen(
+                                  username: widget.username,
+                                ), // PersonalScreen()으로 이동
                           ),
                         );
                       },
                       child: Row(
                         children: [
-                         Text(
-                          '${breadcrumbPath.join("  >  ")}',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontFamily: 'APPLESDGOTHICNEOR',
+                          Text(
+                            '${breadcrumbPath.join("  >  ")}',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontFamily: 'APPLESDGOTHICNEOR',
+                            ),
                           ),
-                         ), 
-                        ]
+                        ],
                       ),
                     ),
                   ),
@@ -473,82 +480,38 @@ class _PersonalScreenState extends State<PersonalScreen> {
                   padding: const EdgeInsets.only(right: 101),
                   child: Row(
                     children: [
-                      // // 🔹 Start 버튼
-                      // ElevatedButton(
-                      //   onPressed:
-                      //       selectedFolderName != null && !isStartSelected
-                      //           ? () {
-                      //             setState(() {
-                      //               startFolderId =
-                      //                   folderNameToId[selectedFolderName!];
-                      //               isStartSelected = true;
-                      //             });
-                      //           }
-                      //           : null,
-                      //   style: ElevatedButton.styleFrom(
-                      //     backgroundColor: Colors.teal,
-                      //     padding: const EdgeInsets.symmetric(
-                      //       horizontal: 12,
-                      //       vertical: 6,
-                      //     ),
-                      //   ),
-                      //   child: const Text(
-                      //     "Start",
-                      //     style: TextStyle(color: Colors.white, fontSize: 12),
-                      //   ),
-                      // ),
-                      // const SizedBox(width: 8),
-
-                      // // 🔹 Dest 버튼
-                      // ElevatedButton(
-                      //   onPressed:
-                      //       selectedFolderName != null && !isDestSelected
-                      //           ? () {
-                      //             setState(() {
-                      //               destFolderId =
-                      //                   folderNameToId[selectedFolderName!];
-                      //               isDestSelected = true;
-                      //             });
-                      //           }
-                      //           : null,
-                      //   style: ElevatedButton.styleFrom(
-                      //     backgroundColor: Colors.indigo,
-                      //     padding: const EdgeInsets.symmetric(
-                      //       horizontal: 12,
-                      //       vertical: 6,
-                      //     ),
-                      //   ),
-                      //   child: const Text(
-                      //     "Dest",
-                      //     style: TextStyle(color: Colors.white, fontSize: 12),
-                      //   ),
-                      // ),
-                      // const SizedBox(width: 8),
-
                       // 🔹 Sorty 버튼
-                     ElevatedButton(
-                      onPressed: selectedFolderNames.isNotEmpty
-                          ? () {
-                              final selectedFolderItems = selectedFolderNames.map((name) {
-                                return FolderItem(
-                                  name: name,
-                                  id: folderNameToId[name]!,
-                                );
-                              }).toList();
+                      ElevatedButton(
+                        onPressed:
+                            selectedFolderNames.isNotEmpty
+                                ? () {
+                                  final selectedFolderItems =
+                                      selectedFolderNames.map((name) {
+                                        return FolderItem(
+                                          name: name,
+                                          id: folderNameToId[name]!,
+                                        );
+                                      }).toList();
 
-                              final selectedFolderIds = selectedFolderItems.map((f) => f.id).toList();
+                                  final selectedFolderIds =
+                                      selectedFolderItems
+                                          .map((f) => f.id)
+                                          .toList();
 
-                              showDialog(
-                                context: context,
-                                builder: (context) => FileSortyScreen(
-                                  folders: selectedFolderItems,
-                                  username: widget.username,
-                                  sourceFolderIds: selectedFolderIds, // ✅ 이제 리스트로 전달
-                                  destinationFolderId: -1, // 목적지는 내부에서 선택함
-                                ),
-                              );
-                            }
-                          : null, // selectedFolderNames가 비어 있으면 버튼 비활성화
+                                  showDialog(
+                                    context: context,
+                                    builder:
+                                        (context) => FileSortyScreen(
+                                          folders: selectedFolderItems,
+                                          username: widget.username,
+                                          sourceFolderIds:
+                                              selectedFolderIds, // ✅ 이제 리스트로 전달
+                                          destinationFolderId:
+                                              -1, // 목적지는 내부에서 선택함
+                                        ),
+                                  );
+                                }
+                                : null, // selectedFolderNames가 비어 있으면 버튼 비활성화
                         style: ElevatedButton.styleFrom(
                           backgroundColor: const Color(0xFF2E24E0),
                           padding: const EdgeInsets.symmetric(
@@ -560,8 +523,7 @@ class _PersonalScreenState extends State<PersonalScreen> {
                           "SORTY",
                           style: TextStyle(color: Colors.white, fontSize: 12),
                         ),
-                      ),  
-
+                      ),
                     ],
                   ),
                 ),
@@ -672,13 +634,12 @@ class _PersonalScreenState extends State<PersonalScreen> {
                                       ),
                                     ),
                                   ),
-                                  IconButton( 
+                                  IconButton(
                                     onPressed: () {
                                       if (folderId != null)
                                         fetchFolderHierarchy(folderId);
-
                                     },
-                                    icon: const Icon( 
+                                    icon: const Icon(
                                       Icons.navigate_next,
                                       size: 20,
                                     ),
@@ -745,6 +706,12 @@ class _PersonalScreenState extends State<PersonalScreen> {
                             folderId: currentFolderId,
                             currentFolderPath: currentFolderPath,
                           );
+                          setState(() {
+                            //파일 추가 후 selectedFiles 초기화화
+                            selectedFiles.clear();
+                            fileNames.clear();
+                          });
+
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(
                               content: Text(
