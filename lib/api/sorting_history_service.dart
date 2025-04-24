@@ -7,7 +7,8 @@ class SortingHistoryService {
     int sortingId,
   ) async {
     final baseUrl = dotenv.get("BaseUrl");
-    final url = Uri.parse("$baseUrl/sorting-history/list/$sortingId");
+    final url = Uri.parse("$baseUrl/sorting-history/selectedList/$sortingId");
+
 
     try {
       final response = await http.get(url);

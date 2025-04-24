@@ -1,5 +1,5 @@
-//팝업이 아니라 창으로 만들기 
-//리스트 스크롤 할 수 있게끔 
+//팝업이 아니라 창으로 만들기
+//리스트 스크롤 할 수 있게끔
 
 import 'package:flutter/material.dart';
 
@@ -7,73 +7,55 @@ void showFileMoveDialog(
   BuildContext context,
   String fromPath,
   String toPath,
-  String fileName,
-) {
+  String fileName, {
+  List<Map<String, String>>? allHistories, // 전체 목록도 옵션으로 받기
+}) {
   showDialog(
     context: context,
     builder: (BuildContext context) {
-      return Dialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        child: Container(
-          padding: const EdgeInsets.all(24),
-          width: 500,
-          height: 300,
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Text(
-                '파일 이동 경로',
-                style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
-              ),
-              Text(
-                fileName,
-                style: const TextStyle(fontSize: 16, color: Colors.blueGrey),
-              ),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceAround,
-                children: [
-                  Column(
+      return AlertDialog(
+        title: const Text('파일 이동 내역'),
+        content: SizedBox(
+          width: double.maxFinite,
+          height: 300, // 원하는 높이 조정 가능
+          child: Scrollbar(
+            child: ListView.builder(
+              itemCount: allHistories?.length ?? 0,
+              itemBuilder: (context, index) {
+                final history = allHistories![index];
+                final prev = history['previousPath'] ?? '';
+                final curr = history['currentPath'] ?? '';
+                final name = history['fileName'] ?? '';
+
+                return Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 6.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      IconButton(
-                        icon: const Icon(Icons.folder, size: 50),
-                        onPressed: () {
-                          print('출발 폴더 클릭');
-                        },
+                      Text(
+                        '📁 $name',
+                        style: const TextStyle(fontWeight: FontWeight.bold),
                       ),
-                      const SizedBox(height: 8),
-                      Text(fromPath),
+                      const SizedBox(height: 4),
+                      Text('이전 경로: $prev'),
+                      Text('현재 경로: $curr'),
+                      const Divider(),
                     ],
                   ),
-                  const Icon(Icons.arrow_forward, size: 30),
-                  Column(
-                    children: [
-                      IconButton(
-                        icon: const Icon(Icons.folder, size: 50),
-                        onPressed: () {
-                          print('도착 폴더 클릭');
-                        },
-                      ),
-                      const SizedBox(height: 8),
-                      Text(toPath),
-                    ],
-                  ),
-                ],
-              ),
-              ElevatedButton(
-                onPressed: () {
-                  Navigator.of(context).pop();
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.grey[800],
-                  foregroundColor: Colors.white,
-                ),
-                child: const Text('완료'),
-              ),
-            ],
+                );
+              },
+            ),
           ),
         ),
+        actions: [
+          TextButton(
+            child: const Text('확인'),
+            onPressed: () {
+              Navigator.of(context).pop();
+            },
+          ),
+        ],
       );
     },
   );
 }
-

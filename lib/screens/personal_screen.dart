@@ -35,7 +35,7 @@ class _PersonalScreenState extends State<PersonalScreen> {
   bool isDestSelected = false;
   // 폴더 목록 상태 관리
   List<String> folders = [];
-// 클래스 맨 위에 추가
+  // 클래스 맨 위에 추가
   final GlobalKey _previewKey = GlobalKey();
   OverlayEntry? _previewOverlay;
   Timer? _hoverTimer;
@@ -122,89 +122,103 @@ class _PersonalScreenState extends State<PersonalScreen> {
       print('폴더 계층 불러오기 실패: ${response.statusCode}');
     }
   }
-void _showPreviewOverlay(BuildContext context, String? url, String type, GlobalKey key) {
-  final renderBox = key.currentContext?.findRenderObject() as RenderBox?;
-  if (renderBox == null || url == null) return;
 
-  final overlay = Overlay.of(context);
-  final offset = renderBox.localToGlobal(Offset.zero);
+  void _showPreviewOverlay(
+    BuildContext context,
+    String? url,
+    String type,
+    GlobalKey key,
+  ) {
+    final renderBox = key.currentContext?.findRenderObject() as RenderBox?;
+    if (renderBox == null || url == null) return;
 
-  _previewOverlay = OverlayEntry(
-    builder: (context) => Positioned(
-      left: offset.dx + renderBox.size.width + 10,
-      top: offset.dy,
-      child: Material(
-        elevation: 4,
-        child: Container(
-          width: 240,
-          height: 240,
-          color: Colors.white,
-          child: _buildPreviewContent(url, type),
-        ),
-      ),
-    ),
-  );
+    final overlay = Overlay.of(context);
+    final offset = renderBox.localToGlobal(Offset.zero);
 
-  overlay.insert(_previewOverlay!);
-}
+    _previewOverlay = OverlayEntry(
+      builder:
+          (context) => Positioned(
+            left: offset.dx + renderBox.size.width + 10,
+            top: offset.dy,
+            child: Material(
+              elevation: 4,
+              child: Container(
+                width: 240,
+                height: 240,
+                color: Colors.white,
+                child: _buildPreviewContent(url, type),
+              ),
+            ),
+          ),
+    );
+
+    overlay.insert(_previewOverlay!);
+  }
+
   Widget _buildPreviewContent(String url, String type, {String? thumbnailUrl}) {
-  final lower = type.toLowerCase();
+    final lower = type.toLowerCase();
 
-  // 이미지 확장자면 원본 URL 사용
-  if (["png", "jpg", "jpeg", "gif", "bmp"].contains(lower)) {
-    return Image.network(url, fit: BoxFit.contain);
+    // 이미지 확장자면 원본 URL 사용
+    if (["png", "jpg", "jpeg", "gif", "bmp"].contains(lower)) {
+      return Image.network(url, fit: BoxFit.contain);
+    }
+
+    // 썸네일 URL이 있으면 우선 사용
+    if (thumbnailUrl != null && thumbnailUrl.isNotEmpty) {
+      return Image.network(thumbnailUrl, fit: BoxFit.contain);
+    }
+
+    // fallback: 직접 렌더링 시도
+    if (lower == "pdf") {
+      return SfPdfViewer.network(url); // PDF 지원
+    } else if (["doc", "docx", "xls", "xlsx", "ppt", "pptx"].contains(lower)) {
+      return OfficeViewerWindows(fileUrl: url); // 오피스
+    }
+
+    return const Center(child: Text("미리보기를 지원하지 않는 형식입니다."));
   }
-
-  // 썸네일 URL이 있으면 우선 사용
-  if (thumbnailUrl != null && thumbnailUrl.isNotEmpty) {
-    return Image.network(thumbnailUrl, fit: BoxFit.contain);
-  }
-
-  // fallback: 직접 렌더링 시도
-  if (lower == "pdf") {
-    return SfPdfViewer.network(url); // PDF 지원
-  } else if (["doc", "docx", "xls", "xlsx", "ppt", "pptx"].contains(lower)) {
-    return OfficeViewerWindows(fileUrl: url); // 오피스
-  }
-
-  return const Center(child: Text("미리보기를 지원하지 않는 형식입니다."));
-}
 
   void _removePreviewOverlay() {
     _previewOverlay?.remove();
     _previewOverlay = null;
   }
-void _showPreviewOverlayAtPosition(
-  BuildContext context,
-  String? url,
-  String type,
-  Offset position, {
-  String? thumbnailUrl,
-}) {
-  if (url == null) return;
 
-  _removePreviewOverlay();
+  void _showPreviewOverlayAtPosition(
+    BuildContext context,
+    String? url,
+    String type,
+    Offset position, {
+    String? thumbnailUrl,
+  }) {
+    if (url == null) return;
 
-  _previewOverlay = OverlayEntry(
-    builder: (context) => Positioned(
-      left: position.dx,
-      top: position.dy - 250,
-      child: Material(
-        elevation: 4,
-        borderRadius: BorderRadius.circular(8),
-        child: Container(
-          width: 240,
-          height: 240,
-          padding: const EdgeInsets.all(8),
-          color: Colors.white,
-          child: _buildPreviewContent(url, type, thumbnailUrl: thumbnailUrl),
-        ),
-      ),
-    ),
-  );
+    _removePreviewOverlay();
 
-  Overlay.of(context).insert(_previewOverlay!);
-}
+    _previewOverlay = OverlayEntry(
+      builder:
+          (context) => Positioned(
+            left: position.dx,
+            top: position.dy - 250,
+            child: Material(
+              elevation: 4,
+              borderRadius: BorderRadius.circular(8),
+              child: Container(
+                width: 240,
+                height: 240,
+                padding: const EdgeInsets.all(8),
+                color: Colors.white,
+                child: _buildPreviewContent(
+                  url,
+                  type,
+                  thumbnailUrl: thumbnailUrl,
+                ),
+              ),
+            ),
+          ),
+    );
+
+    Overlay.of(context).insert(_previewOverlay!);
+  }
 
   void addFolder(String name) {
     setState(() {
@@ -397,15 +411,39 @@ void _showPreviewOverlayAtPosition(
                     items: [
                       const PopupMenuItem(
                         value: 'new_folder',
-                        child: Text('새 폴더'),
+                        child: SizedBox(
+                          width: 150, // ← 여기 크기로 팝업창이 맞춰짐
+                          child: Text(
+                            '새 폴더',
+                            style: TextStyle(
+                              fontSize: 12, // 폰트 크기 조정
+                              fontFamily: 'APPLESDGOTHICNEOR', // 원하는 폰트 패밀리로 변경
+                              color: Colors.black, // 글씨 색상
+                            ),
+                          ),
+                        ),
                       ),
                       const PopupMenuItem(
                         value: 'upload_file',
-                        child: Text('파일 업로드'),
+                        child: Text(
+                          '파일 업로드',
+                          style: TextStyle(
+                            fontSize: 12, // 폰트 크기 조정
+                            fontFamily: 'APPLESDGOTHICNEOR', // 원하는 폰트 패밀리로 변경
+                            color: Colors.black, // 글씨 색상
+                          ),
+                        ),
                       ),
                       const PopupMenuItem(
                         value: 'upload_folder',
-                        child: Text('폴더 업로드'),
+                        child: Text(
+                          '폴더 업로드',
+                          style: TextStyle(
+                            fontSize: 12, // 폰트 크기 조정
+                            fontFamily: 'APPLESDGOTHICNEOR', // 원하는 폰트 패밀리로 변경
+                            color: Colors.black, // 글씨 색상
+                          ),
+                        ),
                       ),
                     ],
                     elevation: 8, // 그림자 깊이 설정
@@ -418,7 +456,7 @@ void _showPreviewOverlayAtPosition(
                         builder: (BuildContext context) {
                           return Dialog(
                             child: Container(
-                              width: 280, // 너비 설정
+                              width: 350, // 너비 설정
                               height: 280, // 높이 설정
                               color: Colors.white,
                               child: FolderCreateScreen(
@@ -846,13 +884,23 @@ void _showPreviewOverlayAtPosition(
                                   final file = selectedFiles[index];
                                   final fileKey = GlobalKey();
                                   return MouseRegion(
-                                    key: fileKey, 
+                                    key: fileKey,
                                     onEnter: (event) {
-                                        _hoverTimer = Timer(const Duration(milliseconds: 500), () {
-                                          final position = event.position; // 마우스 위치
-                                          _showPreviewOverlayAtPosition(context, file.fileUrl, file.type, position, thumbnailUrl: file.fileThumbnail);
-                                        });
-                                      },
+                                      _hoverTimer = Timer(
+                                        const Duration(milliseconds: 500),
+                                        () {
+                                          final position =
+                                              event.position; // 마우스 위치
+                                          _showPreviewOverlayAtPosition(
+                                            context,
+                                            file.fileUrl,
+                                            file.type,
+                                            position,
+                                            thumbnailUrl: file.fileThumbnail,
+                                          );
+                                        },
+                                      );
+                                    },
                                     onExit: (_) {
                                       _hoverTimer?.cancel();
                                       _removePreviewOverlay();
@@ -881,10 +929,16 @@ void _showPreviewOverlayAtPosition(
                                         },
                                       ),
                                       onTap: () {
-                                        print('[파일 미리보기 요청] file.name=${file.name}, fileUrl=${file.fileUrl}, type=${file.type}');
+                                        print(
+                                          '[파일 미리보기 요청] file.name=${file.name}, fileUrl=${file.fileUrl}, type=${file.type}',
+                                        );
                                         showDialog(
-                                          context: context, 
-                                          builder: (_) => FilePreviewDialog(fileUrl: file.fileUrl!, fileType: file.type),
+                                          context: context,
+                                          builder:
+                                              (_) => FilePreviewDialog(
+                                                fileUrl: file.fileUrl!,
+                                                fileType: file.type,
+                                              ),
                                         );
                                       },
                                     ),
