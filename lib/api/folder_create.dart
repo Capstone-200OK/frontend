@@ -6,10 +6,8 @@ import 'package:http/http.dart' as http;
 class FolderCreateScreen extends StatefulWidget {
   final Function(String) onCreateFolder;
 
-  const FolderCreateScreen({
-    Key? key,
-    required this.onCreateFolder,
-  }) : super(key: key);
+  const FolderCreateScreen({Key? key, required this.onCreateFolder})
+    : super(key: key);
 
   @override
   State<FolderCreateScreen> createState() => _FolderCreateScreenState();
@@ -55,7 +53,7 @@ class _FolderCreateScreenState extends State<FolderCreateScreen> {
         if (response.statusCode == 200 || response.statusCode == 201) {
           _message = '폴더 생성 성공!';
           _folderNameController.clear();
-          widget.onCreateFolder(folderName);  // 콜백 실행
+          widget.onCreateFolder(folderName); // 콜백 실행
         } else {
           _message = '실패: ${response.statusCode} - ${response.body}';
         }
@@ -76,36 +74,54 @@ class _FolderCreateScreenState extends State<FolderCreateScreen> {
         '새 폴더 생성',
         textAlign: TextAlign.center,
         style: TextStyle(
-          fontSize: 18,
-          fontWeight: FontWeight.bold,
+          fontSize: 17,
+          fontFamily: 'APPLESDGOTHICNEOEB',
           color: Colors.black,
         ),
       ),
       content: SizedBox(
-        width: 300,
+        width: 100,
+        height: 60,
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            TextField(
-              controller: _folderNameController,
-              decoration: const InputDecoration(
-                labelText: '폴더 이름',
-                labelStyle: TextStyle(color: Colors.black),
-                border: OutlineInputBorder(),
+            Container(
+              height: 45, // TextField의 높이를 설정
+              child: TextField(
+                controller: _folderNameController,
+                decoration: const InputDecoration(
+                  labelText: '폴더 이름',
+                  labelStyle: TextStyle(
+                    color: Colors.black,
+                    fontSize: 13,
+                    fontFamily: 'APPLESDGOTHICNEOR',
+                  ),
+                  border: OutlineInputBorder(),
+                  contentPadding: EdgeInsets.symmetric(
+                    vertical: 7,
+                    horizontal: 12,
+                  ), // 패딩 조정
+                ),
+                style: const TextStyle(
+                  fontSize: 13,
+                  fontFamily: 'APPLESDGOTHICNEOR',
+                ), // 실제 입력 텍스트의 폰트 크기
               ),
             ),
-            const SizedBox(height: 8),
             if (_isLoading)
               const CircularProgressIndicator()
             else if (_message.isNotEmpty)
               Padding(
-                padding: const EdgeInsets.only(top: 8),
+                padding: const EdgeInsets.only(top: 4),
                 child: Text(
                   _message,
-                  style: const TextStyle(color: Colors.black),
+                  style: const TextStyle(
+                    color: Colors.black,
+                    fontSize: 5,
+                    fontFamily: 'APPLESDGOTHICNEOR',
+                  ),
                 ),
               ),
-              const SizedBox(height: 3),
           ],
         ),
       ),
@@ -117,17 +133,34 @@ class _FolderCreateScreenState extends State<FolderCreateScreen> {
           },
           style: TextButton.styleFrom(
             foregroundColor: Colors.black,
+            side: BorderSide(
+              color:  Color(0xFF455A64), // 획(테두리) 색상
+              width: 1, // 획(테두리) 두께
+            ),
           ),
-          child: const Text('취소'),
+          child: const Text(
+            '취소',
+            style: TextStyle(fontSize: 13, fontFamily: 'APPLESDGOTHICNEOR'),
+          ),
         ),
         TextButton(
           onPressed: createFolder,
           style: TextButton.styleFrom(
             foregroundColor: Colors.black,
+            backgroundColor: Color(0xFF263238),
           ),
-          child: const Text('만들기'),
+          child: const Text(
+            '만들기',
+            style: TextStyle(
+              fontSize: 13,
+              fontFamily: 'APPLESDGOTHICNEOR',
+              color: Colors.white,
+            ),
+          ),
         ),
+        
       ],
+      
     );
   }
 }

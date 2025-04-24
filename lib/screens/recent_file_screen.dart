@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_application_1/api/folder_create.dart';
 import 'package:flutter_application_1/api/sorting_rollback_service.dart';
 import 'package:flutter_application_1/screens/show_filemove_dialog.dart';
 import 'package:flutter_application_1/api/sorting_history_service.dart';
@@ -20,6 +19,7 @@ class _RecentFileScreenState extends State<RecentFileScreen> {
   // 폴더 목록 상태 관리
   List<String> folders = [];
   bool _isHovering = false; // 마우스 호버 상태 정의
+  List<Map<String, String>> sortingHistories = [];
 
   @override
   void initState() {
@@ -39,6 +39,8 @@ class _RecentFileScreenState extends State<RecentFileScreen> {
       DateTime(2025, 4, 20, 12, 1),
       DateTime(2025, 4, 23),
     ];
+
+    final histories = await SortingHistoryService.fetchSortingHistory(55);
 
     setState(() {
       historyDates = mockDates;
@@ -128,8 +130,8 @@ class _RecentFileScreenState extends State<RecentFileScreen> {
                                   print('텍스트 버튼 클릭됨');
                                   final histories =
                                       await SortingHistoryService.fetchSortingHistory(
-                                        48,
-                                      ); // 예시 sortingId
+                                        55,
+                                      ); // 예시 ID
 
                                   if (histories.isNotEmpty) {
                                     final fromPath =
@@ -138,11 +140,13 @@ class _RecentFileScreenState extends State<RecentFileScreen> {
                                         histories.first['currentPath'] ?? '';
                                     final fileName =
                                         histories.first['fileName'] ?? '';
+
                                     showFileMoveDialog(
                                       context,
                                       fromPath,
                                       toPath,
                                       fileName,
+                                      allHistories: histories, // 전체 이력 넘겨줌
                                     );
                                   }
                                 },
@@ -247,14 +251,17 @@ class _RecentFileScreenState extends State<RecentFileScreen> {
                       ),
                     ),
                     const SizedBox(height: 8),
+                    const SizedBox(height: 8),
                     Expanded(
                       child: SingleChildScrollView(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             const SizedBox(height: 8),
+
+                            // 과거 정리 날짜 리스트
                             SizedBox(
-                              height: 130, // 40(height) * 3 + 여백 약간
+                              height: 130,
                               child: ListView.builder(
                                 itemCount: pastDates.length,
                                 itemBuilder: (context, index) {
@@ -275,6 +282,51 @@ class _RecentFileScreenState extends State<RecentFileScreen> {
                                       ),
                                       child: Text(
                                         formatDate(date),
+                                        style: const TextStyle(fontSize: 12),
+                                      ),
+                                    ),
+                                  );
+                                },
+                              ),
+                            ),
+
+                            const SizedBox(height: 24), // 간격
+                            // 🔽 폴더 리스트 보여주는 박스
+                            const Padding(
+                              padding: EdgeInsets.symmetric(horizontal: 110.0),
+                              child: Text(
+                                "폴더 목록",
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.bold,
+                                  fontFamily: 'APPLESDGOTHICNEOR',
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+
+                            SizedBox(
+                              height: 130, // 높이 제한
+                              child: ListView.builder(
+                                itemCount: folders.length,
+                                itemBuilder: (context, index) {
+                                  final folderName = folders[index];
+                                  return Padding(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 105.0,
+                                      vertical: 3,
+                                    ),
+                                    child: Container(
+                                      height: 40,
+                                      alignment: Alignment.centerLeft,
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 16,
+                                      ),
+                                      decoration: const BoxDecoration(
+                                        color: Color(0xFFECECEC),
+                                      ),
+                                      child: Text(
+                                        folderName,
                                         style: const TextStyle(fontSize: 12),
                                       ),
                                     ),
