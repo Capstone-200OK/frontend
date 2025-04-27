@@ -4,6 +4,8 @@ import 'package:flutter_application_1/screens/sign_up_screen.dart'; // 회원가
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:provider/provider.dart';
+import 'package:flutter_application_1/providers/user_provider.dart';
 
 // 사용자 정보를 담을 클래스
 class User {
@@ -61,17 +63,22 @@ class _LoginScreenState extends State<LoginScreen> {
           "password": password,
         }),
       );
-      print(response);
-      if (response.statusCode == 200 && json.decode(response.body) == true) {
+      print(response.statusCode);
+      if (response.statusCode == 200) {
+        final responseData = json.decode(response.body);
+        final int userId = responseData['userId'];
+
+      // Provider에 저장
+        Provider.of<UserProvider>(context, listen: false).setUserId(userId);
         // 로그인 성공
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(
-            builder: (context) => HomeScreen(username: email), // 아이디 대신 이메일
-          ),
-        );
-        ScaffoldMessenger.of(context)
-            .showSnackBar(const SnackBar(content: Text('로그인 성공')));
+         Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder: (context) => HomeScreen(username: email), // 아이디 대신 이메일
+            ),
+          );
+          ScaffoldMessenger.of(context)
+              .showSnackBar(const SnackBar(content: Text('로그인 성공')));
       } else {
         // 로그인 실패
         ScaffoldMessenger.of(context).showSnackBar(

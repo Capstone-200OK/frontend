@@ -2,6 +2,8 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
+import 'package:provider/provider.dart';
+import 'package:flutter_application_1/providers/user_provider.dart';
 
 class FolderCreateScreen extends StatefulWidget {
   final Function(String) onCreateFolder;
@@ -18,10 +20,12 @@ class _FolderCreateScreenState extends State<FolderCreateScreen> {
   bool _isLoading = false;
   String _message = '';
   String url = dotenv.get("BaseUrl");
-  final int userId = 1;
+  //final int userId = 1;
   final int parentFolderId = 1;
 
   Future<void> createFolder() async {
+    final userProvider = Provider.of<UserProvider>(context, listen: false);
+    final userId = userProvider.userId;
     final folderName = _folderNameController.text.trim();
 
     if (folderName.isEmpty) {
