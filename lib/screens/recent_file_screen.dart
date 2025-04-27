@@ -64,34 +64,35 @@ class _RecentFileScreenState extends State<RecentFileScreen> {
         child: AppBar(
           automaticallyImplyLeading: false,
           backgroundColor: Colors.white,
-          elevation: 0,
 
-          title: Row(
-            children: [
-              // 뒤로가기 버튼
-              IconButton(
-                icon: const Icon(
-                  Icons.arrow_back,
-                  color: Color(0xff263238),
-                  size: 15,
+          title: Container(
+            padding: const EdgeInsets.only(left: 80, top: 40),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                IconButton(
+                  icon: const Icon(
+                    Icons.arrow_back,
+                    color: Color(0xff263238),
+                    size: 15,
+                  ),
+                  onPressed: () {
+                    Navigator.pop(context);
+                  },
                 ),
-                onPressed: () {
-                  Navigator.pop(context);
-                },
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  "${widget.username}님의 SORTY 기록",
-                  style: const TextStyle(
-                    color: Colors.black,
-                    fontSize: 18,
-                    //fontWeight: FontWeight.bold,
-                    fontFamily: 'APPLESDGOTHICNEOEB',
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    "${widget.username}님의 SORTY 기록",
+                    style: const TextStyle(
+                      color: Colors.black,
+                      fontSize: 20,
+                      fontFamily: 'APPLESDGOTHICNEOEB',
+                    ),
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
@@ -101,7 +102,7 @@ class _RecentFileScreenState extends State<RecentFileScreen> {
                 ? const Center(child: CircularProgressIndicator())
                 : Column(
                   children: [
-                    const SizedBox(height: 100),
+                    const SizedBox(height: 80),
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 105.0),
                       child: Container(
@@ -339,54 +340,54 @@ class _RecentFileScreenState extends State<RecentFileScreen> {
                       ),
                     ),
 
-                    //const SizedBox(height: 10),
                     // 검색창
                     Align(
                       alignment: Alignment.center, // 센터 정렬
-                      child: SizedBox(
-                        width: 800, // 원하는 가로폭
-                        child: TextField(
-                          style: TextStyle(
-                            fontSize: 16, // 입력 텍스트 크기
-                            fontFamily: 'APPLESDGOTHICNEOEB',
-                          ),
-                          decoration: InputDecoration(
-                            hintText: '날짜를 입력해보세요', // 검색창의 힌트 텍스트
-                            hintStyle: TextStyle(
-                              fontSize: 14, // 힌트 텍스트 크기
+                      child: Padding(
+                        padding: const EdgeInsets.only(
+                          bottom: 65,
+                        ), // 🔹 위로 40만큼 띄움
+                        child: SizedBox(
+                          width: 800, // 원하는 가로폭
+                          child: TextField(
+                            style: TextStyle(
+                              fontSize: 16, // 입력 텍스트 크기
                               fontFamily: 'APPLESDGOTHICNEOEB',
                             ),
-                            filled: true, // 🔹 배경색 적용할 때 필수
-                            fillColor: Color(0xFFCFD8DC), //  TextField 배경색
-                            contentPadding: EdgeInsets.symmetric(
-                              vertical: 18,
-                              horizontal: 20,
-                            ),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(
-                                15,
-                              ), // 둥근 정도 설정
-                              borderSide:
-                                  BorderSide.none, // 기본 테두리 제거 (filled일 때 깔끔)
-                            ),
+                            decoration: InputDecoration(
+                              hintText: '날짜를 입력해보세요', // 검색창의 힌트 텍스트
+                              hintStyle: TextStyle(
+                                fontSize: 14, // 힌트 텍스트 크기
+                                fontFamily: 'APPLESDGOTHICNEOEB',
+                              ),
+                              filled: true, // 🔹 배경색 적용할 때 필수
+                              fillColor: Color(0xFFCFD8DC), //  TextField 배경색
+                              contentPadding: EdgeInsets.symmetric(
+                                vertical: 18,
+                                horizontal: 20,
+                              ),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(
+                                  15,
+                                ), // 둥근 정도 설정
+                                borderSide:
+                                    BorderSide.none, // 기본 테두리 제거 (filled일 때 깔끔)
+                              ),
 
-                            focusedBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(15),
-                              borderSide: BorderSide(
-                                color: Color(0xFF607D8B),
-                                width: 2,
-                              ), // 포커스 시 진한 테두리
+                              focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(15),
+                                borderSide: BorderSide(
+                                  color: Color(0xFF607D8B),
+                                  width: 2,
+                                ), // 포커스 시 진한 테두리
+                              ),
+                              //border: OutlineInputBorder(), // 검색창의 테두리 설정
+                              prefixIcon: Icon(
+                                Icons.search,
+                                color: Color(0xff263238),
+                                // 검색 아이콘을 왼쪽에 추가
+                              ),
                             ),
-                            //border: OutlineInputBorder(), // 검색창의 테두리 설정
-                            prefixIcon: Icon(
-                              Icons.search,
-                              color: Color(0xff263238),
-                              // 검색 아이콘을 왼쪽에 추가
-                            ),
-                            suffixIcon: Icon(
-                              Icons.tune,
-                              color: Color(0xff263238),
-                            ), // 오른쪽 '조절' 아이콘
                           ),
                         ),
                       ),

@@ -78,11 +78,14 @@ class _PersonalScreenState extends State<PersonalScreen> {
   }
 
   Future<void> fetchFolderHierarchy(
-    int folderId, int userId, {
+    int folderId,
+    int userId, {
     bool pushToStack = true,
   }) async {
     final response = await http.get(
-      Uri.parse('$url/folder/hierarchy/$folderId/$userId'), // $url/folder/hierarchy/$folderId/$userId 로 수정 필요 (login 할때 받은 userId 전송)
+      Uri.parse(
+        '$url/folder/hierarchy/$folderId/$userId',
+      ), // $url/folder/hierarchy/$folderId/$userId 로 수정 필요 (login 할때 받은 userId 전송)
       headers: {"Content-Type": "application/json"},
     );
 
@@ -227,9 +230,8 @@ class _PersonalScreenState extends State<PersonalScreen> {
           ),
     );
 
-  Overlay.of(context).insert(_previewOverlay!);
-}
-
+    Overlay.of(context).insert(_previewOverlay!);
+  }
 
   void addFolder(String name) {
     setState(() {
@@ -260,7 +262,7 @@ class _PersonalScreenState extends State<PersonalScreen> {
           ),
           title: Row(
             children: [
-              const SizedBox(width: 10), //햄버거 버튼과의 간격
+              const SizedBox(width: 22), //햄버거 버튼과의 간격
               // 뒤로가기 버튼
               IconButton(
                 icon: const Icon(
@@ -287,19 +289,9 @@ class _PersonalScreenState extends State<PersonalScreen> {
               ),
               //아이콘 버튼
               Padding(
-                padding: const EdgeInsets.only(right: 34), // 오른쪽에서 10px 떨어짐
+                padding: const EdgeInsets.only(right: 95), // 오른쪽에서 10px 떨어짐
                 child: Row(
                   children: [
-                    IconButton(
-                      icon: const Icon(
-                        Icons.settings,
-                        color: Color(0xff263238),
-                      ), // 환경설정 아이콘
-                      onPressed: () {
-                        // 환경설정 페이지 이동 로직
-                        print('환경설정 눌림');
-                      },
-                    ),
                     IconButton(
                       icon: const Icon(
                         Icons.history,
@@ -505,7 +497,6 @@ class _PersonalScreenState extends State<PersonalScreen> {
                     fontFamily: 'APPLESDGOTHICNEOR', // 원하는 폰트 사용 가능
                   ),
                 ),
-                
               ),
               ListTile(
                 leading: Icon(
@@ -525,7 +516,10 @@ class _PersonalScreenState extends State<PersonalScreen> {
                 onTap: () {
                   Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (context) => TrashScreen(username: widget.username)),
+                    MaterialPageRoute(
+                      builder:
+                          (context) => TrashScreen(username: widget.username),
+                    ),
                   );
                 },
               ),
@@ -582,7 +576,7 @@ class _PersonalScreenState extends State<PersonalScreen> {
                 // ROOT 텍스트를 누르면 personal_screen.dart기본 화면으로 이동
                 Expanded(
                   child: Padding(
-                    padding: const EdgeInsets.only(left: 150.0),
+                    padding: const EdgeInsets.only(left: 100.0),
                     child: GestureDetector(
                       onTap: () {
                         Navigator.push(
@@ -700,148 +694,160 @@ class _PersonalScreenState extends State<PersonalScreen> {
                               crossAxisSpacing: 12,
                               childAspectRatio: 2.0,
                             ),
-                            itemBuilder: (context, index) {
-                              final folderName = folders[index];
-                              final folderId = folderNameToId[folderName];
+                        itemBuilder: (context, index) {
+                          final folderName = folders[index];
+                          final folderId = folderNameToId[folderName];
 
-                              final isSelected = selectedFolderNames.contains(
-                                  folderName,
-                              );
+                          final isSelected = selectedFolderNames.contains(
+                            folderName,
+                          );
 
-                              return GestureDetector(
-                               onTap: () {
-                                setState(() {
-                                  if (selectedFolderNames.contains(folderName)) {
-                                    selectedFolderNames.remove(folderName);
-                                  } else {
-                                    selectedFolderNames.add(folderName);
-                                  }
-                                });
-                               },
-                               onSecondaryTap: () {
-                                  showDialog(
-                                    context: context,
-                                    builder: (BuildContext context) {
-                                      return AlertDialog(
-                                        title: Text('폴더 삭제'),
-                                        content: Text('이 폴더를 휴지통으로 이동하시겠습니까?'),
-                                        actions: <Widget>[
-                                          TextButton(
-                                            onPressed: () {
-                                              // 폴더 삭제 로직
-                                              if (folderId != null) {
-                                                // 예: 폴더를 trashScreen에 추가하는 로직
-                                                deletedFolders.add(FileItem(name: folderName, type: "폴더", sizeInBytes: 0));
-                                                
-                                                // 폴더 삭제 후 현재 화면에서 삭제
-                                                setState(() {
-                                                  folders.removeAt(index);  // 현재 화면에서 폴더 제거
-                                                });
-                                              }
-                                              Navigator.of(context).pop(); // 다이얼로그 닫기
-                                            },
-                                            child: Text('삭제'),
-                                          ),
-                                          TextButton(
-                                            onPressed: () {
-                                              Navigator.of(context).pop(); // 다이얼로그 닫기
-                                            },
-                                            child: Text('취소'),
-                                          ),
-                                        ],
-                                      );  
-                                    },
+                          return GestureDetector(
+                            onTap: () {
+                              setState(() {
+                                if (selectedFolderNames.contains(folderName)) {
+                                  selectedFolderNames.remove(folderName);
+                                } else {
+                                  selectedFolderNames.add(folderName);
+                                }
+                              });
+                            },
+                            onSecondaryTap: () {
+                              showDialog(
+                                context: context,
+                                builder: (BuildContext context) {
+                                  return AlertDialog(
+                                    title: Text('폴더 삭제'),
+                                    content: Text('이 폴더를 휴지통으로 이동하시겠습니까?'),
+                                    actions: <Widget>[
+                                      TextButton(
+                                        onPressed: () {
+                                          // 폴더 삭제 로직
+                                          if (folderId != null) {
+                                            // 예: 폴더를 trashScreen에 추가하는 로직
+                                            deletedFolders.add(
+                                              FileItem(
+                                                name: folderName,
+                                                type: "폴더",
+                                                sizeInBytes: 0,
+                                              ),
+                                            );
+
+                                            // 폴더 삭제 후 현재 화면에서 삭제
+                                            setState(() {
+                                              folders.removeAt(
+                                                index,
+                                              ); // 현재 화면에서 폴더 제거
+                                            });
+                                          }
+                                          Navigator.of(
+                                            context,
+                                          ).pop(); // 다이얼로그 닫기
+                                        },
+                                        child: Text('삭제'),
+                                      ),
+                                      TextButton(
+                                        onPressed: () {
+                                          Navigator.of(
+                                            context,
+                                          ).pop(); // 다이얼로그 닫기
+                                        },
+                                        child: Text('취소'),
+                                      ),
+                                    ],
                                   );
                                 },
-                                child: Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 12,
-                                  vertical: 8,
+                              );
+                            },
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 8,
+                              ),
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(
+                                  color:
+                                      selectedFolderNames.contains(folderName)
+                                          ? Colors.blueGrey
+                                          : Colors.grey.shade400,
+                                  width: 1.5,
                                 ),
-                                decoration: BoxDecoration(
-                                  color: Colors.white,
-                                  borderRadius: BorderRadius.circular(12),
-                                  border: Border.all(
-                                    color:
-                                        selectedFolderNames.contains(folderName)
-                                            ? Colors.blueGrey
-                                            : Colors.grey.shade400,
-                                    width: 1.5,
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black12,
+                                    blurRadius: 3,
+                                    offset: Offset(0, 2),
                                   ),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: Colors.black12,
-                                      blurRadius: 3,
-                                      offset: Offset(0, 2),
-                                    ),
-                                  ],
-                                ),
-                                child: Row(
-                                  children: [
-                                    Transform.scale(
-                                      scale: 0.6,
-                                      //폴더 선택
-                                      child: Checkbox(
-                                        value: selectedFolderNames.contains(
-                                          folderName,
-                                        ),
-                                        onChanged: (value) {
-                                          setState(() {
-                                            if (value == true) {
-                                              selectedFolderNames.add(folderName);
-                                            } else {
-                                              selectedFolderNames.remove(
-                                                folderName,
-                                              );
-                                            }
-                                          });
-                                        },
-                                      ),
-                                    ),
-                                    const Icon(
-                                      Icons.folder,
-                                      color: Color(0xFF263238),
-                                    ),
-                                    const SizedBox(width: 8),
-                                    Expanded(
-                                      child: Text(
+                                ],
+                              ),
+                              child: Row(
+                                children: [
+                                  Transform.scale(
+                                    scale: 0.6,
+                                    //폴더 선택
+                                    child: Checkbox(
+                                      value: selectedFolderNames.contains(
                                         folderName,
-                                        overflow: TextOverflow.ellipsis,
-                                        style: const TextStyle(
-                                          fontSize: 14,
-                                          fontFamily: 'APPLESDGOTHICNEOR',
-                                          color: Colors.black87,
-                                        ),
+                                      ),
+                                      onChanged: (value) {
+                                        setState(() {
+                                          if (value == true) {
+                                            selectedFolderNames.add(folderName);
+                                          } else {
+                                            selectedFolderNames.remove(
+                                              folderName,
+                                            );
+                                          }
+                                        });
+                                      },
+                                    ),
+                                  ),
+                                  const Icon(
+                                    Icons.folder,
+                                    color: Color(0xFF263238),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Expanded(
+                                    child: Text(
+                                      folderName,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: const TextStyle(
+                                        fontSize: 14,
+                                        fontFamily: 'APPLESDGOTHICNEOR',
+                                        color: Colors.black87,
                                       ),
                                     ),
-                                    IconButton( 
-                                      onPressed: () {
-                                        /*Navigator.of(context).push(
+                                  ),
+                                  IconButton(
+                                    onPressed: () {
+                                      /*Navigator.of(context).push(
                                           MaterialPageRoute(
                                             builder: (context) => TrashScreen(username: widget.username),
                                           ),
                                         );*/
-                                        if (folderId != null)
-                                          fetchFolderHierarchy(folderId, userId!);
-                                      },
-                                      icon: const Icon( 
-                                        Icons.navigate_next,
-                                        size: 20,
-                                      ),
-                                      padding: EdgeInsets.zero,
-                                      constraints: const BoxConstraints(),
+                                      if (folderId != null)
+                                        fetchFolderHierarchy(folderId, userId!);
+                                    },
+                                    icon: const Icon(
+                                      Icons.navigate_next,
+                                      size: 20,
                                     ),
-                                  ],
-                                ),
-                              ),  
-                           );
+                                    padding: EdgeInsets.zero,
+                                    constraints: const BoxConstraints(),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          );
                         },
                       ),
                     ),
                   ),
                   const SizedBox(width: 12),
-  
-                    // 파일 리스트
+
+                  // 파일 리스트
                   Expanded(
                     // DropTarget (파일 드래그 앤 드랍)
                     child: DropTarget(
@@ -980,7 +986,8 @@ class _PersonalScreenState extends State<PersonalScreen> {
                                         onPressed: () {
                                           setState(() {
                                             // 현재 파일을 trash_screen.dart 삭제된 파일 리스트로 옮기기
-                                            final deletedFile = selectedFiles[index];
+                                            final deletedFile =
+                                                selectedFiles[index];
                                             deletedFiles.add(deletedFile);
 
                                             // 원래 리스트에서 제거
