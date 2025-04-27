@@ -4,12 +4,18 @@ import 'package:flutter_application_1/screens/home_screen.dart'; // 홈홈 화�
 import 'models/counter_model.dart'; // provider 모델 import
 //import 'package:flutter_application_1/screens/folder_create.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-//import 'package:flutter_application_1/screens/login_screen.dart';
+import 'package:flutter_application_1/screens/login_screen.dart';
+import 'package:flutter_application_1/providers/user_provider.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();  // 1번코드
   await dotenv.load(fileName: ".env");    // 2번코드
-  runApp(const MyApp());
+  runApp(MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => UserProvider()),
+      ],
+      child: const MyApp(),
+    ),);
 }
 
 class MyApp extends StatelessWidget {
@@ -22,8 +28,9 @@ class MyApp extends StatelessWidget {
       child: MaterialApp(
         title: 'Flutter 로그인 앱',
         theme: ThemeData(primarySwatch: Colors.blue),
-        home: const HomeScreen(username: '현서'),
+        //home: const HomeScreen(username: '현서'),
         //home: const FolderCreateScreen(),
+        home: const LoginScreen()
       ),
     );
   }

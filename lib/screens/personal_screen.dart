@@ -15,6 +15,8 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:flutter_application_1/screens/file_view_dialog.dart';
 import 'package:syncfusion_flutter_pdfviewer/pdfviewer.dart';
+import 'package:provider/provider.dart';
+import 'package:flutter_application_1/providers/user_provider.dart';
 
 class PersonalScreen extends StatefulWidget {
   final String username;
@@ -51,6 +53,7 @@ class _PersonalScreenState extends State<PersonalScreen> {
   Map<String, int> folderNameToId = {};
   Map<int, String> folderIdToName = {};
   late String s3BaseUrl;
+  late int? userId;
   @override
   void initState() {
     super.initState();
@@ -58,7 +61,13 @@ class _PersonalScreenState extends State<PersonalScreen> {
     s3BaseUrl = dotenv.get("S3BaseUrl");
     uploader = FileUploader(baseUrl: url, s3BaseUrl: s3BaseUrl);
     folderIdToName[1] = 'Root';
-    fetchFolderHierarchy(1, pushToStack: false); // 루트 폴더 ID
+    // context 사용 가능한 시점에 userId 가져오기
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      setState(() {
+        userId = Provider.of<UserProvider>(context, listen: false).userId;
+      });
+      fetchFolderHierarchy(1, userId!, pushToStack: false); // userId 초기화된 이후 호출
+    });
   }
 
   String getCurrentFolderPath() {
@@ -69,11 +78,11 @@ class _PersonalScreenState extends State<PersonalScreen> {
   }
 
   Future<void> fetchFolderHierarchy(
-    int folderId, {
+    int folderId, int userId, {
     bool pushToStack = true,
   }) async {
     final response = await http.get(
-      Uri.parse('$url/folder/hierarchy/$folderId'),
+      Uri.parse('$url/folder/hierarchy/$folderId/$userId'), // $url/folder/hierarchy/$folderId/$userId 로 수정 필요 (login 할때 받은 userId 전송)
       headers: {"Content-Type": "application/json"},
     );
 
@@ -813,7 +822,7 @@ class _PersonalScreenState extends State<PersonalScreen> {
                                           ),
                                         );*/
                                         if (folderId != null)
-                                          fetchFolderHierarchy(folderId);
+                                          fetchFolderHierarchy(folderId, userId!);
                                       },
                                       icon: const Icon( 
                                         Icons.navigate_next,
@@ -878,11 +887,11 @@ class _PersonalScreenState extends State<PersonalScreen> {
                           print('📁 경로: $currentFolderPath');
                           await uploader.uploadFiles(
                             file: droppedFiles[0],
-                            userId: 1,
+                            userId: userId!, // login 할때때 받아올 값으로 수정
                             folderId: currentFolderId,
                             currentFolderPath: currentFolderPath,
                           );
-
+                          await fetchFolderHierarchy(currentFolderId, userId!);
                           setState(() {
                             //파일 추가 후 selectedFiles 초기화화
                             selectedFiles.clear();
