@@ -38,7 +38,7 @@ class _FileSortyScreenState extends State<FileSortyScreen> {
     return Dialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       child: Container(
-        width: 800,
+        width: 700,
         height: 500,
         decoration: BoxDecoration(
           color: const Color(0xFFF2F2F2),
@@ -81,10 +81,6 @@ class _FileSortyScreenState extends State<FileSortyScreen> {
                       decoration: BoxDecoration(
                         color: Colors.white,
                         borderRadius: BorderRadius.circular(12),
-                        border: Border.all(
-                          color: Colors.grey.shade400, // 획 색상
-                          width: 1,
-                        ), // 획 두께
                       ),
 
                       child: Column(
@@ -94,8 +90,8 @@ class _FileSortyScreenState extends State<FileSortyScreen> {
                             child: const Text(
                               '선택된 폴더',
                               style: TextStyle(
-                                fontSize: 18,
-                                //fontWeight: FontWeight.bold,
+                                fontSize: 16,
+                                fontFamily: 'APPLESDGOTHICNEOEB',
                               ),
                             ),
                           ),
@@ -112,16 +108,15 @@ class _FileSortyScreenState extends State<FileSortyScreen> {
                               },
                             ),
                           ),
-                          const SizedBox(height: 10),
-                          Center(
-                            child: IconButton(
-                              onPressed: () {
-                                print("폴더 추가!");
-                              },
-                              icon: const Icon(Icons.add_circle_outline),
-                              iconSize: 30,
-                            ),
+                          IconButton(
+                            onPressed: () {
+                              print("폴더 추가!");
+                            },
+                            icon: const Icon(Icons.create_new_folder),
+                            iconSize: 30,
                           ),
+                          const SizedBox(height: 10),
+                          
                         ],
                       ),
                     ),
@@ -138,8 +133,8 @@ class _FileSortyScreenState extends State<FileSortyScreen> {
                           const Text(
                             '목적지 폴더',
                             style: TextStyle(
-                              fontWeight: FontWeight.bold,
                               fontSize: 16,
+                              fontFamily: 'APPLESDGOTHICNEOEB',
                             ),
                           ),
                           const SizedBox(height: 8),
@@ -150,22 +145,23 @@ class _FileSortyScreenState extends State<FileSortyScreen> {
                             ),
                             decoration: BoxDecoration(
                               color: Colors.white,
-                              border: Border.all(color: Colors.grey.shade400),
+
                               borderRadius: BorderRadius.circular(12),
                             ),
                             child: Row(
                               children: [
-                                Icon(Icons.folder, color: Color(0xFF45525B)),
-                                const SizedBox(width: 10),
                                 Expanded(
                                   child: Text(
                                     selectedDestinationFolder?.name ??
                                         "폴더를 선택해주세요",
-                                    style: const TextStyle(fontSize: 16),
+                                    style: const TextStyle(
+                                      fontSize: 13,
+                                      fontFamily: 'APPLESDGOTHICNEOR',
+                                    ),
                                   ),
                                 ),
                                 IconButton(
-                                  icon: const Icon(Icons.add_circle_outline),
+                                  icon: const Icon(Icons.folder_open),
                                   onPressed: () async {
                                     final result = await showDialog<FolderItem>(
                                       context: context,
@@ -188,7 +184,10 @@ class _FileSortyScreenState extends State<FileSortyScreen> {
                           // ② 정리 기준 선택
                           const Text(
                             '정리 기준을 선택해 주세요!',
-                            style: TextStyle(fontWeight: FontWeight.bold),
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontFamily: 'APPLESDGOTHICNEOEB',
+                            ),
                           ),
                           const SizedBox(height: 12),
                           Wrap(
@@ -209,10 +208,10 @@ class _FileSortyScreenState extends State<FileSortyScreen> {
                             alignment: Alignment.bottomRight,
                             child: ElevatedButton.icon(
                               style: ElevatedButton.styleFrom(
-                                backgroundColor: const Color(0xFF45525B),
+                                backgroundColor: const Color(0xFF2E24E0),
                                 padding: const EdgeInsets.symmetric(
-                                  horizontal: 24,
-                                  vertical: 14,
+                                  horizontal: 32,
+                                  vertical: 22,
                                 ),
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(12),
@@ -258,12 +257,16 @@ class _FileSortyScreenState extends State<FileSortyScreen> {
                                 }
                               },
                               icon: const Icon(
-                                Icons.auto_fix_high,
+                                Icons.cleaning_services,
                                 color: Colors.white,
                               ),
                               label: const Text(
                                 '정리하기',
-                                style: TextStyle(color: Colors.white),
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 16,
+                                  fontFamily: 'APPLESDGOTHICNEOEB',
+                                ),
                               ),
                             ),
                           ),
@@ -283,8 +286,8 @@ class _FileSortyScreenState extends State<FileSortyScreen> {
   Widget _sortButton(BuildContext context, String label, String mode) {
     return ElevatedButton(
       style: ElevatedButton.styleFrom(
-        backgroundColor: selectedMode == mode ? Colors.black : Colors.white,
-        foregroundColor: selectedMode == mode ? Colors.white : Colors.black,
+        backgroundColor: selectedMode == mode ? Color(0xFF37474F) : Colors.white,
+        foregroundColor: selectedMode == mode ? Colors.white : Color(0xFF37474F),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       ),
       onPressed: () {
@@ -292,7 +295,10 @@ class _FileSortyScreenState extends State<FileSortyScreen> {
           selectedMode = mode;
         });
       },
-      child: Text(label),
+      child: Text(
+        label,
+        style: TextStyle(fontSize: 14, fontFamily: 'APPLESDGOTHICNEOR'),
+      ),
     );
   }
 }
