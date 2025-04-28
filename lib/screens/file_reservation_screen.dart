@@ -2,7 +2,6 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/screens/folder_select_dialog.dart';
 
-
 class FileReservationScreen extends StatefulWidget {
   const FileReservationScreen({super.key});
 
@@ -14,6 +13,7 @@ class _FileReservationScreenState extends State<FileReservationScreen> {
   List<String> intervals = ['하루', '일주일', '한 달'];
   int selectedInterval = 0;
   int selectedHour = 12;
+  String? selectedMode;
 
   void _changeInterval(int direction) {
     setState(() {
@@ -27,16 +27,21 @@ class _FileReservationScreenState extends State<FileReservationScreen> {
     return Dialog(
       backgroundColor: const Color(0xFFE0E0E0),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
+      child: SizedBox(
+        width: 600,
+        height: 500,
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            // 상단 바
+            // 상단 바 (패딩 없이 가득)
             Container(
+              width: double.infinity,
               decoration: BoxDecoration(
                 color: const Color(0xFF37474F),
-                borderRadius: BorderRadius.circular(15),
+                borderRadius: const BorderRadius.only(
+                  topLeft: Radius.circular(15),
+                  topRight: Radius.circular(15),
+                ),
               ),
               padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
               child: Row(
@@ -57,191 +62,215 @@ class _FileReservationScreenState extends State<FileReservationScreen> {
                 ],
               ),
             ),
+
             const SizedBox(height: 20),
 
-            // 주기 설정, 파일 추가, 목적지 폴더 위치 추가 (왼쪽 레이아웃)
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // 왼쪽 부분 (주기 설정, 파일 추가, 목적지 폴더 위치 추가)
-                Expanded(
-                  flex: 2,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // 주기 설정
-                      const Align(
-                        alignment: Alignment.centerLeft,
-                        child: Text(
-                          '주기를 설정하세요',
-                          style: TextStyle(
-                            fontSize: 14,
-                            fontFamily: 'APPLESDGOTHICNEOR',
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 6),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
+            // 본문은 Padding으로 감싸기
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 40),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // 왼쪽 부분
+                    Expanded(
+                      flex: 2,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          IconButton(
-                            onPressed: () => _changeInterval(-1),
-                            icon: const Icon(Icons.arrow_left),
-                          ),
-                          Text(
-                            intervals[selectedInterval],
-                            style: const TextStyle(
-                              fontSize: 14,
-                              fontFamily: 'APPLESDGOTHICNEOR',
+                          const Align(
+                            alignment: Alignment.centerLeft,
+                            child: Text(
+                              '주기를 설정하세요',
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontFamily: 'APPLESDGOTHICNEOR',
+                              ),
                             ),
                           ),
-                          IconButton(
-                            onPressed: () => _changeInterval(1),
-                            icon: const Icon(Icons.arrow_right),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 10),
-
-                      // 시간 선택
-                      SizedBox(
-                        height: 100,
-                        child: CupertinoPicker(
-                          scrollController: FixedExtentScrollController(
-                            initialItem: selectedHour,
-                          ),
-                          itemExtent: 30,
-                          onSelectedItemChanged: (index) {
-                            setState(() {
-                              selectedHour = index;
-                            });
-                          },
-                          children: List.generate(24, (index) {
-                            return Center(
-                              child: Text(
-                                '${index.toString().padLeft(2, '0')}:00',
-                                style: const TextStyle(color: Colors.white),
+                          const SizedBox(height: 6),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              IconButton(
+                                onPressed: () => _changeInterval(-1),
+                                icon: const Icon(Icons.arrow_left),
                               ),
-                            );
-                          }),
-                        ),
-                      ),
-                      const SizedBox(height: 10),
-                      const Text('주기적으로 관리할 파일을 선택해 주세요'),
-                      const SizedBox(height: 6),
-                      GestureDetector(
-                        onTap: () async {
-                          // 폴더 선택 다이얼로그 띄우기
-                          String? selectedFolder = await showDialog<String>(
-                            context: context,
-                            builder: (BuildContext context) {
-                              return const FolderSelectDialog();
-                            },
-                          );
-                          if (selectedFolder != null) {
-                            // 선택된 폴더에 대한 처리
-                            print('선택된 폴더: $selectedFolder');
-                          }
-                        },
-                        child: Container(
-                          height: 40,
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(12),
+                              Text(
+                                intervals[selectedInterval],
+                                style: const TextStyle(
+                                  fontSize: 14,
+                                  fontFamily: 'APPLESDGOTHICNEOR',
+                                ),
+                              ),
+                              IconButton(
+                                onPressed: () => _changeInterval(1),
+                                icon: const Icon(Icons.arrow_right),
+                              ),
+                            ],
                           ),
-                          child: const Center(
-                            child: Icon(Icons.add, color: Colors.black),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      const Text('목적지 폴더를 선택하세요'),
-                      const SizedBox(height: 6),
-                      GestureDetector(
-                        onTap: () async {
-                          // 폴더 선택 다이얼로그 띄우기
-                          String? selectedFolder = await showDialog<String>(
-                            context: context,
-                            builder: (BuildContext context) {
-                              return const FolderSelectDialog();
-                            },
-                          );
+                          const SizedBox(height: 10),
 
-                          if (selectedFolder != null) {
-                            // 선택된 폴더에 대한 처리
-                            print('선택된 폴더: $selectedFolder');
-                          }
-                        },
-                        child: Container(
-                          height: 40,
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(12),
+                          // 시간 선택
+                          SizedBox(
+                            height: 100,
+                            child: Container(
+                              color: Colors.white, 
+                              child: CupertinoPicker(
+                                scrollController: FixedExtentScrollController(
+                                  initialItem: selectedHour,
+                                ),
+                                itemExtent: 30,
+                                onSelectedItemChanged: (index) {
+                                  setState(() {
+                                    selectedHour = index;
+                                  });
+                                },
+                                children: List.generate(24, (index) {
+                                  return Center(
+                                    child: Text(
+                                      '${index.toString().padLeft(2, '0')}:00',
+                                      style: const TextStyle(
+                                        color: Colors.blueGrey,
+                                      ),
+                                    ),
+                                  );
+                                }),
+                              ),
+                            ),
                           ),
-                          child: const Center(
-                            child: Icon(Icons.add, color: Colors.black),
+                          const SizedBox(height: 10),
+                          const Text(
+                            '주기적으로 관리할 폴더를 선택해 주세요',
+                            style: TextStyle(
+                              fontFamily: 'APPLESDGOTHICNEOR',
+                              fontSize: 14,
+                            ),
                           ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-
-                // 오른쪽 부분 (정리 기준, 예약하기 버튼)
-                Expanded(
-                  flex: 1,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const SizedBox(height: 16),
-                      const Align(
-                        alignment: Alignment.centerLeft,
-                        child: Text('정리 기준을 선택해 주세요!'),
-                      ),
-                      const SizedBox(height: 8),
-                      Wrap(
-                        spacing: 10,
-                        runSpacing: 8,
-                        children: [
-                          _buildTag('내용'),
-                          _buildTag('제목'),
-                          _buildTag('날짜'),
-                          _buildTag('유형'),
+                          const SizedBox(height: 6),
+                          GestureDetector(
+                            onTap: () async {
+                              String? selectedFolder = await showDialog<String>(
+                                context: context,
+                                builder: (BuildContext context) {
+                                  return const FolderSelectDialog();
+                                },
+                              );
+                              if (selectedFolder != null) {
+                                print('선택된 폴더: $selectedFolder');
+                              }
+                            },
+                            child: Container(
+                              height: 40,
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: const Center(
+                                child: Icon(Icons.add_circle, color: Color(0xFF37474F)),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          const Text(
+                            '목적지 폴더를 선택하세요',
+                            style: TextStyle(
+                              fontFamily: 'APPLESDGOTHICNEOR',
+                              fontSize: 14,
+                            ),
+                          ),
+                          const SizedBox(height: 6),
+                          GestureDetector(
+                            onTap: () async {
+                              String? selectedFolder = await showDialog<String>(
+                                context: context,
+                                builder: (BuildContext context) {
+                                  return const FolderSelectDialog();
+                                },
+                              );
+                              if (selectedFolder != null) {
+                                print('선택된 폴더: $selectedFolder');
+                              }
+                            },
+                            child: Container(
+                              height: 40,
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: const Center(
+                                child: Icon(Icons.drive_folder_upload, color: Color(0xFF37474F)),
+                              ),
+                            ),
+                          ),
                         ],
                       ),
-                      const SizedBox(height: 20),
+                    ),
 
-                      // 예약하기 버튼
-                      ElevatedButton(
-                        onPressed: () {
-                          print(
-                            '예약 설정됨: ${intervals[selectedInterval]}, ${selectedHour}시',
-                          );
-                          Navigator.pop(context);
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF37474F),
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 32,
-                            vertical: 12,
+                    const SizedBox(width: 20),
+
+                    // 오른쪽 부분
+                    Expanded(
+                      flex: 1,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const SizedBox(height: 16),
+                          const Align(
+                            alignment: Alignment.centerLeft,
+                            child: Text(
+                              '정리 기준을 선택해 주세요!',
+                              style: TextStyle(
+                                fontFamily: 'APPLESDGOTHICNEOR',
+                                fontSize: 14,
+                              ),
+                            ),
                           ),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10),
+                          const SizedBox(height: 8),
+                          Wrap(
+                            spacing: 10,
+                            runSpacing: 10,
+                            children: [
+                              _buildTag(context,'내용', 'content'),
+                              _buildTag(context,'제목', 'title'),
+                              _buildTag(context,'날짜', 'date'),
+                              _buildTag(context,'유형', 'type'),
+                            ],
                           ),
-                        ),
-                        child: const Text(
-                          '예약하기',
-                          style: TextStyle(
-                            fontSize: 16,
-                            color: Colors.white,
-                            fontFamily: 'APPLESDGOTHICNEOR',
+                          const SizedBox(height: 20),
+
+                          ElevatedButton(
+                            onPressed: () {
+                              print(
+                                '예약 설정됨: ${intervals[selectedInterval]}, ${selectedHour}시',
+                              );
+                              Navigator.pop(context);
+                            },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFF2E24E0),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 53,
+                                vertical: 20,
+                              ),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                            ),
+                            child: const Text(
+                              '예약하기',
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: Colors.white,
+                                fontFamily: 'APPLESDGOTHICNEOR',
+                              ),
+                            ),
                           ),
-                        ),
+                        ],
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
-              ],
+              ),
             ),
           ],
         ),
@@ -249,16 +278,35 @@ class _FileReservationScreenState extends State<FileReservationScreen> {
     );
   }
 
-  Widget _buildTag(String label) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
+  // Widget _buildTag(String label) {
+  //   return Container(
+  //     padding: const EdgeInsets.symmetric(horizontal: 25, vertical: 14),
+  //     decoration: BoxDecoration(
+  //       color: Colors.white,
+  //       borderRadius: BorderRadius.circular(13),
+  //     ),
+  //     child: Text(
+  //       label,
+  //       style: const TextStyle(fontSize: 14, fontFamily: 'APPLESDGOTHICNEOR'),
+  //     ),
+  //   );
+  // }
+
+  Widget _buildTag(BuildContext context, String label, String mode) {
+    return ElevatedButton(
+      style: ElevatedButton.styleFrom(
+        backgroundColor: selectedMode == mode ? Color(0xFF37474F) : Colors.white,
+        foregroundColor: selectedMode == mode ? Colors.white : Color(0xFF37474F),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       ),
+      onPressed: () {
+        setState(() {
+          selectedMode = mode;
+        });
+      },
       child: Text(
         label,
-        style: const TextStyle(fontSize: 14, fontFamily: 'APPLESDGOTHICNEOR'),
+        style: TextStyle(fontSize: 14, fontFamily: 'APPLESDGOTHICNEOR'),
       ),
     );
   }
