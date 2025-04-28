@@ -4,14 +4,15 @@
 class FileItem {
   final int id;
   final String name;
-  final String? filePath ;
+  final String? filePath;
   final String type;
   final int sizeInBytes;
   bool isSelected;
   final String? fileUrl;
   final String? fileThumbnail;
+  bool isFavorite;
   FileItem({
-    this.id=0,
+    this.id = 0,
     required this.name,
     this.filePath,
     required this.type,
@@ -19,6 +20,7 @@ class FileItem {
     this.isSelected = false,
     this.fileUrl,
     this.fileThumbnail,
+    this.isFavorite = false,
   });
 
   String get sizeFormatted {
@@ -36,6 +38,7 @@ class FileItem {
       sizeInBytes: json['sizeInBytes'],
       isSelected: json['isSelected'],
       fileUrl: json['fileUrl'],
+      isFavorite: json['isFavorite'] ?? false,
     );
   }
 }

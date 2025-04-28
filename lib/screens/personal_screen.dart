@@ -3,13 +3,15 @@ import 'package:desktop_drop/desktop_drop.dart';
 import 'dart:io';
 import 'dart:async';
 import 'package:flutter_application_1/api/file_uploader.dart';
+import 'package:flutter_application_1/api/folder_create.dart';
 import 'package:flutter_application_1/screens/file_sorty.dart';
 import 'package:flutter_application_1/screens/recent_file_screen.dart';
 import 'package:flutter_application_1/screens/trash_screen.dart';
 import 'package:flutter_application_1/screens/file_reservation_screen.dart';
+import 'package:flutter_application_1/screens/home_screen.dart';
 import 'package:flutter_application_1/models/file_item.dart';
 import 'package:flutter_application_1/models/folder_item.dart';
-import 'package:flutter_application_1/api/folder_create.dart';
+
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
@@ -31,6 +33,7 @@ class _PersonalScreenState extends State<PersonalScreen> {
   // 파일 선택 상태 저장용 리스트
   List<FileItem> selectedFiles = [];
   List<String> selectedFolderNames = [];
+  List<FileItem> importantFolders = []; // 중요 폴더 리스트
   String? selectedFolderName;
   int? startFolderId;
   int? destFolderId;
@@ -263,16 +266,46 @@ class _PersonalScreenState extends State<PersonalScreen> {
           title: Row(
             children: [
               const SizedBox(width: 22), //햄버거 버튼과의 간격
-              // 뒤로가기 버튼
               IconButton(
                 icon: const Icon(
-                  Icons.arrow_back,
-                  color: Color(0xff263238),
-                  size: 15,
+                  Icons.home, // 홈 모양 아이콘
+                  color: Color(0xff263238), // 짙은 남색 계열
+                  size: 24, // 아이콘 크기 (적당한 크기)
                 ),
                 onPressed: () {
-                  Navigator.pop(context);
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder:
+                          (context) => HomeScreen(username: widget.username),
+                    ),
+                  );
                 },
+              ),
+              const SizedBox(width: 22),
+              // 뒤로가기 버튼
+              IconButton(
+                icon: Icon(
+                  Icons.arrow_back,
+                  color:
+                      folderStack.isEmpty
+                          ? Colors.grey
+                          : Color(0xff263238), // 스택 비었으면 회색
+                  size: 15,
+                ),
+                onPressed:
+                    folderStack.isEmpty
+                        ? null // 스택 비었으면 비활성화
+                        : () {
+                          int previousFolderId =
+                              folderStack.removeLast(); // 마지막 폴더ID 꺼내기
+                          breadcrumbPath.removeLast(); // breadcrumb 경로도 하나 줄이기
+                          fetchFolderHierarchy(
+                            previousFolderId,
+                            userId!,
+                            pushToStack: false,
+                          );
+                        },
               ),
               const SizedBox(width: 8),
 
@@ -712,53 +745,73 @@ class _PersonalScreenState extends State<PersonalScreen> {
                                 }
                               });
                             },
-                            onSecondaryTap: () {
-                              showDialog(
-                                context: context,
-                                builder: (BuildContext context) {
-                                  return AlertDialog(
-                                    title: Text('폴더 삭제'),
-                                    content: Text('이 폴더를 휴지통으로 이동하시겠습니까?'),
-                                    actions: <Widget>[
-                                      TextButton(
-                                        onPressed: () {
-                                          // 폴더 삭제 로직
-                                          if (folderId != null) {
-                                            // 예: 폴더를 trashScreen에 추가하는 로직
-                                            deletedFolders.add(
-                                              FileItem(
-                                                name: folderName,
-                                                type: "폴더",
-                                                sizeInBytes: 0,
-                                              ),
-                                            );
-
-                                            // 폴더 삭제 후 현재 화면에서 삭제
-                                            setState(() {
-                                              folders.removeAt(
-                                                index,
-                                              ); // 현재 화면에서 폴더 제거
-                                            });
-                                          }
-                                          Navigator.of(
-                                            context,
-                                          ).pop(); // 다이얼로그 닫기
-                                        },
-                                        child: Text('삭제'),
-                                      ),
-                                      TextButton(
-                                        onPressed: () {
-                                          Navigator.of(
-                                            context,
-                                          ).pop(); // 다이얼로그 닫기
-                                        },
-                                        child: Text('취소'),
-                                      ),
-                                    ],
-                                  );
-                                },
+                            onSecondaryTap: () async {
+                              // 짧은 딜레이 후 팝업 표시 ( 드로어 닫힘 타이밍 맞추기 )
+                              await Future.delayed(
+                                const Duration(milliseconds: 100),
                               );
+
+                              final RenderBox overlay =
+                                  Overlay.of(context).context.findRenderObject()
+                                      as RenderBox;
+                              final RelativeRect position =
+                                  RelativeRect.fromLTRB(
+                                    100, // 좌측에서 거리
+                                    210, // 위에서 거리
+                                    overlay.size.width - 100,
+                                    0,
+                                  );
+
+                              final selected = await showMenu<String>(
+                                context: context,
+                                position: position,
+                                items: [
+                                  PopupMenuItem(
+                                    value: 'delete',
+                                    child: Text('삭제', style: TextStyle(fontSize: 12, fontFamily: 'APPLESDGOTHICNEOR'),),
+                                  ),
+                                  PopupMenuItem(
+                                    value: 'add_to_important',
+                                    child: Text('중요 폴더로 추가', style: TextStyle(fontSize: 12, fontFamily: 'APPLESDGOTHICNEOR')),
+                                  ),
+                                ],
+                                elevation: 8,
+                                color: Colors.white,
+                              ).then((selected) async {
+                                if (selected == 'delete') {
+                                  // 폴더 삭제 로직
+                                  if (folderId != null) {
+                                    // 폴더를 trashScreen에 추가하는 로직
+                                    deletedFolders.add(
+                                      FileItem(
+                                        name: folderName,
+                                        type: "폴더",
+                                        sizeInBytes: 0,
+                                      ),
+                                    );
+
+                                    // 폴더 삭제 후 현재 화면에서 삭제
+                                    setState(() {
+                                      folders.removeAt(index); // 현재 화면에서 폴더 제거
+                                    });
+                                  }
+                                } else if (selected == 'add_to_important') {
+                                  // 중요 폴더로 추가하는 로직
+                                  if (folderId != null) {
+                                    setState(() {
+                                      importantFolders.add(
+                                        FileItem(
+                                          name: folderName,
+                                          type: "폴더",
+                                          sizeInBytes: 0,
+                                        ),
+                                      );
+                                    });
+                                  }
+                                }
+                              });
                             },
+
                             child: Container(
                               padding: const EdgeInsets.symmetric(
                                 horizontal: 12,
@@ -981,20 +1034,48 @@ class _PersonalScreenState extends State<PersonalScreen> {
                                         '${file.type} • ${(file.sizeInBytes / 1024).toStringAsFixed(1)} KB',
                                         style: const TextStyle(fontSize: 11),
                                       ),
-                                      trailing: IconButton(
-                                        icon: const Icon(Icons.close, size: 16),
-                                        onPressed: () {
-                                          setState(() {
-                                            // 현재 파일을 trash_screen.dart 삭제된 파일 리스트로 옮기기
-                                            final deletedFile =
-                                                selectedFiles[index];
-                                            deletedFiles.add(deletedFile);
 
-                                            // 원래 리스트에서 제거
-                                            selectedFiles.removeAt(index);
-                                            fileNames.remove(file.name);
-                                          });
-                                        },
+                                      trailing: Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          // IconButton(
+                                          //   icon: Icon(
+                                          //     file.isFavorite
+                                          //         ? Icons.star
+                                          //         : Icons
+                                          //             .star_border, // 즐겨찾기 여부에 따라 아이콘 변경
+                                          //     size: 14,
+                                          //     color:
+                                          //         file.isFavorite
+                                          //             ? Colors.yellow
+                                          //             : Colors.grey, // 색칠 여부
+                                          //   ),
+                                          //   onPressed: () {
+                                          //     setState(() {
+                                          //       file.isFavorite =
+                                          //           !file.isFavorite; // 즐겨찾기 토글
+                                          //     });
+                                          //   },
+                                          // ),
+                                          IconButton(
+                                            icon: const Icon(
+                                              Icons.close,
+                                              size: 16,
+                                            ),
+                                            onPressed: () {
+                                              setState(() {
+                                                // 파일을 삭제 리스트로 옮기기
+                                                final deletedFile =
+                                                    selectedFiles[index];
+                                                deletedFiles.add(deletedFile);
+
+                                                // 원래 리스트에서 제거
+                                                selectedFiles.removeAt(index);
+                                                fileNames.remove(file.name);
+                                              });
+                                            },
+                                          ),
+                                        ],
                                       ),
                                       onTap: () {
                                         print(

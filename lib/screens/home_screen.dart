@@ -20,19 +20,9 @@ class HomeScreen extends StatelessWidget {
         backgroundColor: Colors.white,
         actions: [
           Padding(
-            padding: const EdgeInsets.only(right: 50), // 오른쪽에서 10px 떨어짐
+            padding: const EdgeInsets.only(right: 111), // 오른쪽에서 10px 떨어짐
             child: Row(
               children: [
-                IconButton(
-                  icon: const Icon(
-                    Icons.settings,
-                    color: Color(0xff263238),
-                  ), // 환경설정 아이콘
-                  onPressed: () {
-                    // 환경설정 페이지 이동 로직
-                    print('환경설정 눌림');
-                  },
-                ),
                 IconButton(
                   icon: const Icon(
                     Icons.history,
@@ -112,23 +102,7 @@ class HomeScreen extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 70), //사이 간격
-              ListTile(
-                leading: Icon(
-                  Icons.file_upload,
-                  size: 24, // 아이콘 크기 (기본값: 24)
-                  color: Colors.white,
-                ),
-                title: Text(
-                  '업로드',
-                  style: TextStyle(
-                    fontSize: 12, // 글씨 크기
-                    color: Colors.white, // 글씨 색
-                    fontFamily: 'APPLESDGOTHICNEOR', // 원하는 폰트 사용 가능
-                  ),
-                ),
-                tileColor: Color(0xFF455A64),
-                onTap: () => Navigator.pop(context),
-              ),
+
               ListTile(
                 leading: Icon(
                   Icons.star_border,
@@ -230,7 +204,8 @@ class HomeScreen extends StatelessWidget {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (context) => PersonalScreen(username: username),
+                        builder:
+                            (context) => PersonalScreen(username: username),
                       ),
                     );
                   },
