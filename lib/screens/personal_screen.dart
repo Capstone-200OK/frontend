@@ -3,11 +3,9 @@ import 'package:desktop_drop/desktop_drop.dart';
 import 'dart:io';
 import 'dart:async';
 import 'package:flutter_application_1/api/file_uploader.dart';
-import 'package:flutter_application_1/api/folder_create.dart';
 import 'package:flutter_application_1/screens/file_sorty.dart';
 import 'package:flutter_application_1/screens/recent_file_screen.dart';
 import 'package:flutter_application_1/screens/trash_screen.dart';
-import 'package:flutter_application_1/screens/file_reservation_screen.dart';
 import 'package:flutter_application_1/screens/home_screen.dart';
 import 'package:flutter_application_1/models/file_item.dart';
 import 'package:flutter_application_1/models/folder_item.dart';
@@ -36,8 +34,6 @@ class _PersonalScreenState extends State<PersonalScreen> {
   List<String> selectedFolderNames = [];
   List<FileItem> importantFolders = []; // 중요 폴더 리스트
   String? selectedFolderName;
-  int? startFolderId;
-  int? destFolderId;
   bool isStartSelected = false;
   bool isDestSelected = false;
   // 폴더 목록 상태 관리
@@ -437,7 +433,7 @@ class _PersonalScreenState extends State<PersonalScreen> {
                           MaterialPageRoute(
                             builder:
                                 (context) =>
-                                    RecentFileScreen(username: widget.username),
+                                    RecentFileScreen(username: widget.username, userId:1),
                           ),
                         );
                         print('최근 항목 눌림');

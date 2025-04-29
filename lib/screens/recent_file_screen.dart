@@ -6,14 +6,20 @@ import 'package:flutter_application_1/api/sorting_history_service.dart';
 
 class RecentFileScreen extends StatefulWidget {
   final String username;
+  final userId;
 
-  const RecentFileScreen({Key? key, required this.username}) : super(key: key);
+  const RecentFileScreen({
+    Key? key,
+    required this.username,
+    required this.userId,
+  }) : super(key: key);
 
   @override
   State<RecentFileScreen> createState() => _RecentFileScreenState();
 }
 
 class _RecentFileScreenState extends State<RecentFileScreen> {
+  int? latestSortingId;
   DateTime? latestDate;
   List<DateTime> historyDates = [];
   bool isLoading = true;
@@ -25,30 +31,49 @@ class _RecentFileScreenState extends State<RecentFileScreen> {
   @override
   void initState() {
     super.initState();
-    fetchSortyHistory();
+    fetchSortyHistory(); // 2️⃣. initState에서 호출
   }
 
-  Future<void> fetchSortyHistory() async {
-    // 🔁 예시: 실제 API 호출로 바꿔야 함
-    await Future.delayed(const Duration(milliseconds: 800)); // mock delay
+ Future<void> fetchSortyHistory() async {
+  try {
+    // (1) userId는 로그인 정보에서 받아야 함. 일단 임시 1
+    final userId = 1; // 실제로는 Provider 같은 데서 받아와야 함
 
-    // 예시 response -> 실제 API 결과로 치환 필요
-    final mockDates = [
-      DateTime(2025, 4, 20, 12, 1),
-      DateTime(2025, 4, 20, 12, 1),
-      DateTime(2025, 4, 20, 12, 1),
-      DateTime(2025, 4, 20, 12, 1),
-      DateTime(2025, 4, 23),
-    ];
+    // (2) 가장 최근 sortingId 가져오기
+    latestSortingId = await SortingHistoryService.fetchLatestSortingHistoryId(userId);
 
-    final histories = await SortingHistoryService.fetchSortingHistory(55);
+    if (latestSortingId != null) {
+      print('✅ 최신 sortingId: $latestSortingId');
 
+      // (3) 최신 sortingId로 정리 기록 가져오기
+      final histories = await SortingHistoryService.fetchSortingHistory(latestSortingId!);
+
+      // (4) 여기서 날짜 계산도 실제 API 응답 기반으로
+      final mockDates = [
+        DateTime(2025, 4, 20, 12, 1),
+        DateTime(2025, 4, 21, 15, 30),
+        DateTime(2025, 4, 22, 9, 15),
+        DateTime(2025, 4, 23, 18, 45),
+      ]; // 지금은 mock인데 histories 안에 createdAt 같은 거 있으면 그걸 써
+
+      setState(() {
+        historyDates = mockDates;
+        latestDate = mockDates.last;
+        isLoading = false;
+      });
+    } else {
+      print('❌ 최신 sortingId 가져오기 실패');
+      setState(() {
+        isLoading = false;
+      });
+    }
+  } catch (e) {
+    print('에러 발생: $e');
     setState(() {
-      historyDates = mockDates;
-      latestDate = mockDates.last;
       isLoading = false;
     });
   }
+}
 
   String formatDate(DateTime dt) {
     return "${dt.year}-${dt.month.toString().padLeft(2, '0')}-${dt.day.toString().padLeft(2, '0')} ${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}";
@@ -132,7 +157,7 @@ class _RecentFileScreenState extends State<RecentFileScreen> {
                                   print('텍스트 버튼 클릭됨');
                                   final histories =
                                       await SortingHistoryService.fetchSortingHistory(
-                                        55,
+                                        latestSortingId!,
                                       ); // 예시 ID
 
                                   if (histories.isNotEmpty) {
@@ -198,7 +223,7 @@ class _RecentFileScreenState extends State<RecentFileScreen> {
 
                                   final success =
                                       await SortingRollbackService.rollbackSorting(
-                                        45,
+                                        latestSortingId!,
                                       ); // 임시 sortingId = 45
 
                                   if (success) {
@@ -245,7 +270,7 @@ class _RecentFileScreenState extends State<RecentFileScreen> {
                             "과거 정리 기억",
                             style: TextStyle(
                               fontSize: 14,
-                              
+
                               fontFamily: 'APPLESDGOTHICNEOEB',
                             ),
                           ),
@@ -253,15 +278,14 @@ class _RecentFileScreenState extends State<RecentFileScreen> {
                       ),
                     ),
                     const SizedBox(height: 5),
-                    
+
                     Expanded(
                       child: SingleChildScrollView(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             const SizedBox(height: 8),
-
-                            // 과거 정리 날짜 리스트
+                            //과거 날짜 정리 기록
                             SizedBox(
                               height: 130,
                               child: ListView.builder(
@@ -282,9 +306,26 @@ class _RecentFileScreenState extends State<RecentFileScreen> {
                                       decoration: const BoxDecoration(
                                         color: Color(0xFFECECEC),
                                       ),
-                                      child: Text(
-                                        formatDate(date),
-                                        style: const TextStyle(fontSize: 12, fontFamily: 'APPLESDGOTHICNEOR'),
+                                      child: TextButton(
+                                        onPressed: () {
+                                          print('날짜 ${formatDate(date)} 클릭됨!');
+                                          // TODO: 여기다가 클릭했을 때 원하는 기능 추가하면 됨
+                                          // 예를 들면: 해당 날짜에 맞는 sorting 기록 보기 등
+                                        },
+                                        style: TextButton.styleFrom(
+                                          padding:
+                                              EdgeInsets.zero, // 텍스트 주변에 여백 제거
+                                          alignment:
+                                              Alignment.centerLeft, // 왼쪽 정렬
+                                        ),
+                                        child: Text(
+                                          formatDate(date),
+                                          style: const TextStyle(
+                                            fontSize: 12,
+                                            fontFamily: 'APPLESDGOTHICNEOR',
+                                            color: Colors.black, // 버튼 안 텍스트 색
+                                          ),
+                                        ),
                                       ),
                                     ),
                                   );
@@ -293,49 +334,6 @@ class _RecentFileScreenState extends State<RecentFileScreen> {
                             ),
 
                             const SizedBox(height: 24), // 간격
-                            // 🔽 폴더 리스트 보여주는 박스
-                            const Padding(
-                              padding: EdgeInsets.symmetric(horizontal: 110.0),
-                              child: Text(
-                                "폴더 목록",
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.bold,
-                                  fontFamily: 'APPLESDGOTHICNEOR',
-                                ),
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-
-                            SizedBox(
-                              height: 130, // 높이 제한
-                              child: ListView.builder(
-                                itemCount: folders.length,
-                                itemBuilder: (context, index) {
-                                  final folderName = folders[index];
-                                  return Padding(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 105.0,
-                                      vertical: 3,
-                                    ),
-                                    child: Container(
-                                      height: 40,
-                                      alignment: Alignment.centerLeft,
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 16,
-                                      ),
-                                      decoration: const BoxDecoration(
-                                        color: Color(0xFFECECEC),
-                                      ),
-                                      child: Text(
-                                        folderName,
-                                        style: const TextStyle(fontSize: 12),
-                                      ),
-                                    ),
-                                  );
-                                },
-                              ),
-                            ),
                           ],
                         ),
                       ),
