@@ -45,7 +45,7 @@ class _PersonalScreenState extends State<PersonalScreen> {
   final GlobalKey _previewKey = GlobalKey();
   OverlayEntry? _previewOverlay;
   Timer? _hoverTimer;
-
+  bool _isUploading = false;
   Set<String> fileNames = {}; // 중복 방지를 위한 파일 이름 저장용 집합
   late String url;
   late FileUploader uploader;
@@ -137,6 +137,40 @@ class _PersonalScreenState extends State<PersonalScreen> {
       });
     } else {
       print('폴더 계층 불러오기 실패: ${response.statusCode}');
+    }
+  }
+  Future<void> refreshCurrentFolderFiles() async {
+    final response = await http.get(
+      Uri.parse('$url/folder/hierarchy/$currentFolderId/$userId'),
+      headers: {"Content-Type": "application/json"},
+    );
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      List<Map<String, dynamic>> folderList = List<Map<String, dynamic>>.from(data['subFolders']);
+
+      folderNameToId = {for (var f in folderList) f['name']: f['id']};
+      folderIdToName.addAll({for (var f in folderList) f['id']: f['name']});
+
+      setState(() {
+        folders = folderList.map((f) => f['name'] as String).toList();
+
+        selectedFiles = List<FileItem>.from(
+          data['files'].map(
+            (f) => FileItem(
+              name: f['name'],
+              type: f['fileType'],
+              sizeInBytes: f['size'],
+              fileUrl: f['fileUrl'],
+              fileThumbnail: f['fileThumbUrl'],
+            ),
+          ),
+        );
+
+        fileNames = selectedFiles.map((f) => f.name).toSet();
+      });
+    } else {
+      print('파일 새로고침 실패: ${response.statusCode}');
     }
   }
 
@@ -926,6 +960,10 @@ class _PersonalScreenState extends State<PersonalScreen> {
                     // DropTarget (파일 드래그 앤 드랍)
                     child: DropTarget(
                       onDragDone: (detail) async {
+                        if (_isUploading) return;
+                         _isUploading = true;
+                         
+                        try {
                         List<File> droppedFiles =
                             detail.files.map((f) => File(f.path)).toList();
 
@@ -958,7 +996,6 @@ class _PersonalScreenState extends State<PersonalScreen> {
                           selectedFiles.addAll(newFileItems);
                         });
 
-                        try {
                           final currentFolderPath = getCurrentFolderPath();
                           // 업로드 호출
                           print('📦 folderIdToName: $folderIdToName');
@@ -971,12 +1008,12 @@ class _PersonalScreenState extends State<PersonalScreen> {
                             folderId: currentFolderId,
                             currentFolderPath: currentFolderPath,
                           );
-                          await fetchFolderHierarchy(currentFolderId, userId!);
-                          setState(() {
-                            //파일 추가 후 selectedFiles 초기화화
-                            selectedFiles.clear();
-                            fileNames.clear();
-                          });
+                          await refreshCurrentFolderFiles();
+                          // setState(() {
+                          //   //파일 추가 후 selectedFiles 초기화화
+                          //   selectedFiles.clear();
+                          //   fileNames.clear();
+                          // });
 
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(
@@ -991,6 +1028,8 @@ class _PersonalScreenState extends State<PersonalScreen> {
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(content: Text('파일 업로드 실패: $e')),
                           );
+                        }finally {
+                          _isUploading = false;
                         }
                       },
                       onDragEntered: (details) {

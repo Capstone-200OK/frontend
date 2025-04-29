@@ -3,6 +3,8 @@ import 'package:flutter_application_1/models/folder_item.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'package:provider/provider.dart';
+import 'package:flutter_application_1/providers/user_provider.dart';
 
 class FolderSelectDialog extends StatefulWidget {
   const FolderSelectDialog({Key? key}) : super(key: key);
@@ -15,19 +17,23 @@ class _FolderSelectDialogState extends State<FolderSelectDialog> {
   List<FolderItem> currentFolders = [];
   List<int> folderStack = [];
   FolderItem? selected;
-
+  late int? userId;
   late String url;
 
   @override
   void initState() {
     super.initState();
     url = dotenv.get("BaseUrl");
-    loadFolders(1); // 루트 폴더 ID
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      userId = Provider.of<UserProvider>(context, listen: false).userId;
+      loadFolders(1); // ✅ userId 가져온 후 폴더 로딩
+    });
+    
   }
 
   Future<void> loadFolders(int folderId) async {
     final response = await http.get(
-      Uri.parse('$url/folder/hierarchy/$folderId'),
+      Uri.parse('$url/folder/hierarchy/$folderId/$userId'),
       headers: {"Content-Type": "application/json"},
     );
 
