@@ -233,23 +233,34 @@ class _PersonalScreenState extends State<PersonalScreen> {
       overlay.size.width - dx - renderBox.size.width,
       overlay.size.height - dy,
     );
-
     final selected = await showMenu<String>(
       context: context,
       position: position,
       items: [
         PopupMenuItem(
           value: 'delete',
-          child: Text(
-            '삭제',
-            style: TextStyle(fontSize: 12, fontFamily: 'APPLESDGOTHICNEOR'),
+          child: Row(
+            children: [
+              Icon(Icons.delete, size: 16, color: Colors.black54),
+              SizedBox(width: 8),
+              Text(
+                '삭제',
+                style: TextStyle(fontSize: 12, fontFamily: 'APPLESDGOTHICNEOR'),
+              ),
+            ],
           ),
         ),
         PopupMenuItem(
           value: 'add_to_important',
-          child: Text(
-            '중요 폴더로 추가',
-            style: TextStyle(fontSize: 12, fontFamily: 'APPLESDGOTHICNEOR'),
+          child: Row(
+            children: [
+              Icon(Icons.star, size: 16, color: Colors.black54),
+              SizedBox(width: 8),
+              Text(
+                '중요 폴더로 추가',
+                style: TextStyle(fontSize: 12, fontFamily: 'APPLESDGOTHICNEOR'),
+              ),
+            ],
           ),
         ),
       ],
