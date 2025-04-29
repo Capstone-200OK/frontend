@@ -2,6 +2,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/screens/folder_select_dialog.dart';
 import 'package:flutter_application_1/api/file_reservation_service.dart';
+import 'package:flutter_application_1/models/folder_item.dart';
 
 class FileReservationScreen extends StatefulWidget {
   const FileReservationScreen({super.key});
@@ -11,6 +12,8 @@ class FileReservationScreen extends StatefulWidget {
 }
 
 class _FileReservationScreenState extends State<FileReservationScreen> {
+  FolderItem? selectedPreviousFolder;
+  FolderItem? selectedNewFolder;
   List<String> intervals = ['하루', '일주일', '한 달'];
   int selectedInterval = 0;
   int selectedHour = 12;
@@ -151,14 +154,19 @@ class _FileReservationScreenState extends State<FileReservationScreen> {
                           const SizedBox(height: 6),
                           GestureDetector(
                             onTap: () async {
-                              String? selectedFolder = await showDialog<String>(
-                                context: context,
-                                builder: (BuildContext context) {
-                                  return const FolderSelectDialog();
-                                },
-                              );
-                              if (selectedFolder != null) {
-                                print('선택된 폴더: $selectedFolder');
+                              // 출발 폴더 선택
+                              selectedPreviousFolder =
+                                  await showDialog<FolderItem>(
+                                    context: context,
+                                    builder: (BuildContext context) {
+                                      return const FolderSelectDialog();
+                                    },
+                                  );
+
+                              if (selectedPreviousFolder != null) {
+                                print(
+                                  '출발 폴더 선택됨: ${selectedPreviousFolder!.name}',
+                                );
                               }
                             },
                             child: Container(
@@ -186,14 +194,16 @@ class _FileReservationScreenState extends State<FileReservationScreen> {
                           const SizedBox(height: 6),
                           GestureDetector(
                             onTap: () async {
-                              String? selectedFolder = await showDialog<String>(
+                              // 목적지 폴더 선택
+                              selectedNewFolder = await showDialog<FolderItem>(
                                 context: context,
                                 builder: (BuildContext context) {
                                   return const FolderSelectDialog();
                                 },
                               );
-                              if (selectedFolder != null) {
-                                print('선택된 폴더: $selectedFolder');
+
+                              if (selectedNewFolder != null) {
+                                print('목적지 폴더 선택됨: ${selectedNewFolder!.name}');
                               }
                             },
                             child: Container(
@@ -248,18 +258,24 @@ class _FileReservationScreenState extends State<FileReservationScreen> {
 
                           ElevatedButton(
                             onPressed: () async {
-                              print(
-                                '예약 설정됨: ${intervals[selectedInterval]}, ${selectedHour}시',
-                              );
+                              if (selectedPreviousFolder == null ||
+                                  selectedNewFolder == null) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text('폴더를 모두 선택해주세요'),
+                                  ),
+                                );
+                                return;
+                              }
 
                               bool success =
                                   await FileReservationService.addReservation(
-                                    userId: 1, // 👉 실제 로그인한 userId로 교체해야 해
-                                    previousFolderId: 100, // 👉 선택한 출발 폴더 ID
-                                    newFolderId: 200, // 👉 선택한 목적지 폴더 ID
+                                    userId: 1,
+                                    previousFolderId:
+                                        selectedPreviousFolder!.id, // 여기 ✅
+                                    newFolderId: selectedNewFolder!.id, // 여기 ✅
                                     criteria:
-                                        selectedMode?.toUpperCase() ??
-                                        'TYPE', // 선택한 기준 (예: 'TYPE', 'TITLE')
+                                        selectedMode?.toUpperCase() ?? 'TYPE',
                                     interval:
                                         intervals[selectedInterval] == '하루'
                                             ? 'DAILY'
@@ -298,8 +314,8 @@ class _FileReservationScreenState extends State<FileReservationScreen> {
                                   ),
                                 );
                               }
-                              Navigator.pop(context);
                             },
+
                             style: ElevatedButton.styleFrom(
                               backgroundColor: const Color(0xFF2E24E0),
                               padding: const EdgeInsets.symmetric(
