@@ -6,6 +6,22 @@ import 'dart:convert';
 import 'package:provider/provider.dart';
 import 'package:flutter_application_1/providers/user_provider.dart';
 
+class FolderSelectableItem {
+  final int id;
+  final String name;
+  final int? parentId;
+  final String folderType;
+  List<FolderSelectableItem> children = [];
+  bool isExpanded = false;
+
+  FolderSelectableItem({
+    required this.id,
+    required this.name,
+    required this.parentId,
+    required this.folderType,
+  });
+}
+
 class FolderSelectDialog extends StatefulWidget {
   const FolderSelectDialog({Key? key}) : super(key: key);
 
@@ -14,9 +30,8 @@ class FolderSelectDialog extends StatefulWidget {
 }
 
 class _FolderSelectDialogState extends State<FolderSelectDialog> {
-  List<FolderItem> currentFolders = [];
-  List<int> folderStack = [];
-  FolderItem? selected;
+  List<FolderSelectableItem> folderTree = [];
+  FolderSelectableItem? selected;
   late int? userId;
   late String url;
 
@@ -26,99 +41,80 @@ class _FolderSelectDialogState extends State<FolderSelectDialog> {
     url = dotenv.get("BaseUrl");
     WidgetsBinding.instance.addPostFrameCallback((_) {
       userId = Provider.of<UserProvider>(context, listen: false).userId;
-      loadFolders(1); // ✅ userId 가져온 후 폴더 로딩
+      fetchSelectableFolders();
     });
-    
   }
 
-  Future<void> loadFolders(int folderId) async {
+  Future<void> fetchSelectableFolders() async {
     final response = await http.get(
-      Uri.parse('$url/folder/hierarchy/$folderId/$userId'),
+      Uri.parse('$url/folder/selectable/$userId'),
       headers: {"Content-Type": "application/json"},
     );
 
     if (response.statusCode == 200) {
-      final data = jsonDecode(response.body);
-      final subFolders = List<Map<String, dynamic>>.from(data['subFolders']);
-      setState(() {
-        currentFolders = subFolders
-            .map((f) => FolderItem(id: f['id'], name: f['name']))
-            .toList();
+      final data = jsonDecode(response.body) as List;
+      List<FolderSelectableItem> flatList = data.map((item) => FolderSelectableItem(
+        id: item['id'],
+        name: item['name'],
+        parentId: item['parentId'],
+        folderType: item['folderType'],
+      )).toList();
 
-        if (folderStack.isEmpty || folderStack.last != folderId) {
-          folderStack.add(folderId);
-        }
+      setState(() {
+        folderTree = buildFolderTree(flatList);
       });
+    } else {
+      throw Exception('폴더 불러오기 실패');
     }
+  }
+
+  List<FolderSelectableItem> buildFolderTree(List<FolderSelectableItem> flatList) {
+    Map<int, FolderSelectableItem> map = { for (var item in flatList) item.id : item };
+    List<FolderSelectableItem> roots = [];
+
+    for (var item in flatList) {
+      if (item.parentId == null) {
+        roots.add(item);
+      } else {
+        map[item.parentId!]?.children.add(item);
+      }
+    }
+    return roots;
+  }
+
+  Widget buildFolderNode(FolderSelectableItem folder) {
+    return ExpansionTile(
+      title: Row(
+        children: [
+          Checkbox(
+            value: selected?.id == folder.id,
+            onChanged: (_) => setState(() => selected = folder),
+          ),
+          Expanded(
+            child: Text(
+              folder.name,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+        ],
+      ),
+      initiallyExpanded: folder.isExpanded,
+      children: folder.children.map(buildFolderNode).toList(),
+      onExpansionChanged: (expanded) {
+        setState(() => folder.isExpanded = expanded);
+      },
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: Row(
-        children: [
-          if (folderStack.length > 1)
-            IconButton(
-              icon: const Icon(Icons.arrow_back),
-              onPressed: () {
-                if (folderStack.length > 1) {
-                  folderStack.removeLast();
-                  loadFolders(folderStack.last);
-                }
-              },
-            ),
-          const Text("폴더 선택"),
-        ],
-      ),
+      title: const Text("폴더 선택"),
       content: SizedBox(
         width: 400,
-        height: 300,
-        child: GridView.builder(
-          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 2,
-            childAspectRatio: 2.5,
-            crossAxisSpacing: 12,
-            mainAxisSpacing: 12,
-          ),
-          itemCount: currentFolders.length,
-          itemBuilder: (context, index) {
-            final folder = currentFolders[index];
-            final isSelected = selected?.id == folder.id;
-
-            return GestureDetector(
-              onTap: () => setState(() => selected = folder),
-              child: Container(
-                decoration: BoxDecoration(
-                  color: isSelected ? Colors.deepPurple.shade100 : Colors.white,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                    color: isSelected ? Colors.deepPurple : Colors.grey.shade400,
-                    width: 1.5,
-                  ),
-                ),
-                child: Row(
-                  children: [
-                    Checkbox(
-                      value: isSelected,
-                      onChanged: (_) => setState(() => selected = folder),
-                    ),
-                    const Icon(Icons.folder, color: Colors.black87),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        folder.name,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                    IconButton(
-                      icon: const Icon(Icons.chevron_right),
-                      onPressed: () => loadFolders(folder.id),
-                    ),
-                  ],
-                ),
-              ),
-            );
-          },
+        height: 400,
+        child: ListView(
+          children: folderTree.map(buildFolderNode).toList(),
         ),
       ),
       actions: [
