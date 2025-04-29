@@ -11,6 +11,7 @@ import 'package:flutter_application_1/screens/file_reservation_screen.dart';
 import 'package:flutter_application_1/screens/home_screen.dart';
 import 'package:flutter_application_1/models/file_item.dart';
 import 'package:flutter_application_1/models/folder_item.dart';
+import 'package:flutter_application_1/components/navigation_drawer.dart';
 
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'dart:convert';
@@ -57,6 +58,7 @@ class _PersonalScreenState extends State<PersonalScreen> {
   Map<int, String> folderIdToName = {};
   late String s3BaseUrl;
   late int? userId;
+
   @override
   void initState() {
     super.initState();
@@ -138,6 +140,7 @@ class _PersonalScreenState extends State<PersonalScreen> {
       print('폴더 계층 불러오기 실패: ${response.statusCode}');
     }
   }
+
   Future<void> refreshCurrentFolderFiles() async {
     final response = await http.get(
       Uri.parse('$url/folder/hierarchy/$currentFolderId/$userId'),
@@ -146,7 +149,9 @@ class _PersonalScreenState extends State<PersonalScreen> {
 
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);
-      List<Map<String, dynamic>> folderList = List<Map<String, dynamic>>.from(data['subFolders']);
+      List<Map<String, dynamic>> folderList = List<Map<String, dynamic>>.from(
+        data['subFolders'],
+      );
 
       folderNameToId = {for (var f in folderList) f['name']: f['id']};
       folderIdToName.addAll({for (var f in folderList) f['id']: f['name']});
@@ -203,6 +208,67 @@ class _PersonalScreenState extends State<PersonalScreen> {
     );
 
     overlay.insert(_previewOverlay!);
+  }
+
+  Future<void> showContextMenu({
+    required BuildContext context,
+    required GlobalKey key,
+    required Function(String?) onSelected,
+  }) async {
+    await Future.delayed(const Duration(milliseconds: 50));
+
+    final RenderBox? renderBox =
+        key.currentContext?.findRenderObject() as RenderBox?;
+    if (renderBox == null) return;
+
+    final overlay = Overlay.of(context).context.findRenderObject() as RenderBox;
+    final offset = renderBox.localToGlobal(Offset.zero);
+
+    final double dx = offset.dx + 80; // 오른쪽으로 10px
+    final double dy = offset.dy + 60; // 아래로 5px
+
+    final RelativeRect position = RelativeRect.fromLTRB(
+      dx,
+      dy,
+      overlay.size.width - dx - renderBox.size.width,
+      overlay.size.height - dy,
+    );
+    final selected = await showMenu<String>(
+      context: context,
+      position: position,
+      items: [
+        PopupMenuItem(
+          value: 'delete',
+          child: Row(
+            children: [
+              Icon(Icons.delete, size: 16, color: Colors.black54),
+              SizedBox(width: 8),
+              Text(
+                '삭제',
+                style: TextStyle(fontSize: 12, fontFamily: 'APPLESDGOTHICNEOR'),
+              ),
+            ],
+          ),
+        ),
+        PopupMenuItem(
+          value: 'add_to_important',
+          child: Row(
+            children: [
+              Icon(Icons.star, size: 16, color: Colors.black54),
+              SizedBox(width: 8),
+              Text(
+                '중요 폴더로 추가',
+                style: TextStyle(fontSize: 12, fontFamily: 'APPLESDGOTHICNEOR'),
+              ),
+            ],
+          ),
+        ),
+      ],
+      elevation: 8,
+      color: Colors.white,
+    );
+
+    onSelected(selected);
   }
 
   Widget _buildPreviewContent(String url, String type, {String? thumbnailUrl}) {
@@ -370,7 +436,8 @@ class _PersonalScreenState extends State<PersonalScreen> {
                           context,
                           MaterialPageRoute(
                             builder:
-                                (context) => RecentFileScreen(username: "현서"),
+                                (context) =>
+                                    RecentFileScreen(username: widget.username),
                           ),
                         );
                         print('최근 항목 눌림');
@@ -393,245 +460,15 @@ class _PersonalScreenState extends State<PersonalScreen> {
         ),
       ),
 
-      drawer: Drawer(
-        shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.zero, // 모서리 각지게
-        ),
-        child: Container(
-          color: Color(0xFF455A64),
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 40),
-          child: ListView(
-            padding: EdgeInsets.zero,
-            children: [
-              Container(
-                color: Color(0xFF455A64),
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 20,
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        CircleAvatar(
-                          radius: 18, // 원 크기
-                          backgroundColor: Colors.white,
-                          child: Icon(
-                            Icons.person,
-                            size: 20,
-                            color: Color(0xFF455A64),
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Text(
-                          widget.username,
-                          style: const TextStyle(
-                            fontSize: 18,
-                            color: Colors.white,
-                            fontFamily: 'APPLESDGOTHICNEOEB',
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 6),
-                    Text(
-                      '${widget.username}@example.com',
-                      style: const TextStyle(
-                        fontSize: 13,
-                        color: Colors.white70,
-                        fontFamily: 'APPLESDGOTHICNEOR',
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 70), //사이 간격
-              ListTile(
-                leading: Icon(
-                  Icons.file_upload,
-                  size: 24, // 아이콘 크기 (기본값: 24)
-                  color: Colors.white,
-                ),
-                title: Text(
-                  '업로드',
-                  style: TextStyle(
-                    fontSize: 12, // 글씨 크기
-                    color: Colors.white, // 글씨 색
-                    fontFamily: 'APPLESDGOTHICNEOR', // 원하는 폰트 사용 가능
-                  ),
-                ),
-                tileColor: Color(0xFF455A64),
-                onTap: () async {
-                  // 짧은 딜레이 후 팝업 표시 ( 드로어 닫힘 타이밍 맞추기 )
-                  await Future.delayed(const Duration(milliseconds: 100));
-
-                  final RenderBox overlay =
-                      Overlay.of(context).context.findRenderObject()
-                          as RenderBox;
-                  final RelativeRect position = RelativeRect.fromLTRB(
-                    100, // 좌측에서 거리
-                    210, // 위에서 거리
-                    overlay.size.width - 100,
-                    0,
-                  );
-                  final selected = await showMenu<String>(
-                    context: context,
-                    position: position,
-                    items: [
-                      const PopupMenuItem(
-                        value: 'new_folder',
-                        child: SizedBox(
-                          width: 150, // ← 여기 크기로 팝업창이 맞춰짐
-                          child: Text(
-                            '새 폴더',
-                            style: TextStyle(
-                              fontSize: 12, // 폰트 크기 조정
-                              fontFamily: 'APPLESDGOTHICNEOR', // 원하는 폰트 패밀리로 변경
-                              color: Colors.black, // 글씨 색상
-                            ),
-                          ),
-                        ),
-                      ),
-                      const PopupMenuItem(
-                        value: 'upload_file',
-                        child: Text(
-                          '파일 업로드',
-                          style: TextStyle(
-                            fontSize: 12, // 폰트 크기 조정
-                            fontFamily: 'APPLESDGOTHICNEOR', // 원하는 폰트 패밀리로 변경
-                            color: Colors.black, // 글씨 색상
-                          ),
-                        ),
-                      ),
-                      const PopupMenuItem(
-                        value: 'upload_folder',
-                        child: Text(
-                          '폴더 업로드',
-                          style: TextStyle(
-                            fontSize: 12, // 폰트 크기 조정
-                            fontFamily: 'APPLESDGOTHICNEOR', // 원하는 폰트 패밀리로 변경
-                            color: Colors.black, // 글씨 색상
-                          ),
-                        ),
-                      ),
-                    ],
-                    elevation: 8, // 그림자 깊이 설정
-                    color: Colors.white, // 위젯 배경 흰색
-                  ).then((selected) async {
-                    // folder_create를 불러와서 폴더 생성하는 팝업창
-                    if (selected == 'new_folder') {
-                      final result = await showDialog(
-                        context: context,
-                        builder: (BuildContext context) {
-                          return Dialog(
-                            child: Container(
-                              width: 350, // 너비 설정
-                              height: 280, // 높이 설정
-                              color: Colors.white,
-                              child: FolderCreateScreen(
-                                onCreateFolder: (folderName) {
-                                  setState(() {
-                                    folders.add(folderName);
-                                  });
-                                  Navigator.of(context).pop();
-                                },
-                              ), // 실제 내용
-                            ),
-                          );
-                        },
-                      );
-                      if (result == true) {
-                        print('새 폴더 생성 완료');
-                      }
-                    }
-                    // 다른 항목은 여기에 맞게 처리
-                  });
-                },
-              ),
-
-              ListTile(
-                leading: Icon(
-                  Icons.star_border,
-                  size: 24, // 아이콘 크기 (기본값: 24)
-                  color: Colors.white,
-                ),
-                title: Text(
-                  '중요문서함',
-                  style: TextStyle(
-                    fontSize: 12, // 글씨 크기
-                    color: Colors.white, // 글씨 색
-                    fontFamily: 'APPLESDGOTHICNEOR', // 원하는 폰트 사용 가능
-                  ),
-                ),
-              ),
-              ListTile(
-                leading: Icon(
-                  Icons.delete,
-                  size: 24, // 아이콘 크기 (기본값: 24)
-                  color: Colors.white,
-                ),
-                title: Text(
-                  '휴지통',
-                  style: TextStyle(
-                    fontSize: 12, // 글씨 크기
-                    color: Colors.white, // 글씨 색
-                    fontFamily: 'APPLESDGOTHICNEOR', // 원하는 폰트 사용 가능
-                  ),
-                ),
-                tileColor: Color(0xFF455A64),
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder:
-                          (context) => TrashScreen(username: widget.username),
-                    ),
-                  );
-                },
-              ),
-              ListTile(
-                leading: Icon(Icons.check, size: 24, color: Colors.white),
-                title: Text(
-                  '예약하기',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.white,
-                    fontFamily: 'APPLESDGOTHICNEOR',
-                  ),
-                ),
-                tileColor: Color(0xFF455A64),
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder:
-                          (context) => FileReservationScreen(), // ⬅️ 이동할 화면
-                    ),
-                  );
-                },
-              ),
-
-              ListTile(
-                leading: Icon(
-                  Icons.sd_storage,
-                  size: 24, // 아이콘 크기 (기본값: 24)
-                  color: Colors.white,
-                ),
-                title: Text(
-                  '저장용량',
-                  style: TextStyle(
-                    fontSize: 12, // 글씨 크기
-                    color: Colors.white, // 글씨 색
-                    fontFamily: 'APPLESDGOTHICNEOR', // 원하는 폰트 사용 가능
-                  ),
-                ),
-                tileColor: Color(0xFF455A64),
-                onTap: () => Navigator.pop(context),
-              ),
-            ],
-          ),
-        ),
+      drawer: NavigationDrawerWidget(
+        username: widget.username,
+        onFolderCreated: (folderName) {
+          setState(() {
+            folders.add(folderName);
+          });
+        },
+        folders: folders,
+        scaffoldContext: context,
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -764,12 +601,13 @@ class _PersonalScreenState extends State<PersonalScreen> {
                         itemBuilder: (context, index) {
                           final folderName = folders[index];
                           final folderId = folderNameToId[folderName];
-
+                          final itemKey = GlobalKey();
                           final isSelected = selectedFolderNames.contains(
                             folderName,
                           );
 
                           return GestureDetector(
+                            key: itemKey,
                             onTap: () {
                               setState(() {
                                 if (selectedFolderNames.contains(folderName)) {
@@ -779,71 +617,39 @@ class _PersonalScreenState extends State<PersonalScreen> {
                                 }
                               });
                             },
-                            onSecondaryTap: () async {
-                              // 짧은 딜레이 후 팝업 표시 ( 드로어 닫힘 타이밍 맞추기 )
-                              await Future.delayed(
-                                const Duration(milliseconds: 100),
-                              );
-
-                              final RenderBox overlay =
-                                  Overlay.of(context).context.findRenderObject()
-                                      as RenderBox;
-                              final RelativeRect position =
-                                  RelativeRect.fromLTRB(
-                                    100, // 좌측에서 거리
-                                    210, // 위에서 거리
-                                    overlay.size.width - 100,
-                                    0,
-                                  );
-
-                              final selected = await showMenu<String>(
+                            onSecondaryTap: () {
+                              showContextMenu(
                                 context: context,
-                                position: position,
-                                items: [
-                                  PopupMenuItem(
-                                    value: 'delete',
-                                    child: Text('삭제', style: TextStyle(fontSize: 12, fontFamily: 'APPLESDGOTHICNEOR'),),
-                                  ),
-                                  PopupMenuItem(
-                                    value: 'add_to_important',
-                                    child: Text('중요 폴더로 추가', style: TextStyle(fontSize: 12, fontFamily: 'APPLESDGOTHICNEOR')),
-                                  ),
-                                ],
-                                elevation: 8,
-                                color: Colors.white,
-                              ).then((selected) async {
-                                if (selected == 'delete') {
-                                  // 폴더 삭제 로직
-                                  if (folderId != null) {
-                                    // 폴더를 trashScreen에 추가하는 로직
-                                    deletedFolders.add(
-                                      FileItem(
-                                        name: folderName,
-                                        type: "폴더",
-                                        sizeInBytes: 0,
-                                      ),
-                                    );
-
-                                    // 폴더 삭제 후 현재 화면에서 삭제
-                                    setState(() {
-                                      folders.removeAt(index); // 현재 화면에서 폴더 제거
-                                    });
-                                  }
-                                } else if (selected == 'add_to_important') {
-                                  // 중요 폴더로 추가하는 로직
-                                  if (folderId != null) {
-                                    setState(() {
-                                      importantFolders.add(
+                                key: itemKey, // 폴더별 GlobalKey
+                                onSelected: (selected) async {
+                                  if (selected == 'delete') {
+                                    if (folderId != null) {
+                                      deletedFolders.add(
                                         FileItem(
                                           name: folderName,
                                           type: "폴더",
                                           sizeInBytes: 0,
                                         ),
                                       );
-                                    });
+                                      setState(() {
+                                        folders.removeAt(index);
+                                      });
+                                    }
+                                  } else if (selected == 'add_to_important') {
+                                    if (folderId != null) {
+                                      setState(() {
+                                        importantFolders.add(
+                                          FileItem(
+                                            name: folderName,
+                                            type: "폴더",
+                                            sizeInBytes: 0,
+                                          ),
+                                        );
+                                      });
+                                    }
                                   }
-                                }
-                              });
+                                },
+                              );
                             },
 
                             child: Container(
@@ -940,40 +746,40 @@ class _PersonalScreenState extends State<PersonalScreen> {
                     child: DropTarget(
                       onDragDone: (detail) async {
                         if (_isUploading) return;
-                         _isUploading = true;
-                         
+                        _isUploading = true;
+
                         try {
-                        List<File> droppedFiles =
-                            detail.files.map((f) => File(f.path)).toList();
+                          List<File> droppedFiles =
+                              detail.files.map((f) => File(f.path)).toList();
 
-                        List<FileItem> newFileItems = [];
+                          List<FileItem> newFileItems = [];
 
-                        // 드래그 앤 드롭한 파일이 비어있는지 확인
-                        if (droppedFiles.isEmpty) {
-                          print('드래그된 파일이 없습니다.');
-                          return;
-                        }
-
-                        // 중복 체크 및 파일 정보 업데이트
-                        for (final file in detail.files) {
-                          final fileName = file.name;
-
-                          if (!fileNames.contains(fileName)) {
-                            final fileType = fileName.split('.').last;
-                            final fileSize = File(file.path).lengthSync();
-                            final fileItem = FileItem(
-                              name: fileName,
-                              type: fileType,
-                              sizeInBytes: fileSize,
-                            );
-                            newFileItems.add(fileItem);
-                            fileNames.add(fileName);
+                          // 드래그 앤 드롭한 파일이 비어있는지 확인
+                          if (droppedFiles.isEmpty) {
+                            print('드래그된 파일이 없습니다.');
+                            return;
                           }
-                        }
 
-                        setState(() {
-                          selectedFiles.addAll(newFileItems);
-                        });
+                          // 중복 체크 및 파일 정보 업데이트
+                          for (final file in detail.files) {
+                            final fileName = file.name;
+
+                            if (!fileNames.contains(fileName)) {
+                              final fileType = fileName.split('.').last;
+                              final fileSize = File(file.path).lengthSync();
+                              final fileItem = FileItem(
+                                name: fileName,
+                                type: fileType,
+                                sizeInBytes: fileSize,
+                              );
+                              newFileItems.add(fileItem);
+                              fileNames.add(fileName);
+                            }
+                          }
+
+                          setState(() {
+                            selectedFiles.addAll(newFileItems);
+                          });
 
                           final currentFolderPath = getCurrentFolderPath();
                           // 업로드 호출
@@ -1007,7 +813,7 @@ class _PersonalScreenState extends State<PersonalScreen> {
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(content: Text('파일 업로드 실패: $e')),
                           );
-                        }finally {
+                        } finally {
                           _isUploading = false;
                         }
                       },
