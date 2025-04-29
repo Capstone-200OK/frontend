@@ -144,6 +144,7 @@ class NavigationDrawerWidget extends StatelessWidget {
               leading: const Icon(Icons.star_border, color: Colors.white),
               title: const Text('중요문서함', style: TextStyle(fontSize: 12, color: Colors.white, fontFamily: 'APPLESDGOTHICNEOR')),
             ),
+            
             ListTile(
               leading: const Icon(Icons.delete, color: Colors.white),
               title: const Text('휴지통', style: TextStyle(fontSize: 12, color: Colors.white, fontFamily: 'APPLESDGOTHICNEOR')),
@@ -172,6 +173,7 @@ class NavigationDrawerWidget extends StatelessWidget {
               tileColor: const Color(0xFF455A64),
               onTap: () => Navigator.pop(scaffoldContext),
             ),
+            
           ],
         ),
       ),

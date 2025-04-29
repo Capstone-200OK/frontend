@@ -8,7 +8,7 @@ class SortingHistoryService {
   ) async {
     final baseUrl = dotenv.get("BaseUrl");
     final url = Uri.parse("$baseUrl/sorting-history/selectedList/$sortingId");
-
+    
 
     try {
       final response = await http.get(url);
@@ -36,5 +36,30 @@ class SortingHistoryService {
       print("에러 발생: $e");
       return [];
     }
+  }
+
+  static Future<int?> fetchLatestSortingHistoryId(int userId) async {
+    final baseUrl = dotenv.get("BaseUrl");
+    final url = Uri.parse('$baseUrl/sorting-history/latest-id/$userId');
+
+    try {
+      final response = await http.get(url);
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+
+        final latestId = data['latestSortingHistoryId'];
+
+        if (latestId != null) {
+          return latestId as int;
+        }
+      } else {
+        print('최신 sortingId 요청 실패: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('최신 sortingId 요청 중 에러: $e');
+    }
+
+    return null; // 실패 시 null 반환
   }
 }
