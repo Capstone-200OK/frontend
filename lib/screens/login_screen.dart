@@ -48,6 +48,7 @@ class _LoginScreenState extends State<LoginScreen> {
   void _login() async {
     // 텍스트 필드에서 입력된 값 가져오기
     // String id = _idController.text;
+    String nickname= _idController.text;
     String email = _emailController.text;
     String password = _passwordController.text;
     
@@ -74,7 +75,7 @@ class _LoginScreenState extends State<LoginScreen> {
          Navigator.pushReplacement(
             context,
             MaterialPageRoute(
-              builder: (context) => HomeScreen(username: email), // 아이디 대신 이메일
+              builder: (context) => HomeScreen(username: nickname), // 아이디 대신 이메일
             ),
           );
           ScaffoldMessenger.of(context)

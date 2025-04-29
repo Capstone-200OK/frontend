@@ -57,6 +57,7 @@ class _PersonalScreenState extends State<PersonalScreen> {
   Map<int, String> folderIdToName = {};
   late String s3BaseUrl;
   late int? userId;
+
   @override
   void initState() {
     super.initState();
@@ -169,6 +170,56 @@ class _PersonalScreenState extends State<PersonalScreen> {
     );
 
     overlay.insert(_previewOverlay!);
+  }
+
+  Future<void> showContextMenu({
+    required BuildContext context,
+    required GlobalKey key,
+    required Function(String?) onSelected,
+  }) async {
+    await Future.delayed(const Duration(milliseconds: 50));
+
+    final RenderBox? renderBox =
+        key.currentContext?.findRenderObject() as RenderBox?;
+    if (renderBox == null) return;
+
+    final overlay = Overlay.of(context).context.findRenderObject() as RenderBox;
+    final offset = renderBox.localToGlobal(Offset.zero);
+
+    final double dx = offset.dx + 80; // 오른쪽으로 10px
+    final double dy = offset.dy + 60; // 아래로 5px
+
+    final RelativeRect position = RelativeRect.fromLTRB(
+      dx,
+      dy,
+      overlay.size.width - dx - renderBox.size.width,
+      overlay.size.height - dy,
+    );
+
+    final selected = await showMenu<String>(
+      context: context,
+      position: position,
+      items: [
+        PopupMenuItem(
+          value: 'delete',
+          child: Text(
+            '삭제',
+            style: TextStyle(fontSize: 12, fontFamily: 'APPLESDGOTHICNEOR'),
+          ),
+        ),
+        PopupMenuItem(
+          value: 'add_to_important',
+          child: Text(
+            '중요 폴더로 추가',
+            style: TextStyle(fontSize: 12, fontFamily: 'APPLESDGOTHICNEOR'),
+          ),
+        ),
+      ],
+      elevation: 8,
+      color: Colors.white,
+    );
+
+    onSelected(selected);
   }
 
   Widget _buildPreviewContent(String url, String type, {String? thumbnailUrl}) {
@@ -336,7 +387,8 @@ class _PersonalScreenState extends State<PersonalScreen> {
                           context,
                           MaterialPageRoute(
                             builder:
-                                (context) => RecentFileScreen(username: "현서"),
+                                (context) =>
+                                    RecentFileScreen(username: widget.username),
                           ),
                         );
                         print('최근 항목 눌림');
@@ -730,12 +782,13 @@ class _PersonalScreenState extends State<PersonalScreen> {
                         itemBuilder: (context, index) {
                           final folderName = folders[index];
                           final folderId = folderNameToId[folderName];
-
+                          final itemKey = GlobalKey();
                           final isSelected = selectedFolderNames.contains(
                             folderName,
                           );
 
                           return GestureDetector(
+                            key: itemKey,
                             onTap: () {
                               setState(() {
                                 if (selectedFolderNames.contains(folderName)) {
@@ -745,71 +798,39 @@ class _PersonalScreenState extends State<PersonalScreen> {
                                 }
                               });
                             },
-                            onSecondaryTap: () async {
-                              // 짧은 딜레이 후 팝업 표시 ( 드로어 닫힘 타이밍 맞추기 )
-                              await Future.delayed(
-                                const Duration(milliseconds: 100),
-                              );
-
-                              final RenderBox overlay =
-                                  Overlay.of(context).context.findRenderObject()
-                                      as RenderBox;
-                              final RelativeRect position =
-                                  RelativeRect.fromLTRB(
-                                    100, // 좌측에서 거리
-                                    210, // 위에서 거리
-                                    overlay.size.width - 100,
-                                    0,
-                                  );
-
-                              final selected = await showMenu<String>(
+                            onSecondaryTap: () {
+                              showContextMenu(
                                 context: context,
-                                position: position,
-                                items: [
-                                  PopupMenuItem(
-                                    value: 'delete',
-                                    child: Text('삭제', style: TextStyle(fontSize: 12, fontFamily: 'APPLESDGOTHICNEOR'),),
-                                  ),
-                                  PopupMenuItem(
-                                    value: 'add_to_important',
-                                    child: Text('중요 폴더로 추가', style: TextStyle(fontSize: 12, fontFamily: 'APPLESDGOTHICNEOR')),
-                                  ),
-                                ],
-                                elevation: 8,
-                                color: Colors.white,
-                              ).then((selected) async {
-                                if (selected == 'delete') {
-                                  // 폴더 삭제 로직
-                                  if (folderId != null) {
-                                    // 폴더를 trashScreen에 추가하는 로직
-                                    deletedFolders.add(
-                                      FileItem(
-                                        name: folderName,
-                                        type: "폴더",
-                                        sizeInBytes: 0,
-                                      ),
-                                    );
-
-                                    // 폴더 삭제 후 현재 화면에서 삭제
-                                    setState(() {
-                                      folders.removeAt(index); // 현재 화면에서 폴더 제거
-                                    });
-                                  }
-                                } else if (selected == 'add_to_important') {
-                                  // 중요 폴더로 추가하는 로직
-                                  if (folderId != null) {
-                                    setState(() {
-                                      importantFolders.add(
+                                key: itemKey, // 폴더별 GlobalKey
+                                onSelected: (selected) async {
+                                  if (selected == 'delete') {
+                                    if (folderId != null) {
+                                      deletedFolders.add(
                                         FileItem(
                                           name: folderName,
                                           type: "폴더",
                                           sizeInBytes: 0,
                                         ),
                                       );
-                                    });
+                                      setState(() {
+                                        folders.removeAt(index);
+                                      });
+                                    }
+                                  } else if (selected == 'add_to_important') {
+                                    if (folderId != null) {
+                                      setState(() {
+                                        importantFolders.add(
+                                          FileItem(
+                                            name: folderName,
+                                            type: "폴더",
+                                            sizeInBytes: 0,
+                                          ),
+                                        );
+                                      });
+                                    }
                                   }
-                                }
-                              });
+                                },
+                              );
                             },
 
                             child: Container(
