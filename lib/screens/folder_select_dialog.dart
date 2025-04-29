@@ -124,7 +124,11 @@ class _FolderSelectDialogState extends State<FolderSelectDialog> {
         ),
         ElevatedButton(
           onPressed: selected != null
-              ? () => Navigator.pop(context, selected)
+              ? () {
+                  WidgetsBinding.instance.addPostFrameCallback((_) {
+                    Navigator.pop(context, FolderItem(id: selected!.id, name: selected!.name));
+                  });
+                }
               : null,
           child: const Text("확인"),
         ),
