@@ -1,6 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/screens/folder_select_dialog.dart';
+import 'package:flutter_application_1/api/file_reservation_service.dart';
 
 class FileReservationScreen extends StatefulWidget {
   const FileReservationScreen({super.key});
@@ -115,7 +116,7 @@ class _FileReservationScreenState extends State<FileReservationScreen> {
                           SizedBox(
                             height: 100,
                             child: Container(
-                              color: Colors.white, 
+                              color: Colors.white,
                               child: CupertinoPicker(
                                 scrollController: FixedExtentScrollController(
                                   initialItem: selectedHour,
@@ -167,7 +168,10 @@ class _FileReservationScreenState extends State<FileReservationScreen> {
                                 borderRadius: BorderRadius.circular(12),
                               ),
                               child: const Center(
-                                child: Icon(Icons.add_circle, color: Color(0xFF37474F)),
+                                child: Icon(
+                                  Icons.add_circle,
+                                  color: Color(0xFF37474F),
+                                ),
                               ),
                             ),
                           ),
@@ -199,7 +203,10 @@ class _FileReservationScreenState extends State<FileReservationScreen> {
                                 borderRadius: BorderRadius.circular(12),
                               ),
                               child: const Center(
-                                child: Icon(Icons.drive_folder_upload, color: Color(0xFF37474F)),
+                                child: Icon(
+                                  Icons.drive_folder_upload,
+                                  color: Color(0xFF37474F),
+                                ),
                               ),
                             ),
                           ),
@@ -231,19 +238,66 @@ class _FileReservationScreenState extends State<FileReservationScreen> {
                             spacing: 10,
                             runSpacing: 10,
                             children: [
-                              _buildTag(context,'내용', 'content'),
-                              _buildTag(context,'제목', 'title'),
-                              _buildTag(context,'날짜', 'date'),
-                              _buildTag(context,'유형', 'type'),
+                              _buildTag(context, '내용', 'content'),
+                              _buildTag(context, '제목', 'title'),
+                              _buildTag(context, '날짜', 'date'),
+                              _buildTag(context, '유형', 'type'),
                             ],
                           ),
                           const SizedBox(height: 20),
 
                           ElevatedButton(
-                            onPressed: () {
+                            onPressed: () async {
                               print(
                                 '예약 설정됨: ${intervals[selectedInterval]}, ${selectedHour}시',
                               );
+
+                              bool success =
+                                  await FileReservationService.addReservation(
+                                    userId: 1, // 👉 실제 로그인한 userId로 교체해야 해
+                                    previousFolderId: 100, // 👉 선택한 출발 폴더 ID
+                                    newFolderId: 200, // 👉 선택한 목적지 폴더 ID
+                                    criteria:
+                                        selectedMode?.toUpperCase() ??
+                                        'TYPE', // 선택한 기준 (예: 'TYPE', 'TITLE')
+                                    interval:
+                                        intervals[selectedInterval] == '하루'
+                                            ? 'DAILY'
+                                            : intervals[selectedInterval] ==
+                                                '일주일'
+                                            ? 'WEEKLY'
+                                            : 'MONTHLY',
+                                    nextExecuted: DateTime.now()
+                                        .add(
+                                          Duration(
+                                            days:
+                                                selectedInterval == 0
+                                                    ? 1
+                                                    : selectedInterval == 1
+                                                    ? 7
+                                                    : 30,
+                                          ),
+                                        )
+                                        .copyWith(
+                                          hour: selectedHour,
+                                          minute: 0,
+                                        ),
+                                  );
+
+                              if (success) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text('파일 예약이 완료되었습니다!'),
+                                  ),
+                                );
+                                Navigator.pop(context);
+                              } else {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text('파일 예약에 실패했습니다 😢'),
+                                  ),
+                                );
+                              }
                               Navigator.pop(context);
                             },
                             style: ElevatedButton.styleFrom(
@@ -295,8 +349,10 @@ class _FileReservationScreenState extends State<FileReservationScreen> {
   Widget _buildTag(BuildContext context, String label, String mode) {
     return ElevatedButton(
       style: ElevatedButton.styleFrom(
-        backgroundColor: selectedMode == mode ? Color(0xFF37474F) : Colors.white,
-        foregroundColor: selectedMode == mode ? Colors.white : Color(0xFF37474F),
+        backgroundColor:
+            selectedMode == mode ? Color(0xFF37474F) : Colors.white,
+        foregroundColor:
+            selectedMode == mode ? Colors.white : Color(0xFF37474F),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       ),
       onPressed: () {
