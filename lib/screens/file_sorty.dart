@@ -4,6 +4,8 @@ import 'package:flutter_application_1/models/folder_item.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:provider/provider.dart';
+import 'package:flutter_application_1/providers/user_provider.dart';
 
 class FileSortyScreen extends StatefulWidget {
   final List<FolderItem> folders; // 폴더 리스트로 변경
@@ -27,10 +29,12 @@ class _FileSortyScreenState extends State<FileSortyScreen> {
   String? selectedMode;
   late String url;
   FolderItem? selectedDestinationFolder;
+  late int? userId;
   @override
   void initState() {
     super.initState();
     url = dotenv.get("BaseUrl");
+    userId = Provider.of<UserProvider>(context, listen: false).userId;
   }
 
   @override
@@ -235,6 +239,7 @@ class _FileSortyScreenState extends State<FileSortyScreen> {
                                     "mode": selectedMode,
                                     "destinationFolderId":
                                         selectedDestinationFolder!.id,
+                                    "userId": userId,
                                   }),
                                 );
 
