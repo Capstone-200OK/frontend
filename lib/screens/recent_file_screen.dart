@@ -1,3 +1,4 @@
+//최근항목 되돌리기 스크린린
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/api/sorting_rollback_service.dart';
 import 'package:flutter_application_1/screens/show_filemove_dialog.dart';
@@ -243,16 +244,16 @@ class _RecentFileScreenState extends State<RecentFileScreen> {
                           Text(
                             "과거 정리 기억",
                             style: TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.bold,
-                              fontFamily: 'APPLESDGOTHICNEOR',
+                              fontSize: 14,
+                              
+                              fontFamily: 'APPLESDGOTHICNEOEB',
                             ),
                           ),
                         ],
                       ),
                     ),
-                    const SizedBox(height: 8),
-                    const SizedBox(height: 8),
+                    const SizedBox(height: 5),
+                    
                     Expanded(
                       child: SingleChildScrollView(
                         child: Column(
@@ -283,7 +284,7 @@ class _RecentFileScreenState extends State<RecentFileScreen> {
                                       ),
                                       child: Text(
                                         formatDate(date),
-                                        style: const TextStyle(fontSize: 12),
+                                        style: const TextStyle(fontSize: 12, fontFamily: 'APPLESDGOTHICNEOR'),
                                       ),
                                     ),
                                   );

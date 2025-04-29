@@ -14,10 +14,14 @@ void showFileMoveDialog(
     context: context,
     builder: (BuildContext context) {
       return AlertDialog(
-        title: const Text('파일 이동 내역'),
+        backgroundColor: Color(0xFFECEFF1),
+        title: const Text(
+          '파일 이동 내역',
+          style: TextStyle(fontSize: 22, fontFamily: 'APPLESDGOTHICNEOEB'),
+        ),
         content: SizedBox(
-          width: double.maxFinite,
-          height: 300, // 원하는 높이 조정 가능
+          width: 400,
+          height: 250, // 원하는 높이 조정 가능
           child: Scrollbar(
             child: ListView.builder(
               itemCount: allHistories?.length ?? 0,
@@ -32,13 +36,38 @@ void showFileMoveDialog(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        '📁 $name',
-                        style: const TextStyle(fontWeight: FontWeight.bold),
+                      Row(
+                        children: [
+                          const Icon(
+                            Icons.insert_drive_file,
+                            size: 16,
+                            color: Color(0xFF455A64),
+                          ),
+                          const SizedBox(width: 6),
+                          Text(
+                            name,
+                            style: const TextStyle(
+                              fontSize: 15,
+                              fontFamily: 'APPLESDGOTHICNEOEB',
+                            ),
+                          ),
+                        ],
                       ),
                       const SizedBox(height: 4),
-                      Text('이전 경로: $prev'),
-                      Text('현재 경로: $curr'),
+                      Text(
+                        '이전 경로: $prev',
+                        style: const TextStyle(
+                          fontSize: 12,
+                          fontFamily: 'APPLESDGOTHICNEOR',
+                        ),
+                      ),
+                      Text(
+                        '현재 경로: $curr',
+                        style: const TextStyle(
+                          fontSize: 12,
+                          fontFamily: 'APPLESDGOTHICNEOR',
+                        ),
+                      ),
                       const Divider(),
                     ],
                   ),
@@ -49,7 +78,14 @@ void showFileMoveDialog(
         ),
         actions: [
           TextButton(
-            child: const Text('확인'),
+            child: const Text(
+              '확인',
+              style: TextStyle(
+                fontSize: 15,
+                fontFamily: 'APPLESDGOTHICNEOEB',
+                color: Color(0xFF2E24E0),
+              ),
+            ),
             onPressed: () {
               Navigator.of(context).pop();
             },
