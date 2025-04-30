@@ -3,6 +3,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_application_1/api/sorting_rollback_service.dart';
 import 'package:flutter_application_1/screens/show_filemove_dialog.dart';
 import 'package:flutter_application_1/api/sorting_history_service.dart';
+import 'package:provider/provider.dart';
+import 'package:flutter_application_1/providers/user_provider.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
 
 class RecentFileScreen extends StatefulWidget {
   final String username;
@@ -27,20 +32,27 @@ class _RecentFileScreenState extends State<RecentFileScreen> {
   List<String> folders = [];
   bool _isHovering = false; // 마우스 호버 상태 정의
   List<Map<String, String>> sortingHistories = [];
-
+  late int? userId;
+  late String url;
   @override
   void initState() {
     super.initState();
-    fetchSortyHistory(); // 2️⃣. initState에서 호출
+    url = dotenv.get("BaseUrl");
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      setState(() {
+        userId = Provider.of<UserProvider>(context, listen: false).userId;
+        fetchSortyHistory(); // 2️⃣. initState에서 호출
+      });
+    });
   }
 
  Future<void> fetchSortyHistory() async {
   try {
     // (1) userId는 로그인 정보에서 받아야 함. 일단 임시 1
-    final userId = 1; // 실제로는 Provider 같은 데서 받아와야 함
+    //final userId = 1; // 실제로는 Provider 같은 데서 받아와야 함
 
     // (2) 가장 최근 sortingId 가져오기
-    latestSortingId = await SortingHistoryService.fetchLatestSortingHistoryId(userId);
+    latestSortingId = await SortingHistoryService.fetchLatestSortingHistoryId(userId!);
 
     if (latestSortingId != null) {
       print('✅ 최신 sortingId: $latestSortingId');
@@ -49,25 +61,31 @@ class _RecentFileScreenState extends State<RecentFileScreen> {
       final histories = await SortingHistoryService.fetchSortingHistory(latestSortingId!);
 
       // (4) 여기서 날짜 계산도 실제 API 응답 기반으로
-      final mockDates = [
-        DateTime(2025, 4, 20, 12, 1),
-        DateTime(2025, 4, 21, 15, 30),
-        DateTime(2025, 4, 22, 9, 15),
-        DateTime(2025, 4, 23, 18, 45),
-      ]; // 지금은 mock인데 histories 안에 createdAt 같은 거 있으면 그걸 써
+      final response = await http.get(
+        Uri.parse('$url/sorting-history/list/$userId'),
+        headers: {"Content-Type": "application/json"},
+      );
 
-      setState(() {
-        historyDates = mockDates;
-        latestDate = mockDates.last;
-        isLoading = false;
-      });
-    } else {
+      if (response.statusCode == 200) {
+        final List<dynamic> data = jsonDecode(response.body);
+
+        List<DateTime> fetchedDates = data.map((entry) {
+          return DateTime.parse(entry['sortingDate']);
+        }).toList();
+
+        setState(() {
+          historyDates = fetchedDates;
+          latestDate = fetchedDates.isNotEmpty ? fetchedDates.first : null;
+          isLoading = false;
+        });
+      } else {
       print('❌ 최신 sortingId 가져오기 실패');
       setState(() {
         isLoading = false;
       });
     }
-  } catch (e) {
+  } 
+  }catch (e) {
     print('에러 발생: $e');
     setState(() {
       isLoading = false;
