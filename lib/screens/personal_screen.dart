@@ -465,6 +465,7 @@ class _PersonalScreenState extends State<PersonalScreen> {
         },
         folders: folders,
         scaffoldContext: context,
+        showUploadButton: true,
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),

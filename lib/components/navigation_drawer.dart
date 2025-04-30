@@ -13,6 +13,7 @@ class NavigationDrawerWidget extends StatelessWidget {
   final Function(String) onFolderCreated;
   final List<String> folders;
   final BuildContext scaffoldContext; // scaffold.of(context) 때문에 추가
+  final bool showUploadButton;
 
   const NavigationDrawerWidget({
     Key? key,
@@ -20,6 +21,7 @@ class NavigationDrawerWidget extends StatelessWidget {
     required this.onFolderCreated,
     required this.folders,
     required this.scaffoldContext,
+    required this.showUploadButton,
   }) : super(key: key);
 
   // 로그아웃 함수
@@ -143,6 +145,7 @@ class NavigationDrawerWidget extends StatelessWidget {
             ),
             const SizedBox(height: 70),
             // 업로드 메뉴
+            if (showUploadButton)
             ListTile(
               leading: const Icon(Icons.file_upload, color: Colors.white),
               title: const Text(
@@ -211,6 +214,7 @@ class NavigationDrawerWidget extends StatelessWidget {
                 }
               },
             ),
+            
             ListTile(
               leading: const Icon(Icons.star_border, color: Colors.white),
               title: const Text('중요문서함', style: TextStyle(fontSize: 12, color: Colors.white, fontFamily: 'APPLESDGOTHICNEOR')),

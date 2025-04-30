@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/screens/personal_screen.dart';
+import 'package:flutter_application_1/components/navigation_drawer.dart';
 
 class HomeScreen extends StatelessWidget {
   final String username;
@@ -48,133 +49,15 @@ class HomeScreen extends StatelessWidget {
         ],
       ),
 
-      drawer: Drawer(
-        shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.zero, // 🔸 모서리 각지게
-        ),
-        child: Container(
-          color: Color(0xFF455A64),
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 40),
-          child: ListView(
-            padding: EdgeInsets.zero,
-            children: [
-              Container(
-                color: Color(0xFF455A64),
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 20,
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        CircleAvatar(
-                          radius: 18, // 원 크기
-                          backgroundColor: Colors.white,
-                          child: Icon(
-                            Icons.person,
-                            size: 20,
-                            color: Color(0xFF455A64),
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Text(
-                          username,
-                          style: const TextStyle(
-                            fontSize: 18,
-                            color: Colors.white,
-                            fontFamily: 'APPLESDGOTHICNEOEB',
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 6),
-                    Text(
-                      '$username@example.com',
-                      style: const TextStyle(
-                        fontSize: 13,
-                        color: Colors.white70,
-                        fontFamily: 'APPLESDGOTHICNEOR',
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 70), //사이 간격
-
-              ListTile(
-                leading: Icon(
-                  Icons.star_border,
-                  size: 24, // 아이콘 크기 (기본값: 24)
-                  color: Colors.white,
-                ),
-                title: Text(
-                  '중요문서함',
-                  style: TextStyle(
-                    fontSize: 12, // 글씨 크기
-                    color: Colors.white, // 글씨 색
-                    fontFamily: 'APPLESDGOTHICNEOR', // 원하는 폰트 사용 가능
-                  ),
-                ),
-                tileColor: Color(0xFF455A64),
-                onTap: () => Navigator.pop(context),
-              ),
-              ListTile(
-                leading: Icon(
-                  Icons.delete,
-                  size: 24, // 아이콘 크기 (기본값: 24)
-                  color: Colors.white,
-                ),
-                title: Text(
-                  '휴지통',
-                  style: TextStyle(
-                    fontSize: 12, // 글씨 크기
-                    color: Colors.white, // 글씨 색
-                    fontFamily: 'APPLESDGOTHICNEOR', // 원하는 폰트 사용 가능
-                  ),
-                ),
-                tileColor: Color(0xFF455A64),
-                onTap: () => Navigator.pop(context),
-              ),
-              ListTile(
-                leading: Icon(
-                  Icons.check,
-                  size: 24, // 아이콘 크기 (기본값: 24)
-                  color: Colors.white,
-                ),
-                title: Text(
-                  '예약하기',
-                  style: TextStyle(
-                    fontSize: 12, // 글씨 크기
-                    color: Colors.white, // 글씨 색
-                    fontFamily: 'APPLESDGOTHICNEOR', // 원하는 폰트 사용 가능
-                  ),
-                ),
-                tileColor: Color(0xFF455A64),
-                onTap: () => Navigator.pop(context),
-              ),
-              ListTile(
-                leading: Icon(
-                  Icons.sd_storage,
-                  size: 24, // 아이콘 크기 (기본값: 24)
-                  color: Colors.white,
-                ),
-                title: Text(
-                  '저장용량',
-                  style: TextStyle(
-                    fontSize: 12, // 글씨 크기
-                    color: Colors.white, // 글씨 색
-                    fontFamily: 'APPLESDGOTHICNEOR', // 원하는 폰트 사용 가능
-                  ),
-                ),
-                tileColor: Color(0xFF455A64),
-                onTap: () => Navigator.pop(context),
-              ),
-            ],
-          ),
-        ),
-      ),
+      drawer: NavigationDrawerWidget(
+      username: username,
+      onFolderCreated: (folderName) {
+        // 필요 시 폴더 생성 후 작업 추가
+      },
+      folders: const [], // 필요시 폴더 목록 전달
+      scaffoldContext: context,
+      showUploadButton: false,
+    ),
 
       // 화면 내용 부분
       body: Container(
