@@ -125,6 +125,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 labelStyle: const TextStyle(color: Colors.white, fontSize: 12),
                 border: OutlineInputBorder(), // 테두리 설정
               ),
+              onFieldSubmitted: (value) => _login(), // 엔터 활성화
             ),
             const SizedBox(height: 13), // 입력 필드 간 간격 설정
             // 이메일 입력 필드
@@ -137,6 +138,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 border: OutlineInputBorder(), // 테두리 설정
               ),
               keyboardType: TextInputType.emailAddress, // 이메일 형식 키보드 타입 설정
+              onFieldSubmitted: (value) => _login(), // 엔터 활성화
             ),
             const SizedBox(height: 13), // 입력 필드 간 간격 설정
             // 비밀번호 입력 필드
@@ -149,6 +151,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 border: OutlineInputBorder(), // 테두리 설정
               ),
               obscureText: true, // 비밀번호는 가려서 표시
+              onFieldSubmitted: (value) => _login(), // 엔터 활성화
             ),
             const SizedBox(height: 13), // 입력 필드 간 간격 설정
             // 로그인 버튼
