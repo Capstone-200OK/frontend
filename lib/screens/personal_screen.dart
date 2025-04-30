@@ -433,7 +433,7 @@ class _PersonalScreenState extends State<PersonalScreen> {
                           MaterialPageRoute(
                             builder:
                                 (context) =>
-                                    RecentFileScreen(username: widget.username, userId:1),
+                                    RecentFileScreen(username: widget.username, userId: userId),
                           ),
                         );
                         print('최근 항목 눌림');
