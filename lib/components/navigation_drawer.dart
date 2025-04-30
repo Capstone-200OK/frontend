@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/screens/trash_screen.dart';
 import 'package:flutter_application_1/screens/file_reservation_screen.dart';
+import 'package:flutter_application_1/screens/reservation_list_screen.dart';
 import 'package:flutter_application_1/api/folder_create.dart';
 import 'package:flutter_application_1/providers/user_provider.dart';
 import 'package:flutter_application_1/screens/login_screen.dart';
@@ -93,9 +94,7 @@ class NavigationDrawerWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Drawer(
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.zero,
-      ),
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.zero),
       child: Container(
         color: const Color(0xFF455A64),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 40),
@@ -150,13 +149,19 @@ class NavigationDrawerWidget extends StatelessWidget {
               leading: const Icon(Icons.file_upload, color: Colors.white),
               title: const Text(
                 '업로드',
-                style: TextStyle(fontSize: 12, color: Colors.white, fontFamily: 'APPLESDGOTHICNEOR'),
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Colors.white,
+                  fontFamily: 'APPLESDGOTHICNEOR',
+                ),
               ),
               tileColor: const Color(0xFF455A64),
               onTap: () async {
                 await Future.delayed(const Duration(milliseconds: 100));
 
-                final RenderBox overlay = Overlay.of(scaffoldContext).context.findRenderObject() as RenderBox;
+                final RenderBox overlay =
+                    Overlay.of(scaffoldContext).context.findRenderObject()
+                        as RenderBox;
                 final RelativeRect position = RelativeRect.fromLTRB(
                   100,
                   210,
@@ -172,16 +177,37 @@ class NavigationDrawerWidget extends StatelessWidget {
                       value: 'new_folder',
                       child: SizedBox(
                         width: 150,
-                        child: Text('새 폴더', style: TextStyle(fontSize: 12, color: Colors.black, fontFamily: 'APPLESDGOTHICNEOR')),
+                        child: Text(
+                          '새 폴더',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.black,
+                            fontFamily: 'APPLESDGOTHICNEOR',
+                          ),
+                        ),
                       ),
                     ),
                     const PopupMenuItem(
                       value: 'upload_file',
-                      child: Text('파일 업로드', style: TextStyle(fontSize: 12, color: Colors.black, fontFamily: 'APPLESDGOTHICNEOR')),
+                      child: Text(
+                        '파일 업로드',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.black,
+                          fontFamily: 'APPLESDGOTHICNEOR',
+                        ),
+                      ),
                     ),
                     const PopupMenuItem(
                       value: 'upload_folder',
-                      child: Text('폴더 업로드', style: TextStyle(fontSize: 12, color: Colors.black, fontFamily: 'APPLESDGOTHICNEOR')),
+                      child: Text(
+                        '폴더 업로드',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.black,
+                          fontFamily: 'APPLESDGOTHICNEOR',
+                        ),
+                      ),
                     ),
                   ],
                   elevation: 8,
@@ -217,34 +243,84 @@ class NavigationDrawerWidget extends StatelessWidget {
             
             ListTile(
               leading: const Icon(Icons.star_border, color: Colors.white),
-              title: const Text('중요문서함', style: TextStyle(fontSize: 12, color: Colors.white, fontFamily: 'APPLESDGOTHICNEOR')),
+              title: const Text(
+                '중요문서함',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Colors.white,
+                  fontFamily: 'APPLESDGOTHICNEOR',
+                ),
+              ),
             ),
-            
+
             ListTile(
               leading: const Icon(Icons.delete, color: Colors.white),
-              title: const Text('휴지통', style: TextStyle(fontSize: 12, color: Colors.white, fontFamily: 'APPLESDGOTHICNEOR')),
+              title: const Text(
+                '휴지통',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Colors.white,
+                  fontFamily: 'APPLESDGOTHICNEOR',
+                ),
+              ),
               tileColor: const Color(0xFF455A64),
               onTap: () {
                 Navigator.push(
                   scaffoldContext,
-                  MaterialPageRoute(builder: (context) => TrashScreen(username: username)),
+                  MaterialPageRoute(
+                    builder: (context) => TrashScreen(username: username),
+                  ),
                 );
               },
             ),
             ListTile(
               leading: const Icon(Icons.check, color: Colors.white),
-              title: const Text('예약하기', style: TextStyle(fontSize: 12, color: Colors.white, fontFamily: 'APPLESDGOTHICNEOR')),
+              title: const Text(
+                '예약하기',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Colors.white,
+                  fontFamily: 'APPLESDGOTHICNEOR',
+                ),
+              ),
               tileColor: const Color(0xFF455A64),
               onTap: () {
                 Navigator.push(
                   scaffoldContext,
-                  MaterialPageRoute(builder: (context) => FileReservationScreen()),
+                  MaterialPageRoute(
+                    builder: (context) => FileReservationScreen(),
+                  ),
+                );
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.list, color: Colors.white),
+              title: const Text(
+                '예약목록',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Colors.white,
+                  fontFamily: 'APPLESDGOTHICNEOR',
+                ),
+              ),
+              tileColor: const Color(0xFF455A64),
+              onTap: () {
+                showDialog(
+                  context: scaffoldContext,
+                  builder: (context) => const ReservationListScreen(),
                 );
               },
             ),
             ListTile(
               leading: const Icon(Icons.sd_storage, color: Colors.white),
-              title: const Text('저장용량', style: TextStyle(fontSize: 12, color: Colors.white, fontFamily: 'APPLESDGOTHICNEOR')),
+              title: const Text(
+                '저장용량',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Colors.white,
+                  fontFamily: 'APPLESDGOTHICNEOR',
+                ),
+              ),
               tileColor: const Color(0xFF455A64),
               onTap: () => Navigator.pop(scaffoldContext),
             ),
