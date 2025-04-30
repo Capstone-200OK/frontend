@@ -54,6 +54,7 @@ class _PersonalScreenState extends State<PersonalScreen> {
   Map<int, String> folderIdToName = {};
   late String s3BaseUrl;
   late int? userId;
+  bool _dragHandled = false;
 
   @override
   void initState() {
@@ -369,7 +370,7 @@ class _PersonalScreenState extends State<PersonalScreen> {
                   size: 24, // 아이콘 크기 (적당한 크기)
                 ),
                 onPressed: () {
-                  Navigator.push(
+                  Navigator.pushReplacement(
                     context,
                     MaterialPageRoute(
                       builder:
@@ -742,8 +743,9 @@ class _PersonalScreenState extends State<PersonalScreen> {
                     // DropTarget (파일 드래그 앤 드랍)
                     child: DropTarget(
                       onDragDone: (detail) async {
-                        if (_isUploading) return;
+                        if (_isUploading||_dragHandled) return;
                         _isUploading = true;
+                        _dragHandled = true;
 
                         try {
                           List<File> droppedFiles =
@@ -777,7 +779,7 @@ class _PersonalScreenState extends State<PersonalScreen> {
                           setState(() {
                             selectedFiles.addAll(newFileItems);
                           });
-
+                          final int fixedFolderId = currentFolderId; // 💥 여기서 고정
                           final currentFolderPath = getCurrentFolderPath();
                           // 업로드 호출
                           print('📦 folderIdToName: $folderIdToName');
@@ -787,7 +789,7 @@ class _PersonalScreenState extends State<PersonalScreen> {
                           await uploader.uploadFiles(
                             file: droppedFiles[0],
                             userId: userId!, // login 할때때 받아올 값으로 수정
-                            folderId: currentFolderId,
+                            folderId: fixedFolderId,
                             currentFolderPath: currentFolderPath,
                           );
                           await refreshCurrentFolderFiles();
@@ -812,6 +814,9 @@ class _PersonalScreenState extends State<PersonalScreen> {
                           );
                         } finally {
                           _isUploading = false;
+                          Future.delayed(const Duration(milliseconds: 500), () {
+                            _dragHandled = false;
+                          });
                         }
                       },
                       onDragEntered: (details) {
