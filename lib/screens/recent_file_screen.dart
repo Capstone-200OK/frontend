@@ -325,10 +325,34 @@ class _RecentFileScreenState extends State<RecentFileScreen> {
                                         color: Color(0xFFECECEC),
                                       ),
                                       child: TextButton(
-                                        onPressed: () {
+                                        onPressed: () async {
                                           print('날짜 ${formatDate(date)} 클릭됨!');
-                                          // TODO: 여기다가 클릭했을 때 원하는 기능 추가하면 됨
-                                          // 예를 들면: 해당 날짜에 맞는 sorting 기록 보기 등
+                                          
+                                          try {
+                                            if (userId == null) return;
+                                            final sortingId = await SortingHistoryService.fetchSortingIdByDate(userId!, date);
+                                            if (sortingId == null) return;
+                                            final histories = await SortingHistoryService.fetchSortingHistory(sortingId);
+
+                                            if (histories.isNotEmpty) {
+                                              final fromPath = histories.first['previousPath'] ?? '';
+                                              final toPath = histories.first['currentPath'] ?? '';
+                                              final fileName = histories.first['fileName'] ?? '';
+
+                                              showFileMoveDialog(
+                                                context,
+                                                fromPath,
+                                                toPath,
+                                                fileName,
+                                                allHistories: histories,
+                                              );
+                                            }
+                                          } catch (e) {
+                                            print('❌ 정리 이력 불러오기 실패: $e');
+                                            ScaffoldMessenger.of(context).showSnackBar(
+                                              SnackBar(content: Text('정리 기록을 불러오지 못했습니다.')),
+                                            );
+                                          }
                                         },
                                         style: TextButton.styleFrom(
                                           padding:

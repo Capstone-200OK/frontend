@@ -62,4 +62,30 @@ class SortingHistoryService {
 
     return null; // 실패 시 null 반환
   }
+  static Future<int?> fetchSortingIdByDate(int userId, DateTime targetDate) async {
+    final baseUrl = dotenv.get("BaseUrl");
+    final url = Uri.parse('$baseUrl/sorting-history/list/$userId');
+
+    try {
+      final response = await http.get(url);
+
+      if (response.statusCode == 200) {
+        final List<dynamic> data = jsonDecode(response.body);
+
+        for (final entry in data) {
+          final dateString = entry['sortingDate']; // ex: "2024-04-30 18:22"
+          final id = int.tryParse(entry['sortingId']);
+
+          // 날짜만 비교 (시간 제외)
+          if (dateString.startsWith(targetDate.toString().substring(0, 10))) {
+            return id;
+          }
+        }
+      }
+    } catch (e) {
+      print('날짜로 sortingId 찾기 실패: $e');
+    }
+
+    return null;
+  }
 }
