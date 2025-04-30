@@ -2,6 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_application_1/screens/trash_screen.dart';
 import 'package:flutter_application_1/screens/file_reservation_screen.dart';
 import 'package:flutter_application_1/api/folder_create.dart';
+import 'package:flutter_application_1/providers/user_provider.dart';
+import 'package:flutter_application_1/screens/login_screen.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:provider/provider.dart';
+import 'package:http/http.dart' as http;
 
 class NavigationDrawerWidget extends StatelessWidget {
   final String username;
@@ -16,6 +21,72 @@ class NavigationDrawerWidget extends StatelessWidget {
     required this.folders,
     required this.scaffoldContext,
   }) : super(key: key);
+
+  // 로그아웃 함수
+   void _logout(BuildContext context) {
+     Provider.of<UserProvider>(context, listen: false).clearUser();
+ 
+     Navigator.pushAndRemoveUntil(
+       context,
+       MaterialPageRoute(builder: (context) => const LoginScreen()),
+       (route) => false,
+     );
+ 
+     ScaffoldMessenger.of(context)
+         .showSnackBar(const SnackBar(content: Text('로그아웃되었습니다.')));
+   }
+ 
+   // 회원탈퇴 함수
+   void _deleteAccount(BuildContext context) async {
+   final shouldDelete = await showDialog<bool>(
+     context: context,
+     builder: (context) => AlertDialog(
+       title: const Text('회원 탈퇴'),
+       content: const Text('정말 탈퇴하시겠습니까?\n탈퇴하면 모든 정보가 삭제됩니다.'),
+       actions: [
+         TextButton(
+           onPressed: () => Navigator.of(context).pop(false), // 아니오
+           child: const Text('아니오'),
+         ),
+         TextButton(
+           onPressed: () => Navigator.of(context).pop(true), // 예
+           child: const Text('예'),
+         ),
+       ],
+     ),
+   );
+ 
+   // 사용자가 "예"를 눌렀을 때만 탈퇴 진행
+   if (shouldDelete == true) {
+     final url = dotenv.get("BaseUrl");
+     final userId = Provider.of<UserProvider>(context, listen: false).userId;
+ 
+     if (userId == null) {
+       ScaffoldMessenger.of(context)
+           .showSnackBar(const SnackBar(content: Text('로그인이 필요합니다.')));
+       return;
+     }
+ 
+     final deleteUrl = Uri.parse('$url/user/delete/$userId');
+ 
+     try {
+       final response = await http.delete(deleteUrl);
+ 
+       if (response.statusCode == 200) {
+         _logout(context);
+         ScaffoldMessenger.of(context)
+             .showSnackBar(const SnackBar(content: Text('회원 탈퇴 완료')));
+       } else {
+         ScaffoldMessenger.of(context)
+             .showSnackBar(const SnackBar(content: Text('회원 탈퇴 실패')));
+       }
+     } catch (e) {
+       print(e);
+       ScaffoldMessenger.of(context)
+           .showSnackBar(SnackBar(content: Text('오류 발생: $e')));
+     }
+   }
+ }
 
   @override
   Widget build(BuildContext context) {
@@ -173,7 +244,16 @@ class NavigationDrawerWidget extends StatelessWidget {
               tileColor: const Color(0xFF455A64),
               onTap: () => Navigator.pop(scaffoldContext),
             ),
-            
+            ListTile(
+              leading: Icon(Icons.logout, color: Colors.white),
+              title: Text('로그아웃', style: TextStyle(fontSize: 12, color: Colors.white, fontFamily: 'APPLESDGOTHICNEOR')),
+              onTap: () => _logout(context),
+            ),
+            ListTile(
+              leading: Icon(Icons.person_off, color: Colors.white),
+              title: Text('회원탈퇴', style: TextStyle(fontSize: 12, color: Colors.white, fontFamily: 'APPLESDGOTHICNEOR')),
+              onTap: () => _deleteAccount(context),
+            ),
           ],
         ),
       ),
