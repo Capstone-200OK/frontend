@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/screens/personal_screen.dart';
 import 'package:flutter_application_1/components/navigation_drawer.dart';
+import 'package:flutter_application_1/screens/recent_file_screen.dart';
+import 'package:provider/provider.dart';
+import 'package:flutter_application_1/providers/user_provider.dart';
 
 class HomeScreen extends StatelessWidget {
   final String username;
@@ -30,7 +33,14 @@ class HomeScreen extends StatelessWidget {
                     color: Color(0xff263238),
                   ), //최근항목아이콘
                   onPressed: () {
-                    // 최근 항목 페이지 이동 로직
+                    final userId = Provider.of<UserProvider>(context, listen: false).userId;
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) =>
+                            RecentFileScreen(username: username, userId: userId),
+                      ),
+                    );
                     print('최근 항목 눌림');
                   },
                 ),
