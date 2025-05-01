@@ -30,6 +30,7 @@ class _FileSortyScreenState extends State<FileSortyScreen> {
   late String url;
   FolderItem? selectedDestinationFolder;
   late int? userId;
+  bool isMaintain = false;
   @override
   void initState() {
     super.initState();
@@ -204,7 +205,26 @@ class _FileSortyScreenState extends State<FileSortyScreen> {
                               _sortButton(context, '유형', 'type'),
                             ],
                           ),
-
+                          const SizedBox(height: 12),
+                          Row(
+                            children: [
+                              const Text(
+                                '기존 폴더 유지',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontFamily: 'APPLESDGOTHICNEOEB',
+                                ),
+                              ),
+                              Checkbox(
+                                value: isMaintain ?? false,
+                                onChanged: (value) {
+                                  setState(() {
+                                    isMaintain = value ?? false;
+                                  });
+                                },
+                              ),
+                            ],
+                          ),
                           const Spacer(),
 
                           // ③ 정리하기 버튼
@@ -240,6 +260,7 @@ class _FileSortyScreenState extends State<FileSortyScreen> {
                                     "destinationFolderId":
                                         selectedDestinationFolder!.id,
                                     "userId": userId,
+                                    "isMaintain": isMaintain,
                                   }),
                                 );
 
