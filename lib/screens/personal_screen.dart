@@ -6,11 +6,11 @@ import 'package:flutter_application_1/api/file_uploader.dart';
 import 'package:flutter_application_1/screens/file_sorty.dart';
 import 'package:flutter_application_1/screens/recent_file_screen.dart';
 import 'package:flutter_application_1/screens/trash_screen.dart';
+import 'package:flutter_application_1/api/trash.dart';
 import 'package:flutter_application_1/screens/home_screen.dart';
 import 'package:flutter_application_1/models/file_item.dart';
 import 'package:flutter_application_1/models/folder_item.dart';
 import 'package:flutter_application_1/components/navigation_drawer.dart';
-
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
@@ -122,6 +122,7 @@ class _PersonalScreenState extends State<PersonalScreen> {
         selectedFiles = List<FileItem>.from(
           data['files'].map(
             (f) => FileItem(
+              id: f['id'],
               name: f['name'],
               type: f['fileType'],
               sizeInBytes: f['size'],
@@ -384,25 +385,29 @@ class _PersonalScreenState extends State<PersonalScreen> {
               IconButton(
                 icon: Icon(
                   Icons.arrow_back,
-                  color:
-                      folderStack.isEmpty
-                          ? Colors.grey
-                          : Color(0xff263238), // 스택 비었으면 회색
+                  color: Color(0xff263238),
                   size: 15,
                 ),
-                onPressed:
-                    folderStack.isEmpty
-                        ? null // 스택 비었으면 비활성화
-                        : () {
-                          int previousFolderId =
-                              folderStack.removeLast(); // 마지막 폴더ID 꺼내기
-                          breadcrumbPath.removeLast(); // breadcrumb 경로도 하나 줄이기
-                          fetchFolderHierarchy(
-                            previousFolderId,
-                            userId!,
-                            pushToStack: false,
-                          );
-                        },
+                onPressed: () {
+                  if (folderStack.isEmpty) {
+                    // 루트이면 홈으로 이동
+                    Navigator.pushReplacement(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => HomeScreen(username: widget.username),
+                      ),
+                    );
+                  } else {
+                    // 뒤로가기 로직
+                    int previousFolderId = folderStack.removeLast();
+                    breadcrumbPath.removeLast();
+                    fetchFolderHierarchy(
+                      previousFolderId,
+                      userId!,
+                      pushToStack: false,
+                    );
+                  }
+                },
               ),
               const SizedBox(width: 8),
 
@@ -591,10 +596,10 @@ class _PersonalScreenState extends State<PersonalScreen> {
                         itemCount: folders.length,
                         gridDelegate:
                             const SliverGridDelegateWithFixedCrossAxisCount(
-                              crossAxisCount: 2,
+                              crossAxisCount: 1, // 원래 2
                               mainAxisSpacing: 12,
                               crossAxisSpacing: 12,
-                              childAspectRatio: 2.0,
+                              childAspectRatio: 5.0, // 원래 2.0
                             ),
                         itemBuilder: (context, index) {
                           final folderName = folders[index];
@@ -615,6 +620,12 @@ class _PersonalScreenState extends State<PersonalScreen> {
                                 }
                               });
                             },
+                            onDoubleTap: () {
+                              // 더블클릭 시 하위 폴더로 이동
+                              if (folderId != null) {
+                                fetchFolderHierarchy(folderId, userId!);
+                              }
+                            },
                             onSecondaryTap: () {
                               showContextMenu(
                                 context: context,
@@ -622,18 +633,22 @@ class _PersonalScreenState extends State<PersonalScreen> {
                                 onSelected: (selected) async {
                                   if (selected == 'delete') {
                                     if (folderId != null) {
-                                      deletedFolders.add(
-                                        FileItem(
-                                          name: folderName,
-                                          type: "폴더",
-                                          sizeInBytes: 0,
-                                        ),
-                                      );
+                                      try {
+                                        await moveToTrash(
+                                          userId!,        // 실제 로그인된 사용자 ID
+                                          [folderId],     // 삭제할 폴더 ID 리스트
+                                          [],             // 파일 ID 없음
+                                        );
+                                      } catch (e) {
+                                        print('폴더 휴지통 이동 실패: $e');
+                                      }
+
                                       setState(() {
                                         folders.removeAt(index);
                                       });
                                     }
-                                  } else if (selected == 'add_to_important') {
+                                  }
+                                  else if (selected == 'add_to_important') {
                                     if (folderId != null) {
                                       setState(() {
                                         importantFolders.add(
@@ -909,14 +924,22 @@ class _PersonalScreenState extends State<PersonalScreen> {
                                               Icons.close,
                                               size: 16,
                                             ),
-                                            onPressed: () {
-                                              setState(() {
-                                                // 파일을 삭제 리스트로 옮기기
-                                                final deletedFile =
-                                                    selectedFiles[index];
-                                                deletedFiles.add(deletedFile);
+                                            onPressed: () async {
+                                              final deletedFile = selectedFiles[index];
+                                              // 파일 휴지통으로
+                                              try {
+                                                final deletedFile = selectedFiles[index];
+                                                final fileId = deletedFile.id;
+                                                await moveToTrash(
+                                                  userId!, // 실제 로그인한 사용자 ID
+                                                  [],      // 폴더 ID는 없으므로 빈 리스트
+                                                  [fileId!], // 파일
+                                                );
+                                              } catch (e) {
+                                                print('휴지통 이동 실패: $e');
+                                              }
 
-                                                // 원래 리스트에서 제거
+                                              setState(() {
                                                 selectedFiles.removeAt(index);
                                                 fileNames.remove(file.name);
                                               });
