@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/screens/trash_screen.dart';
+import 'package:flutter_application_1/screens/important_screen.dart';
 import 'package:flutter_application_1/screens/file_reservation_screen.dart';
 import 'package:flutter_application_1/screens/reservation_list_screen.dart';
 import 'package:flutter_application_1/api/folder_create.dart';
@@ -251,6 +252,15 @@ class NavigationDrawerWidget extends StatelessWidget {
                   fontFamily: 'APPLESDGOTHICNEOR',
                 ),
               ),
+              tileColor: const Color(0xFF455A64),
+              onTap: () {
+                Navigator.push(
+                  scaffoldContext,
+                  MaterialPageRoute(
+                    builder: (context) => ImportantScreen(username: username),
+                  ),
+                );
+              },
             ),
 
             ListTile(
