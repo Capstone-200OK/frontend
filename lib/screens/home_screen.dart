@@ -4,6 +4,8 @@ import 'package:flutter_application_1/components/navigation_drawer.dart';
 import 'package:flutter_application_1/screens/recent_file_screen.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_application_1/providers/user_provider.dart';
+import 'package:flutter_application_1/screens/cloud_screen.dart';
+
 
 class HomeScreen extends StatelessWidget {
   final String username;
@@ -168,7 +170,14 @@ class HomeScreen extends StatelessWidget {
                 const SizedBox(width: 50), // 버튼들 간의 간격 설정
                 // 클라우드 버튼
                 ElevatedButton(
-                  onPressed: () {},
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => CloudScreen(username: username),
+                      ),
+                    );
+                  },
                   style: ElevatedButton.styleFrom(
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(20),
