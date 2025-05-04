@@ -18,6 +18,8 @@ import 'package:flutter_application_1/screens/file_view_dialog.dart';
 import 'package:syncfusion_flutter_pdfviewer/pdfviewer.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_application_1/providers/user_provider.dart';
+import 'package:flutter_application_1/api/trash.dart';
+
 
 class CloudScreen extends StatefulWidget {
   final String username;
@@ -631,18 +633,22 @@ class _CloudScreenState extends State<CloudScreen> {
                                 onSelected: (selected) async {
                                   if (selected == 'delete') {
                                     if (folderId != null) {
-                                      deletedFolders.add(
-                                        FileItem(
-                                          name: folderName,
-                                          type: "폴더",
-                                          sizeInBytes: 0,
-                                        ),
-                                      );
+                                      try {
+                                        await moveToTrash(
+                                          userId!,        // 실제 로그인된 사용자 ID
+                                          [folderId],     // 삭제할 폴더 ID 리스트
+                                          [],             // 파일 ID 없음
+                                        );
+                                      } catch (e) {
+                                        print('폴더 휴지통 이동 실패: $e');
+                                      }
+
                                       setState(() {
                                         folders.removeAt(index);
                                       });
                                     }
-                                  } else if (selected == 'add_to_important') {
+                                  }
+                                  else if (selected == 'add_to_important') {
                                     if (folderId != null) {
                                       setState(() {
                                         importantFolders.add(
@@ -914,14 +920,22 @@ class _CloudScreenState extends State<CloudScreen> {
                                               Icons.close,
                                               size: 16,
                                             ),
-                                            onPressed: () {
-                                              setState(() {
-                                                // 파일을 삭제 리스트로 옮기기
-                                                final deletedFile =
-                                                    selectedFiles[index];
-                                                deletedFiles.add(deletedFile);
+                                            onPressed: () async {
+                                              final deletedFile = selectedFiles[index];
+                                              // 파일 휴지통으로
+                                              try {
+                                                final deletedFile = selectedFiles[index];
+                                                final fileId = deletedFile.id;
+                                                await moveToTrash(
+                                                  userId!, // 실제 로그인한 사용자 ID
+                                                  [],      // 폴더 ID는 없으므로 빈 리스트
+                                                  [fileId!], // 파일
+                                                );
+                                              } catch (e) {
+                                                print('휴지통 이동 실패: $e');
+                                              }
 
-                                                // 원래 리스트에서 제거
+                                              setState(() {
                                                 selectedFiles.removeAt(index);
                                                 fileNames.remove(file.name);
                                               });

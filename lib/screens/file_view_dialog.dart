@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:syncfusion_flutter_pdfviewer/pdfviewer.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:webview_windows/webview_windows.dart';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
 
 class FilePreviewDialog extends StatelessWidget {
   final String fileUrl;
@@ -23,7 +25,10 @@ class FilePreviewDialog extends StatelessWidget {
       viewer = Image.network(fileUrl, fit: BoxFit.contain);
     } else if (["doc", "docx", "xls", "xlsx", "ppt", "pptx"].contains(fileType)) {
       viewer = OfficeViewerWindows(fileUrl: fileUrl); // ✅ Windows 전용 WebView로
-    } else {
+    } else if (["txt", "md", "csv"].contains(fileType)) {
+      viewer = TextFileViewer(fileUrl: fileUrl);
+    } 
+    else {
       viewer = Center(
         child: TextButton(
           onPressed: () async {
@@ -78,5 +83,45 @@ class _OfficeViewerWindowsState extends State<OfficeViewerWindows> {
     return _isWebViewReady
         ? Webview(_controller)
         : const Center(child: CircularProgressIndicator());
+  }
+}
+
+class TextFileViewer extends StatelessWidget {
+  final String fileUrl;
+
+  const TextFileViewer({super.key, required this.fileUrl});
+
+  Future<String> _fetchTextContent() async {
+    final response = await Uri.parse(fileUrl).resolveUri(Uri());
+    final res = await http.get(response);
+    if (res.statusCode == 200) {
+      return utf8.decode(res.bodyBytes); // 한글 포함 대응
+    } else {
+      return '텍스트를 불러오지 못했습니다. 상태코드: ${res.statusCode}';
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<String>(
+      future: _fetchTextContent(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        } else if (snapshot.hasError) {
+          return Center(child: Text("오류 발생: ${snapshot.error}"));
+        } else {
+          return Padding(
+            padding: const EdgeInsets.all(12.0),
+            child: SingleChildScrollView(
+              child: SelectableText(
+                snapshot.data ?? '',
+                style: const TextStyle(fontFamily: 'Courier', fontSize: 13),
+              ),
+            ),
+          );
+        }
+      },
+    );
   }
 }

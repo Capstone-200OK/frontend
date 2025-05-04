@@ -434,7 +434,7 @@ class _PersonalScreenState extends State<PersonalScreen> {
                       ), //최근항목아이콘
                       onPressed: () {
                         // 최근 항목 페이지 이동 로직
-                        Navigator.push(
+                        Navigator.pushReplacement(
                           context,
                           MaterialPageRoute(
                             builder:
@@ -486,7 +486,7 @@ class _PersonalScreenState extends State<PersonalScreen> {
                     padding: const EdgeInsets.only(left: 100.0),
                     child: GestureDetector(
                       onTap: () {
-                        Navigator.push(
+                        Navigator.pushReplacement(
                           context,
                           MaterialPageRoute(
                             builder:
@@ -717,6 +717,7 @@ class _PersonalScreenState extends State<PersonalScreen> {
                                   const SizedBox(width: 8),
                                   Expanded(
                                     child: Text(
+                                      //const Utf8Decoder().convert(folderName.codeUnits),
                                       folderName,
                                       overflow: TextOverflow.ellipsis,
                                       style: const TextStyle(
