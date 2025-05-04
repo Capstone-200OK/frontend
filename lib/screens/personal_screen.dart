@@ -5,7 +5,6 @@ import 'dart:async';
 import 'package:flutter_application_1/api/file_uploader.dart';
 import 'package:flutter_application_1/screens/file_sorty.dart';
 import 'package:flutter_application_1/screens/recent_file_screen.dart';
-import 'package:flutter_application_1/screens/trash_screen.dart';
 import 'package:flutter_application_1/api/trash.dart';
 import 'package:flutter_application_1/screens/home_screen.dart';
 import 'package:flutter_application_1/models/file_item.dart';

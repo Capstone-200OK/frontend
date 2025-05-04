@@ -631,13 +631,6 @@ class _CloudScreenState extends State<CloudScreen> {
                                 onSelected: (selected) async {
                                   if (selected == 'delete') {
                                     if (folderId != null) {
-                                      deletedFolders.add(
-                                        FileItem(
-                                          name: folderName,
-                                          type: "폴더",
-                                          sizeInBytes: 0,
-                                        ),
-                                      );
                                       setState(() {
                                         folders.removeAt(index);
                                       });
@@ -919,7 +912,6 @@ class _CloudScreenState extends State<CloudScreen> {
                                                 // 파일을 삭제 리스트로 옮기기
                                                 final deletedFile =
                                                     selectedFiles[index];
-                                                deletedFiles.add(deletedFile);
 
                                                 // 원래 리스트에서 제거
                                                 selectedFiles.removeAt(index);
