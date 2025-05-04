@@ -633,7 +633,7 @@ class _CloudScreenState extends State<CloudScreen> {
                                 onSelected: (selected) async {
                                   if (selected == 'delete') {
                                     if (folderId != null) {
-                                      try {
+                                    try {
                                         await moveToTrash(
                                           userId!,        // 실제 로그인된 사용자 ID
                                           [folderId],     // 삭제할 폴더 ID 리스트
@@ -642,6 +642,7 @@ class _CloudScreenState extends State<CloudScreen> {
                                       } catch (e) {
                                         print('폴더 휴지통 이동 실패: $e');
                                       }
+
 
                                       setState(() {
                                         folders.removeAt(index);
@@ -920,6 +921,7 @@ class _CloudScreenState extends State<CloudScreen> {
                                               Icons.close,
                                               size: 16,
                                             ),
+
                                             onPressed: () async {
                                               final deletedFile = selectedFiles[index];
                                               // 파일 휴지통으로
@@ -934,6 +936,7 @@ class _CloudScreenState extends State<CloudScreen> {
                                               } catch (e) {
                                                 print('휴지통 이동 실패: $e');
                                               }
+
 
                                               setState(() {
                                                 selectedFiles.removeAt(index);
