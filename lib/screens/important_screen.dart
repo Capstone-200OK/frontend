@@ -9,6 +9,9 @@ import 'package:flutter_application_1/screens/home_screen.dart';
 import 'package:flutter_application_1/screens/personal_screen.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'dart:async';
+import 'package:flutter_application_1/screens/file_view_dialog.dart';
+import 'package:syncfusion_flutter_pdfviewer/pdfviewer.dart';
 
 class ImportantScreen extends StatefulWidget {
   final String username;
@@ -22,7 +25,9 @@ class _ImportantScreenState extends State<ImportantScreen> {
   late int? userId;
   List<ImportantFileItem> importantFiles = [];
   List<ImportantFolderItem> importantFolders = [];
-
+  final GlobalKey _previewKey = GlobalKey();
+  OverlayEntry? _previewOverlay;
+  Timer? _hoverTimer;
   @override
   void initState() {
     super.initState();
@@ -31,6 +36,25 @@ class _ImportantScreenState extends State<ImportantScreen> {
       await fetchImportantItems();
     });
   }
+  Widget _buildPreviewContent(String url, String type, {String? thumbnailUrl}) {
+  final lower = type.toLowerCase();
+
+  if (["png", "jpg", "jpeg", "gif", "bmp"].contains(lower)) {
+    return Image.network(url, fit: BoxFit.contain);
+  }
+
+  if (thumbnailUrl != null && thumbnailUrl.isNotEmpty) {
+    return Image.network(thumbnailUrl, fit: BoxFit.contain);
+  }
+
+  if (lower == "pdf") {
+    return SfPdfViewer.network(url);
+  } else if (["doc", "docx", "xls", "xlsx", "ppt", "pptx"].contains(lower)) {
+    return OfficeViewerWindows(fileUrl: url);
+  }
+
+  return const Center(child: Text("미리보기를 지원하지 않는 형식입니다."));
+}
 
   Future<void> fetchImportantItems() async {
     if (userId == null) return;
@@ -72,7 +96,10 @@ class _ImportantScreenState extends State<ImportantScreen> {
       throw Exception('폴더 경로 조회 실패');
     }
   }
-
+  void _removePreviewOverlay() {
+    _previewOverlay?.remove();
+    _previewOverlay = null;
+  }
   void _showContextMenu({
     required BuildContext context,
     required Offset position,
@@ -94,7 +121,7 @@ class _ImportantScreenState extends State<ImportantScreen> {
       }
     });
   }
-
+  
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -238,6 +265,7 @@ class _ImportantScreenState extends State<ImportantScreen> {
                               itemCount: importantFiles.length,
                               itemBuilder: (context, index) {
                                 final file = importantFiles[index];
+                                final fileKey = GlobalKey();
                                 return GestureDetector(
                                   onSecondaryTapDown: (details) {
                                     _showContextMenu(
@@ -252,14 +280,62 @@ class _ImportantScreenState extends State<ImportantScreen> {
                                       },
                                     );
                                   },
-                                  child: ListTile(
-                                    leading: const Icon(Icons.insert_drive_file, color: Colors.black54),
-                                    title: Text(file.fileName),
-                                    subtitle: Text('${file.fileType} • ${(file.size / 1024).toStringAsFixed(1)} KB'),
+                                  child: MouseRegion(
+                                    key: fileKey,
+                                    onEnter: (event) {
+                                      _hoverTimer = Timer(
+                                        const Duration(milliseconds: 500),
+                                        () {
+                                          final position = event.position;
+                                          _removePreviewOverlay();
+                                          _previewOverlay = OverlayEntry(
+                                            builder: (context) => Positioned(
+                                              left: position.dx,
+                                              top: position.dy - 250,
+                                              child: Material(
+                                                elevation: 4,
+                                                borderRadius: BorderRadius.circular(8),
+                                                child: Container(
+                                                  width: 240,
+                                                  height: 240,
+                                                  padding: const EdgeInsets.all(8),
+                                                  color: Colors.white,
+                                                  child: _buildPreviewContent(
+                                                    file.fileUrl,
+                                                    file.fileType,
+                                                    thumbnailUrl: file.fileThumbnail,
+                                                  ),
+                                                ),
+                                              ),
+                                            ),
+                                          );
+                                          Overlay.of(context).insert(_previewOverlay!);
+                                        },
+                                      );
+                                    },
+                                    onExit: (_) {
+                                      _hoverTimer?.cancel();
+                                      _removePreviewOverlay();
+                                    },
+                                    child: ListTile(
+                                      leading: const Icon(Icons.insert_drive_file, color: Colors.black54),
+                                      title: Text(file.fileName),
+                                      subtitle: Text('${file.fileType} • ${(file.size / 1024).toStringAsFixed(1)} KB'),
+                                      onTap: () {
+                                        showDialog(
+                                          context: context,
+                                          builder: (_) => FilePreviewDialog(
+                                            fileUrl: file.fileUrl!,
+                                            fileType: file.fileType,
+                                          ),
+                                        );
+                                      },
+                                    ),
                                   ),
                                 );
                               },
                             ),
+
                     ),
                   ),
                 ],
