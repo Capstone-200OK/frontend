@@ -237,7 +237,8 @@ class _PersonalScreenState extends State<PersonalScreen> {
     required Offset position,
     required Function(String?) onSelected,
   }) async {
-    final RenderBox overlay = Overlay.of(context).context.findRenderObject() as RenderBox;
+    final RenderBox overlay =
+        Overlay.of(context).context.findRenderObject() as RenderBox;
 
     final RelativeRect positionRect = RelativeRect.fromLTRB(
       position.dx,
@@ -249,6 +250,7 @@ class _PersonalScreenState extends State<PersonalScreen> {
     final selected = await showMenu<String>(
       context: context,
       position: positionRect,
+      color: Color(0xFFECEFF1),
       items: [
         PopupMenuItem(
           value: 'delete',
@@ -264,7 +266,7 @@ class _PersonalScreenState extends State<PersonalScreen> {
           value: 'add_to_important',
           child: Row(
             children: const [
-              Icon(Icons.star, size: 16, color: Colors.black54),
+              Icon(Icons.star, size: 15, color: Colors.black54),
               SizedBox(width: 8),
               Text('중요 문서로 추가', style: TextStyle(fontSize: 12)),
             ],
@@ -401,7 +403,8 @@ class _PersonalScreenState extends State<PersonalScreen> {
                     Navigator.pushReplacement(
                       context,
                       MaterialPageRoute(
-                        builder: (context) => HomeScreen(username: widget.username),
+                        builder:
+                            (context) => HomeScreen(username: widget.username),
                       ),
                     );
                   } else {
@@ -445,8 +448,10 @@ class _PersonalScreenState extends State<PersonalScreen> {
                           context,
                           MaterialPageRoute(
                             builder:
-                                (context) =>
-                                    RecentFileScreen(username: widget.username, userId: userId),
+                                (context) => RecentFileScreen(
+                                  username: widget.username,
+                                  userId: userId,
+                                ),
                           ),
                         );
                         print('최근 항목 눌림');
@@ -471,6 +476,7 @@ class _PersonalScreenState extends State<PersonalScreen> {
 
       drawer: NavigationDrawerWidget(
         username: widget.username,
+        
         onFolderCreated: (folderName) {
           setState(() {
             folders.add(folderName);
@@ -603,10 +609,10 @@ class _PersonalScreenState extends State<PersonalScreen> {
                         itemCount: folders.length,
                         gridDelegate:
                             const SliverGridDelegateWithFixedCrossAxisCount(
-                              crossAxisCount: 1, // 원래 2
+                              crossAxisCount: 2,
                               mainAxisSpacing: 12,
                               crossAxisSpacing: 12,
-                              childAspectRatio: 5.0, // 원래 2.0
+                              childAspectRatio: 2.0,
                             ),
                         itemBuilder: (context, index) {
                           final folderName = folders[index];
@@ -642,9 +648,9 @@ class _PersonalScreenState extends State<PersonalScreen> {
                                     if (folderId != null) {
                                       try {
                                         await moveToTrash(
-                                          userId!,        // 실제 로그인된 사용자 ID
-                                          [folderId],     // 삭제할 폴더 ID 리스트
-                                          [],             // 파일 ID 없음
+                                          userId!, // 실제 로그인된 사용자 ID
+                                          [folderId], // 삭제할 폴더 ID 리스트
+                                          [], // 파일 ID 없음
                                         );
                                       } catch (e) {
                                         print('폴더 휴지통 이동 실패: $e');
@@ -653,21 +659,35 @@ class _PersonalScreenState extends State<PersonalScreen> {
                                         folders.removeAt(index);
                                       });
                                     }
-                                  }
-                                  else if (selected == 'add_to_important') {
+                                  } else if (selected == 'add_to_important') {
                                     if (folderId != null) {
                                       if (isAlreadyImportantFolder(folderId)) {
-                                        ScaffoldMessenger.of(context).showSnackBar(
-                                          SnackBar(content: Text('이미 중요 문서함에 추가된 폴더입니다.')),
+                                        ScaffoldMessenger.of(
+                                          context,
+                                        ).showSnackBar(
+                                          SnackBar(
+                                            content: Text(
+                                              '이미 중요 문서함에 추가된 폴더입니다.',
+                                            ),
+                                          ),
                                         );
                                         return;
                                       }
 
                                       try {
-                                        await addToImportant(userId: userId!, folderId: folderId);
+                                        await addToImportant(
+                                          userId: userId!,
+                                          folderId: folderId,
+                                        );
                                         await fetchImportantStatus(); // 새로고침
-                                        ScaffoldMessenger.of(context).showSnackBar(
-                                          SnackBar(content: Text('$folderName 폴더가 중요 문서함에 추가되었습니다.')),
+                                        ScaffoldMessenger.of(
+                                          context,
+                                        ).showSnackBar(
+                                          SnackBar(
+                                            content: Text(
+                                              '$folderName 폴더가 중요 문서함에 추가되었습니다.',
+                                            ),
+                                          ),
                                         );
                                         fetchImportantStatus();
                                       } catch (e) {
@@ -735,7 +755,7 @@ class _PersonalScreenState extends State<PersonalScreen> {
                                       folderName,
                                       overflow: TextOverflow.ellipsis,
                                       style: const TextStyle(
-                                        fontSize: 14,
+                                        fontSize: 12,
                                         fontFamily: 'APPLESDGOTHICNEOR',
                                         color: Colors.black87,
                                       ),
@@ -746,44 +766,48 @@ class _PersonalScreenState extends State<PersonalScreen> {
                                       isAlreadyImportantFolder(folderId!)
                                           ? Icons.star
                                           : Icons.star_border,
-                                      color: isAlreadyImportantFolder(folderId!)
-                                          ? Colors.amber
-                                          : Colors.grey,
-                                      size: 18,
+                                      color:
+                                          isAlreadyImportantFolder(folderId!)
+                                              ? Colors.amber
+                                              : Colors.grey,
+                                      size: 13,
                                     ),
                                     onPressed: () async {
                                       if (isAlreadyImportantFolder(folderId!)) {
-                                        final target = importantFolders.firstWhere((f) => f.folderId == folderId);
-                                        await removeFromImportant(target.importantId);
-                                        ScaffoldMessenger.of(context).showSnackBar(
-                                          SnackBar(content: Text('$folderName 폴더가 중요 문서함에서 삭제되었습니다.')),
+                                        final target = importantFolders
+                                            .firstWhere(
+                                              (f) => f.folderId == folderId,
+                                            );
+                                        await removeFromImportant(
+                                          target.importantId,
+                                        );
+                                        ScaffoldMessenger.of(
+                                          context,
+                                        ).showSnackBar(
+                                          SnackBar(
+                                            content: Text(
+                                              '$folderName 폴더가 중요 문서함에서 삭제되었습니다.',
+                                            ),
+                                          ),
                                         );
                                       } else {
-                                        await addToImportant(userId: userId!, folderId: folderId);
-                                        ScaffoldMessenger.of(context).showSnackBar(
-                                          SnackBar(content: Text('$folderName 폴더가 중요 문서함에 추가되었습니다.')),
+                                        await addToImportant(
+                                          userId: userId!,
+                                          folderId: folderId,
+                                        );
+                                        ScaffoldMessenger.of(
+                                          context,
+                                        ).showSnackBar(
+                                          SnackBar(
+                                            content: Text(
+                                              '$folderName 폴더가 중요 문서함에 추가되었습니다.',
+                                            ),
+                                          ),
                                         );
                                       }
                                       await fetchImportantStatus();
                                       setState(() {});
                                     },
-                                  ),
-                                  IconButton(
-                                    onPressed: () {
-                                      /*Navigator.of(context).push(
-                                          MaterialPageRoute(
-                                            builder: (context) => TrashScreen(username: widget.username),
-                                          ),
-                                        );*/
-                                      if (folderId != null)
-                                        fetchFolderHierarchy(folderId, userId!);
-                                    },
-                                    icon: const Icon(
-                                      Icons.navigate_next,
-                                      size: 20,
-                                    ),
-                                    padding: EdgeInsets.zero,
-                                    constraints: const BoxConstraints(),
                                   ),
                                 ],
                               ),
@@ -800,7 +824,7 @@ class _PersonalScreenState extends State<PersonalScreen> {
                     // DropTarget (파일 드래그 앤 드랍)
                     child: DropTarget(
                       onDragDone: (detail) async {
-                        if (_isUploading||_dragHandled) return;
+                        if (_isUploading || _dragHandled) return;
                         _isUploading = true;
                         _dragHandled = true;
 
@@ -836,7 +860,8 @@ class _PersonalScreenState extends State<PersonalScreen> {
                           setState(() {
                             selectedFiles.addAll(newFileItems);
                           });
-                          final int fixedFolderId = currentFolderId; // 💥 여기서 고정
+                          final int fixedFolderId =
+                              currentFolderId; // 💥 여기서 고정
                           final currentFolderPath = getCurrentFolderPath();
                           // 업로드 호출
                           print('📦 folderIdToName: $folderIdToName');
@@ -903,7 +928,9 @@ class _PersonalScreenState extends State<PersonalScreen> {
                                   final file = selectedFiles[index];
                                   final fileKey = GlobalKey();
                                   return GestureDetector(
-                                    onSecondaryTapDown: (TapDownDetails details) {
+                                    onSecondaryTapDown: (
+                                      TapDownDetails details,
+                                    ) {
                                       showContextMenuAtPosition(
                                         context: context,
                                         position: details.globalPosition,
@@ -911,11 +938,9 @@ class _PersonalScreenState extends State<PersonalScreen> {
                                           final file = selectedFiles[index];
                                           if (selected == 'delete') {
                                             try {
-                                              await moveToTrash(
-                                                userId!,
-                                                [],
-                                                [file.id],
-                                              );
+                                              await moveToTrash(userId!, [], [
+                                                file.id,
+                                              ]);
                                               setState(() {
                                                 selectedFiles.removeAt(index);
                                                 fileNames.remove(file.name);
@@ -923,10 +948,19 @@ class _PersonalScreenState extends State<PersonalScreen> {
                                             } catch (e) {
                                               print('파일 휴지통 이동 실패: $e');
                                             }
-                                          } else if (selected == 'add_to_important') {
-                                            if (isAlreadyImportantFile(file.id!)) {
-                                              ScaffoldMessenger.of(context).showSnackBar(
-                                                SnackBar(content: Text('이미 중요 문서함에 추가된 파일입니다.')),
+                                          } else if (selected ==
+                                              'add_to_important') {
+                                            if (isAlreadyImportantFile(
+                                              file.id!,
+                                            )) {
+                                              ScaffoldMessenger.of(
+                                                context,
+                                              ).showSnackBar(
+                                                SnackBar(
+                                                  content: Text(
+                                                    '이미 중요 문서함에 추가된 파일입니다.',
+                                                  ),
+                                                ),
                                               );
                                               return;
                                             }
@@ -935,13 +969,25 @@ class _PersonalScreenState extends State<PersonalScreen> {
                                                 userId: userId!,
                                                 fileId: file.id,
                                               );
-                                              ScaffoldMessenger.of(context).showSnackBar(
-                                                SnackBar(content: Text('${file.name} 파일이 중요 문서함에 추가되었습니다.')),
+                                              ScaffoldMessenger.of(
+                                                context,
+                                              ).showSnackBar(
+                                                SnackBar(
+                                                  content: Text(
+                                                    '${file.name} 파일이 중요 문서함에 추가되었습니다.',
+                                                  ),
+                                                ),
                                               );
                                             } catch (e) {
                                               print('중요 문서 추가 실패: $e');
-                                              ScaffoldMessenger.of(context).showSnackBar(
-                                                SnackBar(content: Text('중요 문서 추가 실패: $e')),
+                                              ScaffoldMessenger.of(
+                                                context,
+                                              ).showSnackBar(
+                                                SnackBar(
+                                                  content: Text(
+                                                    '중요 문서 추가 실패: $e',
+                                                  ),
+                                                ),
                                               );
                                             }
                                           }
@@ -993,52 +1039,52 @@ class _PersonalScreenState extends State<PersonalScreen> {
                                                 isAlreadyImportantFile(file.id!)
                                                     ? Icons.star
                                                     : Icons.star_border,
-                                                color: isAlreadyImportantFile(file.id!)
-                                                    ? Colors.amber
-                                                    : Colors.grey,
-                                                size: 18,
+                                                color:
+                                                    isAlreadyImportantFile(
+                                                          file.id!,
+                                                        )
+                                                        ? Colors.amber
+                                                        : Colors.grey,
+                                                size: 13,
                                               ),
                                               onPressed: () async {
-                                                if (isAlreadyImportantFile(file.id!)) {
-                                                  final target = importantFiles.firstWhere((f) => f.fileId == file.id);
-                                                  await removeFromImportant(target.importantId);
-                                                  ScaffoldMessenger.of(context).showSnackBar(
-                                                    SnackBar(content: Text('${file.name} 파일이 중요 문서함에서 삭제되었습니다.')),
+                                                if (isAlreadyImportantFile(
+                                                  file.id!,
+                                                )) {
+                                                  final target = importantFiles
+                                                      .firstWhere(
+                                                        (f) =>
+                                                            f.fileId == file.id,
+                                                      );
+                                                  await removeFromImportant(
+                                                    target.importantId,
+                                                  );
+                                                  ScaffoldMessenger.of(
+                                                    context,
+                                                  ).showSnackBar(
+                                                    SnackBar(
+                                                      content: Text(
+                                                        '${file.name} 파일이 중요 문서함에서 삭제되었습니다.',
+                                                      ),
+                                                    ),
                                                   );
                                                 } else {
-                                                  await addToImportant(userId: userId!, fileId: file.id);
-                                                  ScaffoldMessenger.of(context).showSnackBar(
-                                                    SnackBar(content: Text('${file.name} 파일이 중요 문서함에 추가되었습니다.')),
+                                                  await addToImportant(
+                                                    userId: userId!,
+                                                    fileId: file.id,
+                                                  );
+                                                  ScaffoldMessenger.of(
+                                                    context,
+                                                  ).showSnackBar(
+                                                    SnackBar(
+                                                      content: Text(
+                                                        '${file.name} 파일이 중요 문서함에 추가되었습니다.',
+                                                      ),
+                                                    ),
                                                   );
                                                 }
                                                 await fetchImportantStatus();
                                                 setState(() {});
-                                              },
-                                            ),
-                                            IconButton(
-                                              icon: const Icon(
-                                                Icons.close,
-                                                size: 16,
-                                              ),
-                                              onPressed: () async {
-                                                final deletedFile = selectedFiles[index];
-                                                // 파일 휴지통으로
-                                                try {
-                                                  final deletedFile = selectedFiles[index];
-                                                  final fileId = deletedFile.id;
-                                                  await moveToTrash(
-                                                    userId!, // 실제 로그인한 사용자 ID
-                                                    [],      // 폴더 ID는 없으므로 빈 리스트
-                                                    [fileId!], // 파일
-                                                  );
-                                                } catch (e) {
-                                                  print('휴지통 이동 실패: $e');
-                                                }
-
-                                                setState(() {
-                                                  selectedFiles.removeAt(index);
-                                                  fileNames.remove(file.name);
-                                                });
                                               },
                                             ),
                                           ],
