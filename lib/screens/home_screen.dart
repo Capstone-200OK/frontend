@@ -6,7 +6,6 @@ import 'package:provider/provider.dart';
 import 'package:flutter_application_1/providers/user_provider.dart';
 import 'package:flutter_application_1/screens/cloud_screen.dart';
 
-
 class HomeScreen extends StatelessWidget {
   final String username;
 
@@ -35,12 +34,19 @@ class HomeScreen extends StatelessWidget {
                     color: Color(0xff263238),
                   ), //최근항목아이콘
                   onPressed: () {
-                    final userId = Provider.of<UserProvider>(context, listen: false).userId;
+                    final userId =
+                        Provider.of<UserProvider>(
+                          context,
+                          listen: false,
+                        ).userId;
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (context) =>
-                            RecentFileScreen(username: username, userId: userId),
+                        builder:
+                            (context) => RecentFileScreen(
+                              username: username,
+                              userId: userId,
+                            ),
                       ),
                     );
                     print('최근 항목 눌림');
@@ -62,14 +68,14 @@ class HomeScreen extends StatelessWidget {
       ),
 
       drawer: NavigationDrawerWidget(
-      username: username,
-      onFolderCreated: (folderName) {
-        // 필요 시 폴더 생성 후 작업 추가
-      },
-      folders: const [], // 필요시 폴더 목록 전달
-      scaffoldContext: context,
-      showUploadButton: false,
-    ),
+        username: username,
+        onFolderCreated: (folderName) {
+          // 필요 시 폴더 생성 후 작업 추가
+        },
+        folders: const [], // 필요시 폴더 목록 전달
+        scaffoldContext: context,
+        showUploadButton: false,
+      ),
 
       // 화면 내용 부분
       body: Container(
@@ -136,38 +142,8 @@ class HomeScreen extends StatelessWidget {
                     ],
                   ),
                 ),
-                const SizedBox(width: 50), // 버튼들 간의 간격 설정
-                // 홈 버튼
-                ElevatedButton(
-                  onPressed: () {},
-                  style: ElevatedButton.styleFrom(
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    minimumSize: const Size(200, 100),
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 50,
-                      vertical: 30,
-                    ),
-                    backgroundColor: Color(0xFFCFD8DC),
-                    foregroundColor: Colors.black,
-                  ),
-                  child: const Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.home, size: 50, color: Color(0xff263238)),
-                      SizedBox(width: 8),
-                      Text(
-                        '홈',
-                        style: TextStyle(
-                          fontSize: 15,
-                          fontFamily: 'APPLESDGOTHICNEOEB',
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(width: 50), // 버튼들 간의 간격 설정
+
+                const SizedBox(width: 150), // 버튼들 간의 간격 설정
                 // 클라우드 버튼
                 ElevatedButton(
                   onPressed: () {

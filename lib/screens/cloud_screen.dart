@@ -20,7 +20,6 @@ import 'package:provider/provider.dart';
 import 'package:flutter_application_1/providers/user_provider.dart';
 import 'package:flutter_application_1/api/trash.dart';
 
-
 class CloudScreen extends StatefulWidget {
   final String username;
 
@@ -237,6 +236,7 @@ class _CloudScreenState extends State<CloudScreen> {
       items: [
         PopupMenuItem(
           value: 'delete',
+          
           child: Row(
             children: [
               Icon(Icons.delete, size: 16, color: Colors.black54),
@@ -263,7 +263,7 @@ class _CloudScreenState extends State<CloudScreen> {
         ),
       ],
       elevation: 8,
-      color: Colors.white,
+      //color: Colors.white,
     );
 
     onSelected(selected);
@@ -633,23 +633,21 @@ class _CloudScreenState extends State<CloudScreen> {
                                 onSelected: (selected) async {
                                   if (selected == 'delete') {
                                     if (folderId != null) {
-                                    try {
+                                      try {
                                         await moveToTrash(
-                                          userId!,        // 실제 로그인된 사용자 ID
-                                          [folderId],     // 삭제할 폴더 ID 리스트
-                                          [],             // 파일 ID 없음
+                                          userId!, // 실제 로그인된 사용자 ID
+                                          [folderId], // 삭제할 폴더 ID 리스트
+                                          [], // 파일 ID 없음
                                         );
                                       } catch (e) {
                                         print('폴더 휴지통 이동 실패: $e');
                                       }
 
-
                                       setState(() {
                                         folders.removeAt(index);
                                       });
                                     }
-                                  }
-                                  else if (selected == 'add_to_important') {
+                                  } else if (selected == 'add_to_important') {
                                     if (folderId != null) {
                                       setState(() {
                                         importantFolders.add(
@@ -721,28 +719,11 @@ class _CloudScreenState extends State<CloudScreen> {
                                       folderName,
                                       overflow: TextOverflow.ellipsis,
                                       style: const TextStyle(
-                                        fontSize: 14,
+                                        fontSize: 12,
                                         fontFamily: 'APPLESDGOTHICNEOR',
                                         color: Colors.black87,
                                       ),
                                     ),
-                                  ),
-                                  IconButton(
-                                    onPressed: () {
-                                      /*Navigator.of(context).push(
-                                          MaterialPageRoute(
-                                            builder: (context) => TrashScreen(username: widget.username),
-                                          ),
-                                        );*/
-                                      if (folderId != null)
-                                        fetchFolderHierarchy(folderId, userId!);
-                                    },
-                                    icon: const Icon(
-                                      Icons.navigate_next,
-                                      size: 20,
-                                    ),
-                                    padding: EdgeInsets.zero,
-                                    constraints: const BoxConstraints(),
                                   ),
                                 ],
                               ),
@@ -916,34 +897,6 @@ class _CloudScreenState extends State<CloudScreen> {
                                           //     });
                                           //   },
                                           // ),
-                                          IconButton(
-                                            icon: const Icon(
-                                              Icons.close,
-                                              size: 16,
-                                            ),
-
-                                            onPressed: () async {
-                                              final deletedFile = selectedFiles[index];
-                                              // 파일 휴지통으로
-                                              try {
-                                                final deletedFile = selectedFiles[index];
-                                                final fileId = deletedFile.id;
-                                                await moveToTrash(
-                                                  userId!, // 실제 로그인한 사용자 ID
-                                                  [],      // 폴더 ID는 없으므로 빈 리스트
-                                                  [fileId!], // 파일
-                                                );
-                                              } catch (e) {
-                                                print('휴지통 이동 실패: $e');
-                                              }
-
-
-                                              setState(() {
-                                                selectedFiles.removeAt(index);
-                                                fileNames.remove(file.name);
-                                              });
-                                            },
-                                          ),
                                         ],
                                       ),
                                       onTap: () {
