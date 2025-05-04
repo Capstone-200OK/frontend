@@ -6,6 +6,9 @@ import 'package:flutter_application_1/components/navigation_drawer.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_application_1/providers/user_provider.dart';
 import 'package:flutter_application_1/screens/home_screen.dart';
+import 'package:flutter_application_1/screens/personal_screen.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 
 class ImportantScreen extends StatefulWidget {
   final String username;
@@ -38,6 +41,36 @@ class _ImportantScreenState extends State<ImportantScreen> {
       importantFiles = files;
       importantFolders = folders;
     });
+  }
+
+  Future<List<Map<String, dynamic>>> fetchFolderPath(int folderId) async {
+    try {
+      final response = await http.get(Uri.parse('$baseUrl/folder/path/$folderId'));
+
+      if (response.statusCode == 200) {
+        print('폴더 경로 응답: ${response.body}');
+        final List<dynamic> jsonList = jsonDecode(response.body);
+        
+        final pathList = jsonList.map((e) {
+          if (e is Map<String, dynamic>) {
+            return {
+              "folderId": e["folderId"],
+              "folderName": e["folderName"]
+            };
+          } else {
+            throw Exception("Unexpected data format: $e");
+          }
+        }).toList();
+
+        return pathList;
+      } else {
+        throw Exception('HTTP 상태 오류: ${response.statusCode}');
+      }
+    } catch (e, stack) {
+      print('❗ fetchFolderPath 실패: $e');
+      print('📌 Stack trace: $stack');
+      throw Exception('폴더 경로 조회 실패');
+    }
   }
 
   void _showContextMenu({
@@ -154,6 +187,20 @@ class _ImportantScreenState extends State<ImportantScreen> {
                               itemBuilder: (context, index) {
                                 final folder = importantFolders[index];
                                 return GestureDetector(
+                                  onTap: () async {
+                                    final path = await fetchFolderPath(folder.folderId); // API 호출
+                                    final pathIds = path.map((p) => p['folderId'] as int).toList();
+
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) => PersonalScreen(
+                                          username: widget.username,
+                                          targetPathIds: pathIds, // 루트 → A → B 순서대로 전달
+                                        ),
+                                      ),
+                                    );
+                                  },
                                   onSecondaryTapDown: (details) {
                                     _showContextMenu(
                                       context: context,

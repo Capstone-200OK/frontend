@@ -100,7 +100,7 @@ class HomeScreen extends StatelessWidget {
                       context,
                       MaterialPageRoute(
                         builder:
-                            (context) => PersonalScreen(username: username),
+                            (context) => PersonalScreen(username: username, targetPathIds: null,),
                       ),
                     );
                   },
