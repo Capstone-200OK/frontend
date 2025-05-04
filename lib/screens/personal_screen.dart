@@ -23,8 +23,9 @@ import 'package:flutter_application_1/providers/user_provider.dart';
 
 class PersonalScreen extends StatefulWidget {
   final String username;
+  final List<int>? targetPathIds;
 
-  const PersonalScreen({Key? key, required this.username}) : super(key: key);
+  const PersonalScreen({Key? key, required this.username, this.targetPathIds,}) : super(key: key);
 
   @override
   State<PersonalScreen> createState() => _PersonalScreenState();
@@ -74,12 +75,18 @@ class _PersonalScreenState extends State<PersonalScreen> {
     uploader = FileUploader(baseUrl: url, s3BaseUrl: s3BaseUrl);
     folderIdToName[1] = 'Root';
     // context 사용 가능한 시점에 userId 가져오기
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      setState(() {
-        userId = Provider.of<UserProvider>(context, listen: false).userId;
-      });
-      fetchFolderHierarchy(1, userId!, pushToStack: false); // userId 초기화된 이후 호출
-      fetchImportantStatus();
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      userId = Provider.of<UserProvider>(context, listen: false).userId;
+
+      if (widget.targetPathIds != null && widget.targetPathIds!.isNotEmpty) {
+        for (final folderId in widget.targetPathIds!) {
+          await fetchFolderHierarchy(folderId, userId!, pushToStack: true);
+        }
+      } else {
+        await fetchFolderHierarchy(1, userId!, pushToStack: false);
+      }
+
+      await fetchImportantStatus(); // 별표 상태 초기화
     });
   }
 
