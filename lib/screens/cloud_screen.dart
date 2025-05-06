@@ -371,7 +371,7 @@ class _CloudScreenState extends State<CloudScreen> {
                   size: 24, // 아이콘 크기 (적당한 크기)
                 ),
                 onPressed: () {
-                  Navigator.push(
+                  Navigator.pushReplacement(
                     context,
                     MaterialPageRoute(
                       builder:
@@ -440,7 +440,7 @@ class _CloudScreenState extends State<CloudScreen> {
                       ), //최근항목아이콘
                       onPressed: () {
                         // 최근 항목 페이지 이동 로직
-                        Navigator.push(
+                        Navigator.pushReplacement(
                           context,
                           MaterialPageRoute(
                             builder:
@@ -493,7 +493,7 @@ class _CloudScreenState extends State<CloudScreen> {
                     padding: const EdgeInsets.only(left: 100.0),
                     child: GestureDetector(
                       onTap: () {
-                        Navigator.push(
+                        Navigator.pushReplacement(
                           context,
                           MaterialPageRoute(
                             builder:
@@ -625,6 +625,12 @@ class _CloudScreenState extends State<CloudScreen> {
                                   selectedFolderNames.add(folderName);
                                 }
                               });
+                            },
+                            onDoubleTap: () {
+                              // 더블클릭 시 하위 폴더로 이동
+                              if (folderId != null) {
+                                fetchFolderHierarchy(folderId, userId!);
+                              }
                             },
                             onSecondaryTap: () {
                               showContextMenu(
