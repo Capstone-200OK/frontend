@@ -194,6 +194,12 @@ class _RecentFileScreenState extends State<RecentFileScreen> {
                                       allHistories: histories, // 전체 이력 넘겨줌
                                     );
                                   }
+                                  else {
+                                    print('❌ 정리 내역 없음');
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(content: Text('파일 정리 내역이 없습니다.')),
+                                    );
+                                  }
                                 },
 
                                 child: Column(
@@ -345,6 +351,12 @@ class _RecentFileScreenState extends State<RecentFileScreen> {
                                                 toPath,
                                                 fileName,
                                                 allHistories: histories,
+                                              );
+                                            }
+                                            else {
+                                              print('❌ 정리 내역 없음');
+                                              ScaffoldMessenger.of(context).showSnackBar(
+                                                SnackBar(content: Text('파일 정리 내역이 없습니다.')),
                                               );
                                             }
                                           } catch (e) {
