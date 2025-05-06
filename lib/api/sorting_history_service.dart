@@ -76,8 +76,8 @@ class SortingHistoryService {
           final dateString = entry['sortingDate']; // ex: "2024-04-30 18:22"
           final id = int.tryParse(entry['sortingId']);
 
-          // 날짜만 비교 (시간 제외)
-          if (dateString.startsWith(targetDate.toString().substring(0, 10))) {
+          // 날짜 비교(분까지 포함)
+          if (dateString.startsWith(targetDate.toString().substring(0, 16))) {
             return id;
           }
         }
