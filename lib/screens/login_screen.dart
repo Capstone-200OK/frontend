@@ -18,9 +18,7 @@ class User {
 }
 
 class LoginScreen extends StatefulWidget {
-  
   const LoginScreen({Key? key}) : super(key: key);
-  
 
   @override
   _LoginScreenState createState() => _LoginScreenState();
@@ -35,7 +33,7 @@ class _LoginScreenState extends State<LoginScreen> {
   final TextEditingController _passwordController =
       TextEditingController(); // 비밀번호 입력 컨트롤러
 
-       String url = dotenv.get("BaseUrl");
+  String url = dotenv.get("BaseUrl");
 
   // 사용자 정보 리스트 (로그인할 때 비교할 데이터)
   List<User> users = [
@@ -46,52 +44,49 @@ class _LoginScreenState extends State<LoginScreen> {
 
   // 로그인 처리 함수
   void _login() async {
-    // 텍스트 필드에서 입력된 값 가져오기
-    // String id = _idController.text;
-    String nickname= _idController.text;
     String email = _emailController.text;
     String password = _passwordController.text;
-    
+
     final URL = Uri.parse('$url/user/login');
-    
 
     try {
       final response = await http.post(
         URL,
         headers: {"Content-Type": "application/json"},
-        body: json.encode({
-          "email": email,
-          "password": password,
-        }),
+        body: json.encode({"email": email, "password": password}),
       );
+
       print(response.statusCode);
+
       if (response.statusCode == 200) {
         final responseData = json.decode(response.body);
         final int userId = responseData['userId'];
+        final String username = responseData['username']; // ✅ DB에서 받아온 이름
 
-      // Provider에 저장
+        // Provider에 저장
         Provider.of<UserProvider>(context, listen: false).setUserId(userId);
+
         // 로그인 성공
-         Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(
-              builder: (context) => HomeScreen(username: nickname), // 아이디 대신 이메일
-            ),
-          );
-          ScaffoldMessenger.of(context)
-              .showSnackBar(const SnackBar(content: Text('로그인 성공')));
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (context) => HomeScreen(username: username), // ✅ DB값 전달
+          ),
+        );
+
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('로그인 성공')));
       } else {
-        // 로그인 실패
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('로그인 실패: 이메일 또는 비밀번호가 일치하지 않습니다.')),
         );
       }
     } catch (e) {
-      // 서버 연결 실패 등
       print(e);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('오류 발생: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('오류 발생: $e')));
     }
   }
 
@@ -116,18 +111,18 @@ class _LoginScreenState extends State<LoginScreen> {
         ), // 위젯, 화면 사이 여백
         child: ListView(
           children: [
-            // 아이디 입력 필드
-            TextFormField(
-              controller: _idController, // 아이디 입력을 위한 컨트롤러 연결
-              style: const TextStyle(color: Colors.white, fontSize: 13),
-              decoration: const InputDecoration(
-                labelText: '아이디', // 필드 라벨 텍스트
-                labelStyle: const TextStyle(color: Colors.white, fontSize: 12),
-                border: OutlineInputBorder(), // 테두리 설정
-              ),
-              onFieldSubmitted: (value) => _login(), // 엔터 활성화
-            ),
-            const SizedBox(height: 13), // 입력 필드 간 간격 설정
+            // // 아이디 입력 필드
+            // TextFormField(
+            //   controller: _idController, // 아이디 입력을 위한 컨트롤러 연결
+            //   style: const TextStyle(color: Colors.white, fontSize: 13),
+            //   decoration: const InputDecoration(
+            //     labelText: '아이디', // 필드 라벨 텍스트
+            //     labelStyle: const TextStyle(color: Colors.white, fontSize: 12),
+            //     border: OutlineInputBorder(), // 테두리 설정
+            //   ),
+            //   onFieldSubmitted: (value) => _login(), // 엔터 활성화
+            // ),
+            // const SizedBox(height: 13), // 입력 필드 간 간격 설정
             // 이메일 입력 필드
             TextFormField(
               controller: _emailController, // 이메일 입력을 위한 컨트롤러 연결
@@ -157,14 +152,14 @@ class _LoginScreenState extends State<LoginScreen> {
             // 로그인 버튼
             ElevatedButton(
               onPressed: _login, // 로그인 버튼 클릭 시 _login 함수 호출
-              child: const Text('로그인'), // 버튼 텍스트
+              child: const Text(
+                '로그인',
+                style: TextStyle(color: Color(0xFF37474F), fontSize: 12),
+              ), // 버튼 텍스트
               style: ButtonStyle(
                 backgroundColor: MaterialStateProperty.all(
                   Colors.grey[300],
                 ), // 연한 회색 배경
-                foregroundColor: MaterialStateProperty.all(
-                  Colors.black,
-                ), // 버튼 글자 색상 검정색
               ),
             ),
             const SizedBox(height: 20), // 버튼 간 간격 설정
@@ -181,11 +176,7 @@ class _LoginScreenState extends State<LoginScreen> {
               },
               child: const Text(
                 '회원가입',
-                style: TextStyle(
-                  color: Colors.white, 
-                  fontSize: 12,
-                  decoration: TextDecoration.underline, // 밑줄 추가해서 클릭 가능한 느낌
-                ),
+                style: TextStyle(color: Colors.white, fontSize: 12),
               ),
             ),
           ],
