@@ -53,12 +53,17 @@ class _FolderSelectDialogState extends State<FolderSelectDialog> {
 
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body) as List;
-      List<FolderSelectableItem> flatList = data.map((item) => FolderSelectableItem(
-        id: item['id'],
-        name: item['name'],
-        parentId: item['parentId'],
-        folderType: item['folderType'],
-      )).toList();
+      List<FolderSelectableItem> flatList =
+          data
+              .map(
+                (item) => FolderSelectableItem(
+                  id: item['id'],
+                  name: item['name'],
+                  parentId: item['parentId'],
+                  folderType: item['folderType'],
+                ),
+              )
+              .toList();
 
       setState(() {
         folderTree = buildFolderTree(flatList);
@@ -68,8 +73,12 @@ class _FolderSelectDialogState extends State<FolderSelectDialog> {
     }
   }
 
-  List<FolderSelectableItem> buildFolderTree(List<FolderSelectableItem> flatList) {
-    Map<int, FolderSelectableItem> map = { for (var item in flatList) item.id : item };
+  List<FolderSelectableItem> buildFolderTree(
+    List<FolderSelectableItem> flatList,
+  ) {
+    Map<int, FolderSelectableItem> map = {
+      for (var item in flatList) item.id: item,
+    };
     List<FolderSelectableItem> roots = [];
 
     for (var item in flatList) {
@@ -83,54 +92,122 @@ class _FolderSelectDialogState extends State<FolderSelectDialog> {
   }
 
   Widget buildFolderNode(FolderSelectableItem folder) {
-    return ExpansionTile(
-      title: Row(
-        children: [
-          Checkbox(
-            value: selected?.id == folder.id,
-            onChanged: (_) => setState(() => selected = folder),
-          ),
-          Expanded(
-            child: Text(
-              folder.name,
-              overflow: TextOverflow.ellipsis,
+    final isRoot = folder.parentId == null;
+
+    final titleRow = Row(
+      children: [
+        if (!isRoot)
+          Transform.scale(
+            scale: 0.7,
+            child: Checkbox(
+              value: selected?.id == folder.id,
+              onChanged: (_) {
+                setState(() {
+                  if (selected?.id == folder.id) {
+                    selected = null;
+                  } else {
+                    selected = folder;
+                  }
+                });
+              },
             ),
           ),
-        ],
-      ),
+        Expanded(
+          child: Text(
+            folder.name,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              fontSize: 14,
+              fontFamily: 'APPLESDGOTHICNEOR',
+              color:
+                  isRoot
+                      ? const Color(0xFFECEFF1)
+                      : Colors.black, // ✅ 텍스트 색상 분기
+             
+            ),
+          ),
+        ),
+      ],
+    );
+
+    return ExpansionTile(
       initiallyExpanded: folder.isExpanded,
-      children: folder.children.map(buildFolderNode).toList(),
       onExpansionChanged: (expanded) {
         setState(() => folder.isExpanded = expanded);
       },
+      title:
+          isRoot
+              ? Container(
+                decoration: BoxDecoration(
+                  color: const Color(0xFF455A64),
+                ),
+                padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 8),
+                child: titleRow,
+              )
+              : titleRow,
+      children: folder.children.map(buildFolderNode).toList(),
     );
   }
 
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: const Text("폴더 선택"),
+      backgroundColor: Colors.white,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(15), //  모서리
+      ),
+      title: const Text(
+        "폴더 선택",
+        style: TextStyle(fontSize: 18, fontFamily: 'APPLESDGOTHICNEOEB'),
+      ),
       content: SizedBox(
         width: 400,
-        height: 400,
-        child: ListView(
-          children: folderTree.map(buildFolderNode).toList(),
-        ),
+        height: 300,
+
+        child: ListView(children: folderTree.map(buildFolderNode).toList()),
       ),
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context, null),
-          child: const Text("취소"),
+          child: const Text(
+            "취소",
+            style: TextStyle(
+              fontSize: 14,
+              fontFamily: 'APPLESDGOTHICNEOR',
+              color: Colors.black,
+            ),
+          ),
         ),
         ElevatedButton(
-          onPressed: selected != null
-              ? () {
-                  WidgetsBinding.instance.addPostFrameCallback((_) {
-                    Navigator.pop(context, FolderItem(id: selected!.id, name: selected!.name));
-                  });
-                }
-              : null,
-          child: const Text("확인"),
+          style: ElevatedButton.styleFrom(
+            backgroundColor:
+                selected != null
+                    ? const Color(0xFF2E24E0)
+                    : const Color(0xFFCFD8DC),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            elevation: selected != null ? 2 : 0,
+          ),
+          onPressed:
+              selected != null
+                  ? () {
+                    WidgetsBinding.instance.addPostFrameCallback((_) {
+                      Navigator.pop(
+                        context,
+                        FolderItem(id: selected!.id, name: selected!.name),
+                      );
+                    });
+                  }
+                  : null,
+          child: Text(
+            "확인",
+            style: TextStyle(
+              fontSize: 14,
+              fontFamily: 'APPLESDGOTHICNEOR',
+              color: selected != null ? Colors.white : Colors.white,
+            ),
+          ),
         ),
       ],
     );

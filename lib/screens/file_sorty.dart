@@ -121,7 +121,6 @@ class _FileSortyScreenState extends State<FileSortyScreen> {
                             iconSize: 30,
                           ),
                           const SizedBox(height: 10),
-                          
                         ],
                       ),
                     ),
@@ -215,13 +214,16 @@ class _FileSortyScreenState extends State<FileSortyScreen> {
                                   fontFamily: 'APPLESDGOTHICNEOEB',
                                 ),
                               ),
-                              Checkbox(
-                                value: isMaintain ?? false,
-                                onChanged: (value) {
-                                  setState(() {
-                                    isMaintain = value ?? false;
-                                  });
-                                },
+                              Transform.scale(
+                                scale: 0.7, // 🔸 0.8 = 80% 크기로 축소
+                                child: Checkbox(
+                                  value: isMaintain ?? false,
+                                  onChanged: (value) {
+                                    setState(() {
+                                      isMaintain = value ?? false;
+                                    });
+                                  },
+                                ),
                               ),
                             ],
                           ),
@@ -312,8 +314,10 @@ class _FileSortyScreenState extends State<FileSortyScreen> {
   Widget _sortButton(BuildContext context, String label, String mode) {
     return ElevatedButton(
       style: ElevatedButton.styleFrom(
-        backgroundColor: selectedMode == mode ? Color(0xFF37474F) : Colors.white,
-        foregroundColor: selectedMode == mode ? Colors.white : Color(0xFF37474F),
+        backgroundColor:
+            selectedMode == mode ? Color(0xFF37474F) : Colors.white,
+        foregroundColor:
+            selectedMode == mode ? Colors.white : Color(0xFF37474F),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       ),
       onPressed: () {
