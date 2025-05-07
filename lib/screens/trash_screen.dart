@@ -139,7 +139,7 @@ class _TrashScreenState extends State<TrashScreen> {
               children: const [
                 Expanded(
                   child: Padding(
-                    padding: const EdgeInsets.only(left: 110.0),
+                    padding: const EdgeInsets.only(left: 100.0),
                     child: Text(
                       '삭제된 폴더',
                       style: TextStyle(
@@ -150,11 +150,14 @@ class _TrashScreenState extends State<TrashScreen> {
                   ),
                 ),
                 Expanded(
-                  child: Text(
-                    '삭제된 파일',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontFamily: 'APPLESDGOTHICNEOR',
+                  child: Padding(
+                    padding: const EdgeInsets.only(left: 25.0),
+                    child: Text(
+                      '삭제된 파일',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontFamily: 'APPLESDGOTHICNEOR',
+                      ),
                     ),
                   ),
                 ),
@@ -166,10 +169,10 @@ class _TrashScreenState extends State<TrashScreen> {
                 children: [
                   // 🔹 폴더 영역 (왼쪽 여백 추가됨)
                   Padding(
-                    padding: const EdgeInsets.only(left: 90), // 오른쪽으로 밀기
+                    padding: const EdgeInsets.only(left: 97), // 오른쪽으로 밀기
                     child: SizedBox(
                       height: 400,
-                      width: 400,
+                      width: 370,
                       child: Container(
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
@@ -202,13 +205,42 @@ class _TrashScreenState extends State<TrashScreen> {
                                           },
                                         );
                                       },
-                                      child: ListTile(
-                                        leading: const Icon(
-                                          Icons.folder,
-                                          color: Colors.black54,
-                                          size: 14,
+                                      child: Container(
+                                        margin: const EdgeInsets.symmetric(
+                                          vertical: 4,
+                                        ), // 요소 간 간격
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 8,
                                         ),
-                                        title: Text(folder.folderName,style: TextStyle(fontSize: 14, fontFamily: 'APPLESDGOTHICNEOR'),),
+                                        decoration: BoxDecoration(
+                                          color: Colors.white, // 🔸 각 요소 배경색
+                                          borderRadius: BorderRadius.circular(
+                                            12,
+                                          ), // 🔸 둥근 테두리
+                                          boxShadow: [
+                                            BoxShadow(
+                                              color: Colors.black.withOpacity(
+                                                0.05,
+                                              ), // 🔸 살짝 그림자
+                                              blurRadius: 4,
+                                              offset: const Offset(0, 2),
+                                            ),
+                                          ],
+                                        ),
+                                        child: ListTile(
+                                          leading: const Icon(
+                                            Icons.folder,
+                                            color: Colors.black54,
+                                            size: 14,
+                                          ),
+                                          title: Text(
+                                            folder.folderName,
+                                            style: const TextStyle(
+                                              fontSize: 14,
+                                              fontFamily: 'APPLESDGOTHICNEOR',
+                                            ),
+                                          ),
+                                        ),
                                       ),
                                     );
                                   },
@@ -217,12 +249,12 @@ class _TrashScreenState extends State<TrashScreen> {
                     ),
                   ),
 
-                  const SizedBox(width: 12),
+                  const SizedBox(width: 53),
 
                   // 🔹 파일 영역 (변경 없음)
                   SizedBox(
                     height: 400,
-                    width: 400,
+                    width: 370,
                     child: Container(
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
@@ -253,15 +285,42 @@ class _TrashScreenState extends State<TrashScreen> {
                                         },
                                       );
                                     },
-                                    child: ListTile(
-                                      leading: const Icon(
-                                        Icons.insert_drive_file,
-                                        color: Colors.black54,
-                                        size: 14,
+                                    child: Container(
+                                      margin: const EdgeInsets.symmetric(
+                                        vertical: 4,
+                                      ), // 요소 간 간격
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 8,
                                       ),
-                                      title: Text(file.fileName, style: TextStyle(fontSize: 14, fontFamily: 'APPLESDGOTHICNEOR'),),
-                                      subtitle: Text(
-                                        '${file.fileType} • ${(file.size / 1024).toStringAsFixed(1)} KB',
+                                      decoration: BoxDecoration(
+                                        color: Colors.white, // 🔸 흰 배경
+                                        borderRadius: BorderRadius.circular(12),
+                                        boxShadow: [
+                                          BoxShadow(
+                                            color: Colors.black.withOpacity(
+                                              0.05,
+                                            ), // 🔸 은은한 그림자
+                                            blurRadius: 4,
+                                            offset: const Offset(0, 2),
+                                          ),
+                                        ],
+                                      ),
+                                      child: ListTile(
+                                        leading: const Icon(
+                                          Icons.insert_drive_file,
+                                          color: Colors.black54,
+                                          size: 14,
+                                        ),
+                                        title: Text(
+                                          file.fileName,
+                                          style: const TextStyle(
+                                            fontSize: 14,
+                                            fontFamily: 'APPLESDGOTHICNEOR',
+                                          ),
+                                        ),
+                                        subtitle: Text(
+                                          '${file.fileType} • ${(file.size / 1024).toStringAsFixed(1)} KB',
+                                        ),
                                       ),
                                     ),
                                   );
@@ -276,7 +335,7 @@ class _TrashScreenState extends State<TrashScreen> {
             //const SizedBox(height: 8),
             // 검색창
             Padding(
-              padding: const EdgeInsets.only(bottom: 55), // 🔸 위쪽 여백 줄여서 위로 올림
+              padding: const EdgeInsets.only(bottom: 48), // 🔸 위쪽 여백 줄여서 위로 올림
               child: SizedBox(
                 width: 800,
                 child: TextField(
