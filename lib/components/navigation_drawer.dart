@@ -181,76 +181,77 @@ class NavigationDrawerWidget extends StatelessWidget {
                     0,
                   );
 
-                  final selected = await showMenu<String>(
-                    context: scaffoldContext,
-                    position: position,
-                    items: [
-                      const PopupMenuItem(
-                        value: 'new_folder',
-                        child: SizedBox(
-                          width: 150,
-                          child: Text(
-                            '새 폴더',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: Colors.black,
-                              fontFamily: 'APPLESDGOTHICNEOR',
-                            ),
-                          ),
-                        ),
-                      ),
-                      const PopupMenuItem(
-                        value: 'upload_file',
-                        child: Text(
-                          '파일 업로드',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: Colors.black,
-                            fontFamily: 'APPLESDGOTHICNEOR',
-                          ),
-                        ),
-                      ),
-                      const PopupMenuItem(
-                        value: 'upload_folder',
-                        child: Text(
-                          '폴더 업로드',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: Colors.black,
-                            fontFamily: 'APPLESDGOTHICNEOR',
-                          ),
-                        ),
-                      ),
-                    ],
-                    elevation: 8,
-                    color: Colors.white,
-                  );
+                //   final selected = await showMenu<String>(
+                //     context: scaffoldContext,
+                //     position: position,
+                //     items: [
+                //       const PopupMenuItem(
+                //         value: 'new_folder',
+                //         child: SizedBox(
+                //           width: 150,
+                //           child: Text(
+                //             '새 폴더',
+                //             style: TextStyle(
+                //               fontSize: 12,
+                //               color: Colors.black,
+                //               fontFamily: 'APPLESDGOTHICNEOR',
+                //             ),
+                //           ),
+                //         ),
+                //       ),
+                //       const PopupMenuItem(
+                //         value: 'upload_file',
+                //         child: Text(
+                //           '파일 업로드',
+                //           style: TextStyle(
+                //             fontSize: 12,
+                //             color: Colors.black,
+                //             fontFamily: 'APPLESDGOTHICNEOR',
+                //           ),
+                //         ),
+                //       ),
+                //       const PopupMenuItem(
+                //         value: 'upload_folder',
+                //         child: Text(
+                //           '폴더 업로드',
+                //           style: TextStyle(
+                //             fontSize: 12,
+                //             color: Colors.black,
+                //             fontFamily: 'APPLESDGOTHICNEOR',
+                //           ),
+                //         ),
+                //       ),
+                //     ],
+                //     elevation: 8,
+                //     color: Colors.white,
+                //   );
 
-                  if (selected == 'new_folder') {
-                    final result = await showDialog(
-                      context: scaffoldContext,
-                      builder: (context) {
-                        return Dialog(
-                          child: Container(
-                            width: 350,
-                            height: 280,
-                            color: Colors.white,
-                            child: FolderCreateScreen(
-                              onCreateFolder: (folderName) {
-                                onFolderCreated(folderName);
-                                Navigator.of(context).pop();
-                              },
-                            ),
-                          ),
-                        );
-                      },
-                    );
+                //   if (selected == 'new_folder') {
+                //     final result = await showDialog(
+                //       context: scaffoldContext,
+                //       builder: (context) {
+                //         return Dialog(
+                //           child: Container(
+                //             width: 350,
+                //             height: 280,
+                //             color: Colors.white,
+                //             child: FolderCreateScreen(
+                //               onCreateFolder: (folderName) {
+                //                 onFolderCreated(folderName);
+                //                 Navigator.of(context).pop();
+                //               },
+                //             ),
+                //           ),
+                //         );
+                //       },
+                //     );
 
-                    if (result == true) {
-                      print('새 폴더 생성 완료');
-                    }
-                  }
-                },
+                //     if (result == true) {
+                //       print('새 폴더 생성 완료');
+                //     }
+                //   }
+                // },
+                }
               ),
 
             ListTile(
@@ -269,7 +270,7 @@ class NavigationDrawerWidget extends StatelessWidget {
               ),
               tileColor: const Color(0xFF455A64),
               onTap: () {
-                Navigator.push(
+                Navigator.pushReplacement(
                   scaffoldContext,
                   MaterialPageRoute(
                     builder: (context) => ImportantScreen(username: username),
@@ -291,7 +292,7 @@ class NavigationDrawerWidget extends StatelessWidget {
               ),
               tileColor: const Color(0xFF455A64),
               onTap: () {
-                Navigator.push(
+                Navigator.pushReplacement(
                   scaffoldContext,
                   MaterialPageRoute(
                     builder: (context) => TrashScreen(username: username),
@@ -312,7 +313,7 @@ class NavigationDrawerWidget extends StatelessWidget {
               ),
               tileColor: const Color(0xFF455A64),
               onTap: () {
-                Navigator.push(
+                Navigator.pushReplacement(
                   scaffoldContext,
                   MaterialPageRoute(
                     builder: (context) => FileReservationScreen(),
@@ -373,7 +374,7 @@ class NavigationDrawerWidget extends StatelessWidget {
                 final userId =
                     Provider.of<UserProvider>(context, listen: false).userId;
 
-                Navigator.push(
+                Navigator.pushReplacement(
                   context,
                   MaterialPageRoute(
                     builder:

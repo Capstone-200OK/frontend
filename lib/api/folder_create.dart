@@ -7,8 +7,9 @@ import 'package:flutter_application_1/providers/user_provider.dart';
 
 class FolderCreateScreen extends StatefulWidget {
   final Function(String) onCreateFolder;
+  final int parentFolderId;
 
-  const FolderCreateScreen({Key? key, required this.onCreateFolder})
+  const FolderCreateScreen({Key? key, required this.onCreateFolder, required this.parentFolderId})
     : super(key: key);
 
   @override
@@ -21,8 +22,12 @@ class _FolderCreateScreenState extends State<FolderCreateScreen> {
   String _message = '';
   String url = dotenv.get("BaseUrl");
   //final int userId = 1;
-  final int parentFolderId = 1;
-
+  late final int parentFolderId;
+  @override
+  void initState() {
+    super.initState();
+    parentFolderId = widget.parentFolderId;
+  }
   Future<void> createFolder() async {
     final userProvider = Provider.of<UserProvider>(context, listen: false);
     final userId = userProvider.userId;
