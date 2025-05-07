@@ -99,8 +99,12 @@ class _PersonalScreenState extends State<PersonalScreen> {
 
   Future<void> fetchImportantStatus() async {
     if (userId == null) return;
-    importantFolders = await fetchImportantFolders(userId!);
-    importantFiles = await fetchImportantFiles(userId!);
+    final folders = await fetchImportantFolders(userId!);
+    final files = await fetchImportantFiles(userId!);
+    setState(() {
+      importantFolders = folders;
+      importantFiles = files;
+    });
   }
 
   Future<void> fetchFolderHierarchy(
