@@ -5,12 +5,208 @@ import 'package:flutter_application_1/screens/recent_file_screen.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_application_1/providers/user_provider.dart';
 import 'package:flutter_application_1/screens/cloud_screen.dart';
+import 'dart:convert'; // for jsonDecode
+import 'package:http/http.dart' as http; // for http.get
+import 'package:flutter_dotenv/flutter_dotenv.dart'; // for dotenv.get
 
-class HomeScreen extends StatelessWidget {
+
+class HomeScreen extends StatefulWidget {
   final String username;
-
-  // 생성자에 사용자 이름을 전달받음
   const HomeScreen({Key? key, required this.username}) : super(key: key);
+
+  @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  final TextEditingController _searchController = TextEditingController();
+  List<Map<String, dynamic>> searchResults = [];
+  OverlayEntry? _searchOverlay;
+  late int? userId;
+  late String url;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      userId = Provider.of<UserProvider>(context, listen: false).userId;
+      url = dotenv.get("BaseUrl");
+    });
+  }
+
+  Future<void> searchFoldersAndFiles(String input) async {
+    if (input.trim().isEmpty || userId == null) return;
+
+    final folderRes = await http.get(Uri.parse('$url/folder/search/$userId/$input'));
+    final fileRes = await http.get(Uri.parse('$url/file/search/$userId/$input'));
+
+    if (folderRes.statusCode == 200 && fileRes.statusCode == 200) {
+      final folderJson = List<Map<String, dynamic>>.from(
+        jsonDecode(folderRes.body).map((e) => Map<String, dynamic>.from(e)),
+      );
+
+      final fileJson = List<Map<String, dynamic>>.from(
+        jsonDecode(fileRes.body).map((e) => Map<String, dynamic>.from(e)),
+      );
+
+      final combinedResults = [
+        ...folderJson.map((e) => {...e, 'type': 'folder'}),
+        ...fileJson.map((e) => {...e, 'type': 'file'}),
+      ];
+
+      showSearchOverlay(combinedResults);
+    }
+  }
+
+  TextSpan highlightOccurrences(String source, String query) {
+    if (query.isEmpty) {
+      return TextSpan(
+        text: source,
+        style: const TextStyle(
+          color: Colors.black,
+          fontSize: 14,
+        ),
+      );
+    }
+
+    final matches = <TextSpan>[];
+    final lcSource = source.toLowerCase();
+    final lcQuery = query.toLowerCase();
+
+    int start = 0;
+    int index = lcSource.indexOf(lcQuery, start);
+
+    while (index != -1) {
+      if (index > start) {
+        matches.add(TextSpan(
+          text: source.substring(start, index),
+          style: const TextStyle(
+            color: Colors.black,
+            fontSize: 14,
+          ),
+        ));
+      }
+
+      matches.add(TextSpan(
+        text: source.substring(index, index + query.length),
+        style: const TextStyle(
+          fontWeight: FontWeight.bold,
+          color: Colors.blue,
+          fontSize: 14,
+        ),
+      ));
+
+      start = index + query.length;
+      index = lcSource.indexOf(lcQuery, start);
+    }
+
+    if (start < source.length) {
+      matches.add(TextSpan(
+        text: source.substring(start),
+        style: const TextStyle(
+          color: Colors.black,
+          fontSize: 14,
+        ),
+      ));
+    }
+
+    return TextSpan(children: matches);
+  }
+
+  void showSearchOverlay(List<Map<String, dynamic>> results) {
+    _removeSearchOverlay();
+
+    final renderBox = context.findRenderObject() as RenderBox;
+    final position = renderBox.localToGlobal(Offset.zero);
+
+    _searchOverlay = OverlayEntry(
+      builder: (context) => Positioned(
+        left: position.dx + 100,
+        top: position.dy + 90,
+        width: 800,
+        child: Material(
+          elevation: 4,
+          borderRadius: BorderRadius.circular(10),
+          child: Container(
+            color: Colors.white,
+            child: ListView(
+              shrinkWrap: true,
+              children: results.map((item) {
+                final isFolder = item['type'] == 'folder';
+                return ListTile(
+                  leading: Icon(
+                    isFolder ? Icons.folder : Icons.insert_drive_file,
+                    color: isFolder ? Colors.amber : Colors.grey,
+                    size: 20,
+                  ),
+                  title: RichText(
+                    text: highlightOccurrences(
+                      item[isFolder ? 'folderName' : 'fileName'],
+                      _searchController.text,
+                    ),
+                  ),
+                  subtitle: Text(
+                    item['parentFolderName'] != null
+                        ? '${item['parentFolderName']}'
+                        : '',
+                    style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                  ),
+                  onTap: () async {
+                    if (isFolder) {
+                      final folderId = item['folderId'];
+                      final response = await http.get(Uri.parse('$url/folder/path/$folderId'));
+
+                      if (response.statusCode == 200) {
+                        final List<dynamic> jsonList = jsonDecode(response.body);
+                        final List<int> pathIds = jsonList.map((e) => e['folderId'] as int).toList();
+
+                        _removeSearchOverlay();
+                        Navigator.pushReplacement(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => PersonalScreen(
+                              username: widget.username,
+                              targetPathIds: pathIds,
+                            ),
+                          ),
+                        );
+                      }
+                    } else {
+                      final parentId = item['parentFolderId'];
+                      final response = await http.get(Uri.parse('$url/folder/path/$parentId'));
+
+                      if (response.statusCode == 200) {
+                        final List<dynamic> jsonList = jsonDecode(response.body);
+                        final List<int> pathIds = jsonList.map((e) => e['folderId'] as int).toList();
+
+                        _removeSearchOverlay();
+                        Navigator.pushReplacement(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => PersonalScreen(
+                              username: widget.username,
+                              targetPathIds: pathIds,
+                            ),
+                          ),
+                        );
+                      }
+                    }
+                  },
+                );
+              }).toList(),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    Overlay.of(context).insert(_searchOverlay!);
+  }
+
+  void _removeSearchOverlay() {
+    _searchOverlay?.remove();
+    _searchOverlay = null;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -44,7 +240,7 @@ class HomeScreen extends StatelessWidget {
                       MaterialPageRoute(
                         builder:
                             (context) => RecentFileScreen(
-                              username: username,
+                              username: widget.username,
                               userId: userId,
                             ),
                       ),
@@ -68,7 +264,7 @@ class HomeScreen extends StatelessWidget {
       ),
 
       drawer: NavigationDrawerWidget(
-        username: username,
+        username: widget.username,
         onFolderCreated: (folderName) {
           // 필요 시 폴더 생성 후 작업 추가
         },
@@ -86,7 +282,7 @@ class HomeScreen extends StatelessWidget {
             Align(
               alignment: Alignment.center, // 글씨를 화면 중앙에 배치
               child: Text(
-                '$username님, 안녕하세요', // 사용자 이름을 동적으로 출력
+                '${widget.username}님, 안녕하세요', // 사용자 이름을 동적으로 출력
                 style: const TextStyle(
                   fontSize: 30, // 글씨 크기 설정
                   fontFamily: 'APPLESDGOTHICNEOEB',
@@ -106,7 +302,7 @@ class HomeScreen extends StatelessWidget {
                       context,
                       MaterialPageRoute(
                         builder:
-                            (context) => PersonalScreen(username: username, targetPathIds: null,),
+                            (context) => PersonalScreen(username: widget.username, targetPathIds: null,),
                       ),
                     );
                   },
@@ -150,7 +346,7 @@ class HomeScreen extends StatelessWidget {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (context) => CloudScreen(username: username),
+                        builder: (context) => CloudScreen(username: widget.username),
                       ),
                     );
                   },
@@ -191,6 +387,10 @@ class HomeScreen extends StatelessWidget {
               child: SizedBox(
                 width: 800, // 원하는 가로폭
                 child: TextField(
+                  controller: _searchController,
+                  onSubmitted: (value) {
+                    searchFoldersAndFiles(value);
+                  },
                   style: TextStyle(
                     fontSize: 16, // 입력 텍스트 크기
                     fontFamily: 'APPLESDGOTHICNEOEB',
@@ -223,7 +423,8 @@ class HomeScreen extends StatelessWidget {
                     prefixIcon: Icon(
                       Icons.search,
                       color: Color(0xff263238),
-                    ), // 검색 아이콘을 왼쪽에에 추가
+                      // 검색 아이콘을 왼쪽에 추가
+                    ),
                     suffixIcon: Icon(
                       Icons.tune,
                       color: Color(0xff263238),

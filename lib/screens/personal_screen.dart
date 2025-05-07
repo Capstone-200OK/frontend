@@ -66,6 +66,9 @@ class _PersonalScreenState extends State<PersonalScreen> {
   bool isAlreadyImportantFile(int fileId) {
     return importantFiles.any((f) => f.fileId == fileId);
   }
+  List<Map<String, dynamic>> searchResults = [];
+  OverlayEntry? _searchOverlay;
+  final TextEditingController _searchController = TextEditingController();
 
   @override
   void initState() {
@@ -95,6 +98,125 @@ class _PersonalScreenState extends State<PersonalScreen> {
     List<String> pathNames =
         pathIds.map((id) => folderIdToName[id] ?? 'Unknown').toList();
     return pathNames.join('/');
+  }
+
+  Future<void> searchFoldersAndFiles(String input) async {
+    if (input.trim().isEmpty || userId == null) return;
+
+    final folderRes = await http.get(Uri.parse('$url/folder/search/$userId/$input'));
+    final fileRes = await http.get(Uri.parse('$url/file/search/$userId/$input'));
+
+    if (folderRes.statusCode == 200 && fileRes.statusCode == 200) {
+      final folderJson = List<Map<String, dynamic>>.from(
+        jsonDecode(folderRes.body).map((e) => Map<String, dynamic>.from(e)),
+      );
+
+      final fileJson = List<Map<String, dynamic>>.from(
+        jsonDecode(fileRes.body).map((e) => Map<String, dynamic>.from(e)),
+      );
+
+      final combinedResults = [
+        ...folderJson.map((e) => {...e, 'type': 'folder'}),
+        ...fileJson.map((e) => {...e, 'type': 'file'}),
+      ];
+
+      showSearchOverlay(combinedResults);
+    }
+  }
+
+  void showSearchOverlay(List<Map<String, dynamic>> results) {
+    _removeSearchOverlay();
+
+    final renderBox = context.findRenderObject() as RenderBox;
+    final position = renderBox.localToGlobal(Offset.zero);
+
+    _searchOverlay = OverlayEntry(
+      builder: (context) => Positioned(
+        left: position.dx + 100,
+        top: position.dy + 90,
+        width: 800,
+        child: Material(
+          elevation: 4,
+          borderRadius: BorderRadius.circular(10),
+          child: Container(
+            color: Colors.white,
+            child: ListView(
+              shrinkWrap: true,
+              children: results.map((item) {
+                final isFolder = item['type'] == 'folder';
+                return ListTile(
+                  leading: Icon(
+                    isFolder ? Icons.folder : Icons.insert_drive_file,
+                    color: isFolder ? Colors.amber : Colors.grey,
+                    size: 20,
+                  ),
+                  title: RichText(
+                    text: highlightOccurrences(
+                      item[isFolder ? 'folderName' : 'fileName'],
+                      _searchController.text,
+                    ),
+                  ),
+                  subtitle: Text(
+                    item['parentFolderName'] != null
+                        ? '${item['parentFolderName']}'
+                        : '',
+                    style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                  ),
+                  onTap: () async {
+                    if (isFolder) {
+                      final folderId = item['folderId'];
+                      final response = await http.get(Uri.parse('$url/folder/path/$folderId'));
+
+                      if (response.statusCode == 200) {
+                        final List<dynamic> jsonList = jsonDecode(response.body);
+                        final List<int> pathIds = jsonList.map((e) => e['folderId'] as int).toList();
+
+                        _removeSearchOverlay();
+                        Navigator.pushReplacement(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => PersonalScreen(
+                              username: widget.username,
+                              targetPathIds: pathIds,
+                            ),
+                          ),
+                        );
+                      }
+                    } else {
+                      final parentId = item['parentFolderId'];
+                      final response = await http.get(Uri.parse('$url/folder/path/$parentId'));
+
+                      if (response.statusCode == 200) {
+                        final List<dynamic> jsonList = jsonDecode(response.body);
+                        final List<int> pathIds = jsonList.map((e) => e['folderId'] as int).toList();
+
+                        _removeSearchOverlay();
+                        Navigator.pushReplacement(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => PersonalScreen(
+                              username: widget.username,
+                              targetPathIds: pathIds,
+                            ),
+                          ),
+                        );
+                      }
+                    }
+                  },
+                );
+              }).toList(),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    Overlay.of(context).insert(_searchOverlay!);
+  }
+
+  void _removeSearchOverlay() {
+    _searchOverlay?.remove();
+    _searchOverlay = null;
   }
 
   Future<void> fetchImportantStatus() async {
@@ -234,6 +356,61 @@ class _PersonalScreenState extends State<PersonalScreen> {
     );
 
     overlay.insert(_previewOverlay!);
+  }
+
+  TextSpan highlightOccurrences(String source, String query) {
+      if (query.isEmpty) {
+      return TextSpan(
+        text: source,
+        style: const TextStyle(
+          color: Colors.black,
+          fontSize: 14,
+        ),
+      );
+    }
+
+    final matches = <TextSpan>[];
+    final lcSource = source.toLowerCase();
+    final lcQuery = query.toLowerCase();
+
+    int start = 0;
+    int index = lcSource.indexOf(lcQuery, start);
+
+    while (index != -1) {
+      if (index > start) {
+        matches.add(TextSpan(
+          text: source.substring(start, index),
+          style: const TextStyle(
+            color: Colors.black,
+            fontSize: 14,
+          ),
+        ));
+      }
+
+      matches.add(TextSpan(
+        text: source.substring(index, index + query.length),
+        style: const TextStyle(
+          fontWeight: FontWeight.bold,
+          color: Colors.blue,
+          fontSize: 14,
+        ),
+      ));
+
+      start = index + query.length;
+      index = lcSource.indexOf(lcQuery, start);
+    }
+
+    if (start < source.length) {
+      matches.add(TextSpan(
+        text: source.substring(start),
+        style: const TextStyle(
+          color: Colors.black,
+          fontSize: 14,
+        ),
+      ));
+    }
+
+    return TextSpan(children: matches);
   }
 
   Future<void> showContextMenuAtPosition({
@@ -1128,6 +1305,10 @@ class _PersonalScreenState extends State<PersonalScreen> {
               child: SizedBox(
                 width: 800, // 원하는 가로폭
                 child: TextField(
+                  controller: _searchController,
+                  onSubmitted: (value) {
+                    searchFoldersAndFiles(value);
+                  },
                   style: TextStyle(
                     fontSize: 16, // 입력 텍스트 크기
                     fontFamily: 'APPLESDGOTHICNEOEB',
