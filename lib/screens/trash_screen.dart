@@ -56,6 +56,7 @@ class _TrashScreenState extends State<TrashScreen> {
         overlay.size.width - position.dx,
         overlay.size.height - position.dy,
       ),
+      color: Colors.white,
       items: [
         PopupMenuItem(
           value: 'restore',
@@ -139,7 +140,7 @@ class _TrashScreenState extends State<TrashScreen> {
               children: const [
                 Expanded(
                   child: Padding(
-                    padding: const EdgeInsets.only(left: 100.0),
+                    padding: const EdgeInsets.only(left: 100.0, top: 30.0),
                     child: Text(
                       '삭제된 폴더',
                       style: TextStyle(
@@ -151,7 +152,7 @@ class _TrashScreenState extends State<TrashScreen> {
                 ),
                 Expanded(
                   child: Padding(
-                    padding: const EdgeInsets.only(left: 25.0),
+                    padding: const EdgeInsets.only(left: 25.0, top: 30.0),
                     child: Text(
                       '삭제된 파일',
                       style: TextStyle(
@@ -332,7 +333,6 @@ class _TrashScreenState extends State<TrashScreen> {
               ),
             ),
 
-            //const SizedBox(height: 8),
             // 검색창
             Padding(
               padding: const EdgeInsets.only(bottom: 48), // 🔸 위쪽 여백 줄여서 위로 올림
