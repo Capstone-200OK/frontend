@@ -21,6 +21,7 @@ import 'package:syncfusion_flutter_pdfviewer/pdfviewer.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_application_1/providers/user_provider.dart';
 import 'package:flutter_application_1/api/folder_create.dart';
+import 'package:flutter_application_1/components/search_bar_with_overlay.dart';
 
 class PersonalScreen extends StatefulWidget {
   final String username;
@@ -99,127 +100,6 @@ class _PersonalScreenState extends State<PersonalScreen> {
     List<String> pathNames =
         pathIds.map((id) => folderIdToName[id] ?? 'Unknown').toList();
     return pathNames.join('/');
-  }
-
-  Future<void> searchFoldersAndFiles(String input) async {
-    if (input.trim().isEmpty || userId == null) return;
-
-    final folderRes = await http.get(Uri.parse('$url/folder/search/$userId/$input'));
-    final fileRes = await http.get(Uri.parse('$url/file/search/$userId/$input'));
-
-    if (folderRes.statusCode == 200 && fileRes.statusCode == 200) {
-      final folderJson = List<Map<String, dynamic>>.from(
-        jsonDecode(folderRes.body).map((e) => Map<String, dynamic>.from(e)),
-      );
-
-      final fileJson = List<Map<String, dynamic>>.from(
-        jsonDecode(fileRes.body).map((e) => Map<String, dynamic>.from(e)),
-      );
-
-      final combinedResults = [
-        ...folderJson.map((e) => {...e, 'type': 'folder'}),
-        ...fileJson.map((e) => {...e, 'type': 'file'}),
-      ];
-
-      showSearchOverlay(combinedResults);
-    }
-  }
-
-  void showSearchOverlay(List<Map<String, dynamic>> results) {
-    _removeSearchOverlay();
-
-    final renderBox = context.findRenderObject() as RenderBox;
-    final position = renderBox.localToGlobal(Offset.zero);
-
-    _searchOverlay = OverlayEntry(
-      builder: (context) => Positioned(
-        left: position.dx + 100,
-        top: position.dy + 90,
-        width: 800,
-        child: Material(
-          elevation: 4,
-          borderRadius: BorderRadius.circular(10),
-          child: Container(
-            color: Colors.white,
-            child: ListView(
-              shrinkWrap: true,
-              children: results.map((item) {
-                final isFolder = item['type'] == 'folder';
-                return ListTile(
-                  leading: Icon(
-                    isFolder ? Icons.folder : Icons.insert_drive_file,
-                    color: isFolder ? Colors.amber : Colors.grey,
-                    size: 20,
-                  ),
-                  title: RichText(
-                    text: highlightOccurrences(
-                      item[isFolder ? 'folderName' : 'fileName'],
-                      _searchController.text,
-                    ),
-                  ),
-                  subtitle: Text(
-                    item['parentFolderName'] != null
-                        ? (item['folderType'] != null
-                            ? "${item['folderType']}: ${item['parentFolderName']}"
-                            : item['parentFolderName']) // 파일은 폴더타입 없음
-                        : '',
-                    style: TextStyle(fontSize: 12, color: Colors.grey[600]),
-                  ),
-                  onTap: () async {
-                    if (isFolder) {
-                      final folderId = item['folderId'];
-                      final response = await http.get(Uri.parse('$url/folder/path/$folderId'));
-
-                      if (response.statusCode == 200) {
-                        final List<dynamic> jsonList = jsonDecode(response.body);
-                        final List<int> pathIds = jsonList.map((e) => e['folderId'] as int).toList();
-
-                        _removeSearchOverlay();
-                        Navigator.pushReplacement(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => PersonalScreen(
-                              username: widget.username,
-                              targetPathIds: pathIds,
-                            ),
-                          ),
-                        );
-                      }
-                    } else {
-                      final parentId = item['parentFolderId'];
-                      final response = await http.get(Uri.parse('$url/folder/path/$parentId'));
-
-                      if (response.statusCode == 200) {
-                        final List<dynamic> jsonList = jsonDecode(response.body);
-                        final List<int> pathIds = jsonList.map((e) => e['folderId'] as int).toList();
-
-                        _removeSearchOverlay();
-                        Navigator.pushReplacement(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => PersonalScreen(
-                              username: widget.username,
-                              targetPathIds: pathIds,
-                            ),
-                          ),
-                        );
-                      }
-                    }
-                  },
-                );
-              }).toList(),
-            ),
-          ),
-        ),
-      ),
-    );
-
-    Overlay.of(context).insert(_searchOverlay!);
-  }
-
-  void _removeSearchOverlay() {
-    _searchOverlay?.remove();
-    _searchOverlay = null;
   }
 
   Future<void> fetchImportantStatus() async {
@@ -1268,56 +1148,9 @@ class _PersonalScreenState extends State<PersonalScreen> {
             const SizedBox(height: 5),
 
             // 검색창
-            Align(
-              alignment: Alignment.center, // 센터 정렬
-              child: SizedBox(
-                width: 800, // 원하는 가로폭
-                child: TextField(
-                  controller: _searchController,
-                  onSubmitted: (value) {
-                    searchFoldersAndFiles(value);
-                  },
-                  style: TextStyle(
-                    fontSize: 16, // 입력 텍스트 크기
-                    fontFamily: 'APPLESDGOTHICNEOEB',
-                  ),
-                  decoration: InputDecoration(
-                    hintText: 'search', // 검색창의 힌트 텍스트
-                    hintStyle: TextStyle(
-                      fontSize: 16, // 힌트 텍스트 크기
-                      fontFamily: 'APPLESDGOTHICNEOEB',
-                    ),
-                    filled: true, // 🔹 배경색 적용할 때 필수
-                    fillColor: Color(0xFFCFD8DC), //  TextField 배경색
-                    contentPadding: EdgeInsets.symmetric(
-                      vertical: 18,
-                      horizontal: 20,
-                    ),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(15), // 둥근 정도 설정
-                      borderSide: BorderSide.none, // 기본 테두리 제거 (filled일 때 깔끔)
-                    ),
-
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(15),
-                      borderSide: BorderSide(
-                        color: Color(0xFF607D8B),
-                        width: 2,
-                      ), // 포커스 시 진한 테두리
-                    ),
-                    //border: OutlineInputBorder(), // 검색창의 테두리 설정
-                    prefixIcon: Icon(
-                      Icons.search,
-                      color: Color(0xff263238),
-                      // 검색 아이콘을 왼쪽에 추가
-                    ),
-                    suffixIcon: Icon(
-                      Icons.tune,
-                      color: Color(0xff263238),
-                    ), // 오른쪽 '조절' 아이콘
-                  ),
-                ),
-              ),
+            SearchBarWithOverlay(
+              baseUrl: dotenv.get("BaseUrl"),
+              username: widget.username,
             ),
           ],
         ),
