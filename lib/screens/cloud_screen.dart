@@ -68,6 +68,7 @@ class _CloudScreenState extends State<CloudScreen> {
   bool isAlreadyImportantFile(int fileId) {
     return importantFiles.any((f) => f.fileId == fileId);
   }
+
   @override
   void initState() {
     super.initState();
@@ -76,12 +77,13 @@ class _CloudScreenState extends State<CloudScreen> {
     uploader = FileUploader(baseUrl: url, s3BaseUrl: s3BaseUrl);
     // folderIdToName[1] = 'Root';
     // context 사용 가능한 시점에 userId 가져오기
-    WidgetsBinding.instance.addPostFrameCallback((_) async{
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
       userId = Provider.of<UserProvider>(context, listen: false).userId;
       await fetchImportantStatus();
       fetchFolderHierarchy(2, userId!, pushToStack: false); // userId 초기화된 이후 호출
-  });
+    });
   }
+
   Future<void> fetchImportantStatus() async {
     if (userId == null) return;
     importantFolders = await fetchImportantFolders(userId!);
@@ -254,7 +256,7 @@ class _CloudScreenState extends State<CloudScreen> {
       items: [
         PopupMenuItem(
           value: 'delete',
-          
+
           child: Row(
             children: [
               Icon(Icons.delete, size: 16, color: Colors.black54),
@@ -286,12 +288,14 @@ class _CloudScreenState extends State<CloudScreen> {
 
     onSelected(selected);
   }
+
   Future<void> showContextMenuAtPosition({
-  required BuildContext context,
-  required Offset position,
-  required Function(String?) onSelected,
+    required BuildContext context,
+    required Offset position,
+    required Function(String?) onSelected,
   }) async {
-    final RenderBox overlay = Overlay.of(context).context.findRenderObject() as RenderBox;
+    final RenderBox overlay =
+        Overlay.of(context).context.findRenderObject() as RenderBox;
 
     final RelativeRect positionRect = RelativeRect.fromLTRB(
       position.dx,
@@ -303,20 +307,44 @@ class _CloudScreenState extends State<CloudScreen> {
     final selected = await showMenu<String>(
       context: context,
       position: positionRect,
+      color: Color(0xFFECEFF1),
       items: [
-        const PopupMenuItem<String>(
-          value: 'delete',
-          child: Text('삭제'),
+        PopupMenuItem(
+          value: 'create',
+          child: Row(
+            children: const [
+              Icon(Icons.create_new_folder, size: 16, color: Colors.black54),
+              SizedBox(width: 8),
+              Text('새 폴더', style: TextStyle(fontSize: 12)),
+            ],
+          ),
         ),
-        const PopupMenuItem<String>(
+        PopupMenuItem(
+          value: 'delete',
+          child: Row(
+            children: const [
+              Icon(Icons.delete, size: 16, color: Colors.black54),
+              SizedBox(width: 8),
+              Text('삭제', style: TextStyle(fontSize: 12)),
+            ],
+          ),
+        ),
+        PopupMenuItem(
           value: 'add_to_important',
-          child: Text('중요 문서함 추가'),
+          child: Row(
+            children: const [
+              Icon(Icons.star, size: 15, color: Colors.black54),
+              SizedBox(width: 8),
+              Text('중요 문서로 추가', style: TextStyle(fontSize: 12)),
+            ],
+          ),
         ),
       ],
     );
 
     onSelected(selected);
   }
+
   Widget _buildPreviewContent(String url, String type, {String? thumbnailUrl}) {
     final lower = type.toLowerCase();
 
@@ -580,6 +608,35 @@ class _CloudScreenState extends State<CloudScreen> {
                   padding: const EdgeInsets.only(right: 101),
                   child: Row(
                     children: [
+                      // 🔹 새 폴더 아이콘 버튼
+                      IconButton(
+                        icon: const Icon(
+                          Icons.create_new_folder,
+                          color: Color(0xFF596D79),
+                        ),
+                        tooltip: '새 폴더 생성',
+                        onPressed: () {
+                          showDialog(
+                            context: context,
+                            builder:
+                                (_) => FolderCreateScreen(
+                                  parentFolderId: currentFolderId,
+                                  onCreateFolder: (newName) async {
+                                    await refreshCurrentFolderFiles();
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: Text(
+                                          '"$newName" 폴더가 생성되었습니다.',
+                                        ),
+                                      ),
+                                    );
+                                  },
+                                ),
+                          );
+                        },
+                      ),
+
+                      const SizedBox(width: 10), // 버튼 사이 간격
                       // 🔹 Sorty 버튼
                       ElevatedButton(
                         onPressed:
@@ -604,12 +661,12 @@ class _CloudScreenState extends State<CloudScreen> {
                                         (context) => FileSortyScreen(
                                           folders: selectedFolderItems,
                                           username: widget.username,
-                                          sourceFolderIds: selectedFolderIds, // ✅ 이제 리스트로 전달
-                                          destinationFolderId: -1, // 목적지는 내부에서 선택함
+                                          sourceFolderIds: selectedFolderIds,
+                                          destinationFolderId: -1,
                                         ),
                                   );
                                 }
-                                : null, // selectedFolderNames가 비어 있으면 버튼 비활성화
+                                : null,
                         style: ElevatedButton.styleFrom(
                           backgroundColor: const Color(0xFF2E24E0),
                           padding: const EdgeInsets.symmetric(
@@ -637,189 +694,229 @@ class _CloudScreenState extends State<CloudScreen> {
                 children: [
                   // 폴더 리스트
                   Expanded(
-  child: Container(
-    height: 425,
-    decoration: BoxDecoration(
-      color: Color(0xFFCFD8DC),
-      borderRadius: BorderRadius.circular(16),
-    ),
-    padding: const EdgeInsets.all(12),
+                    child: Container(
+                      height: 425,
+                      decoration: BoxDecoration(
+                        color: Color(0xFFCFD8DC),
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      padding: const EdgeInsets.all(12),
 
-    // 🔽 GestureDetector로 감싸서 우클릭 이벤트 추가
-    child: GestureDetector(
-      onSecondaryTapDown: (TapDownDetails details) {
-        showMenu(
-          context: context,
-          position: RelativeRect.fromLTRB(
-            details.globalPosition.dx,
-            details.globalPosition.dy,
-            details.globalPosition.dx,
-            details.globalPosition.dy,
-          ),
-          items: [
-            const PopupMenuItem<String>(
-              value: 'create',
-              child: Text('새 폴더 만들기'),
-            ),
-          ],
-        ).then((selected) {
-          if (selected == 'create') {
-            showDialog(
-              context: context,
-              builder: (_) => FolderCreateScreen(
-                parentFolderId: currentFolderId,
-                onCreateFolder: (newName) async {
-                  await refreshCurrentFolderFiles();
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('"$newName" 폴더가 생성되었습니다.')),
-                  );
-                },
-              ),
-            );
-          }
-        });
-      },
+                      // 🔽 GestureDetector로 감싸서 우클릭 이벤트 추가
+                      child: GestureDetector(
+                        child: GridView.builder(
+                          itemCount: folders.length,
+                          gridDelegate:
+                              const SliverGridDelegateWithFixedCrossAxisCount(
+                                crossAxisCount: 2,
+                                mainAxisSpacing: 12,
+                                crossAxisSpacing: 12,
+                                childAspectRatio: 2.0,
+                              ),
+                          itemBuilder: (context, index) {
+                            final folderName = folders[index];
+                            final folderId = folderNameToId[folderName];
+                            final folderKey = GlobalKey();
+                            final isSelected = selectedFolderNames.contains(
+                              folderName,
+                            );
 
-      child: GridView.builder(
-        itemCount: folders.length,
-        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 2,
-          mainAxisSpacing: 12,
-          crossAxisSpacing: 12,
-          childAspectRatio: 2.0,
-        ),
-        itemBuilder: (context, index) {
-          final folderName = folders[index];
-          final folderId = folderNameToId[folderName];
-          final folderKey = GlobalKey();
-          final isSelected = selectedFolderNames.contains(folderName);
+                            return GestureDetector(
+                              key: folderKey,
+                              onTap: () {
+                                setState(() {
+                                  if (selectedFolderNames.contains(
+                                    folderName,
+                                  )) {
+                                    selectedFolderNames.remove(folderName);
+                                  } else {
+                                    selectedFolderNames.add(folderName);
+                                  }
+                                });
+                              },
+                              onDoubleTap: () {
+                                if (folderId != null) {
+                                  fetchFolderHierarchy(folderId, userId!);
+                                }
+                              },
+                              onSecondaryTapDown: (TapDownDetails details) {
+                                showContextMenuAtPosition(
+                                  context: context,
+                                  position: details.globalPosition,
+                                  onSelected: (selected) async {
+                                    if (selected == 'delete') {
+                                      if (folderId != null) {
+                                        await moveToTrash(userId!, [
+                                          folderId,
+                                        ], []);
+                                        setState(() {
+                                          folders.removeAt(index);
+                                        });
+                                      }
+                                    } else if (selected == 'add_to_important') {
+                                      if (folderId != null &&
+                                          !isAlreadyImportantFolder(folderId)) {
+                                        await addToImportant(
+                                          userId: userId!,
+                                          folderId: folderId,
+                                        );
+                                        await fetchImportantStatus();
+                                        ScaffoldMessenger.of(
+                                          context,
+                                        ).showSnackBar(
+                                          SnackBar(
+                                            content: Text(
+                                              '$folderName 폴더가 중요 문서함에 추가되었습니다.',
+                                            ),
+                                          ),
+                                        );
+                                      }
+                                    } else if (selected == 'create') {
+                                      showDialog(
+                                        context: context,
+                                        builder:
+                                            (_) => FolderCreateScreen(
+                                              parentFolderId: currentFolderId,
+                                              onCreateFolder: (newName) async {
+                                                await refreshCurrentFolderFiles(); // 새로고침
+                                                ScaffoldMessenger.of(
+                                                  context,
+                                                ).showSnackBar(
+                                                  SnackBar(
+                                                    content: Text(
+                                                      '"$newName" 폴더가 생성되었습니다.',
+                                                    ),
+                                                  ),
+                                                );
+                                              },
+                                            ),
+                                      );
+                                    }
+                                  },
+                                );
+                              },
 
-          return GestureDetector(
-            key: folderKey,
-            onTap: () {
-              setState(() {
-                if (selectedFolderNames.contains(folderName)) {
-                  selectedFolderNames.remove(folderName);
-                } else {
-                  selectedFolderNames.add(folderName);
-                }
-              });
-            },
-            onDoubleTap: () {
-              if (folderId != null) {
-                fetchFolderHierarchy(folderId, userId!);
-              }
-            },
-            onSecondaryTapDown: (TapDownDetails details) {
-              showContextMenuAtPosition(
-                context: context,
-                position: details.globalPosition,
-                onSelected: (selected) async {
-                  if (selected == 'delete') {
-                    if (folderId != null) {
-                      await moveToTrash(userId!, [folderId], []);
-                      setState(() {
-                        folders.removeAt(index);
-                      });
-                    }
-                  } else if (selected == 'add_to_important') {
-                    if (folderId != null && !isAlreadyImportantFolder(folderId)) {
-                      await addToImportant(userId: userId!, folderId: folderId);
-                      await fetchImportantStatus();
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text('$folderName 폴더가 중요 문서함에 추가되었습니다.')),
-                      );
-                    }
-                  }
-                },
-              );
-            },
-
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(
-                  color: selectedFolderNames.contains(folderName)
-                      ? Colors.blueGrey
-                      : Colors.grey.shade400,
-                  width: 1.5,
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black12,
-                    blurRadius: 3,
-                    offset: Offset(0, 2),
-                  ),
-                ],
-              ),
-              child: Row(
-                children: [
-                  Transform.scale(
-                    scale: 0.6,
-                    child: Checkbox(
-                      value: selectedFolderNames.contains(folderName),
-                      onChanged: (value) {
-                        setState(() {
-                          if (value == true) {
-                            selectedFolderNames.add(folderName);
-                          } else {
-                            selectedFolderNames.remove(folderName);
-                          }
-                        });
-                      },
-                    ),
-                  ),
-                  const Icon(Icons.folder, color: Color(0xFF263238)),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      folderName,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        fontSize: 12,
-                        fontFamily: 'APPLESDGOTHICNEOR',
-                        color: Colors.black87,
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 12,
+                                  vertical: 8,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(
+                                    color:
+                                        selectedFolderNames.contains(folderName)
+                                            ? Colors.blueGrey
+                                            : Colors.grey.shade400,
+                                    width: 1.5,
+                                  ),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.black12,
+                                      blurRadius: 3,
+                                      offset: Offset(0, 2),
+                                    ),
+                                  ],
+                                ),
+                                child: Row(
+                                  children: [
+                                    Transform.scale(
+                                      scale: 0.6,
+                                      child: Checkbox(
+                                        value: selectedFolderNames.contains(
+                                          folderName,
+                                        ),
+                                        onChanged: (value) {
+                                          setState(() {
+                                            if (value == true) {
+                                              selectedFolderNames.add(
+                                                folderName,
+                                              );
+                                            } else {
+                                              selectedFolderNames.remove(
+                                                folderName,
+                                              );
+                                            }
+                                          });
+                                        },
+                                      ),
+                                    ),
+                                    const Icon(
+                                      Icons.folder,
+                                      color: Color(0xFF263238),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Expanded(
+                                      child: Text(
+                                        folderName,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: const TextStyle(
+                                          fontSize: 12,
+                                          fontFamily: 'APPLESDGOTHICNEOR',
+                                          color: Colors.black87,
+                                        ),
+                                      ),
+                                    ),
+                                    IconButton(
+                                      icon: Icon(
+                                        isAlreadyImportantFolder(folderId!)
+                                            ? Icons.star
+                                            : Icons.star_border,
+                                        color:
+                                            isAlreadyImportantFolder(folderId!)
+                                                ? Colors.amber
+                                                : Colors.grey,
+                                        size: 13,
+                                      ),
+                                      onPressed: () async {
+                                        if (isAlreadyImportantFolder(
+                                          folderId!,
+                                        )) {
+                                          final target = importantFolders
+                                              .firstWhere(
+                                                (f) => f.folderId == folderId,
+                                              );
+                                          await removeFromImportant(
+                                            target.importantId,
+                                          );
+                                          ScaffoldMessenger.of(
+                                            context,
+                                          ).showSnackBar(
+                                            SnackBar(
+                                              content: Text(
+                                                '$folderName 폴더가 중요 문서함에서 삭제되었습니다.',
+                                              ),
+                                            ),
+                                          );
+                                        } else {
+                                          await addToImportant(
+                                            userId: userId!,
+                                            folderId: folderId,
+                                          );
+                                          ScaffoldMessenger.of(
+                                            context,
+                                          ).showSnackBar(
+                                            SnackBar(
+                                              content: Text(
+                                                '$folderName 폴더가 중요 문서함에 추가되었습니다.',
+                                              ),
+                                            ),
+                                          );
+                                        }
+                                        await fetchImportantStatus();
+                                        setState(() {});
+                                      },
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            );
+                          },
+                        ),
                       ),
                     ),
                   ),
-                  IconButton(
-                    icon: Icon(
-                      isAlreadyImportantFolder(folderId!)
-                          ? Icons.star
-                          : Icons.star_border,
-                      color: isAlreadyImportantFolder(folderId!)
-                          ? Colors.amber
-                          : Colors.grey,
-                      size: 13,
-                    ),
-                    onPressed: () async {
-                      if (isAlreadyImportantFolder(folderId!)) {
-                        final target = importantFolders.firstWhere((f) => f.folderId == folderId);
-                        await removeFromImportant(target.importantId);
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text('$folderName 폴더가 중요 문서함에서 삭제되었습니다.')),
-                        );
-                      } else {
-                        await addToImportant(userId: userId!, folderId: folderId);
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text('$folderName 폴더가 중요 문서함에 추가되었습니다.')),
-                        );
-                      }
-                      await fetchImportantStatus();
-                      setState(() {});
-                    },
-                  ),
-                ],
-              ),
-            ),
-          );
-        },
-      ),
-    ),
-  ),
-),
                   const SizedBox(width: 12),
 
                   // 파일 리스트
@@ -927,14 +1024,18 @@ class _CloudScreenState extends State<CloudScreen> {
                                   final fileKey = GlobalKey();
 
                                   return GestureDetector(
-                                    onSecondaryTapDown: (TapDownDetails details) {
+                                    onSecondaryTapDown: (
+                                      TapDownDetails details,
+                                    ) {
                                       showContextMenuAtPosition(
                                         context: context,
                                         position: details.globalPosition,
                                         onSelected: (selected) async {
                                           if (selected == 'delete') {
                                             try {
-                                              await moveToTrash(userId!, [], [file.id]);
+                                              await moveToTrash(userId!, [], [
+                                                file.id,
+                                              ]);
                                               setState(() {
                                                 selectedFiles.removeAt(index);
                                                 fileNames.remove(file.name);
@@ -942,18 +1043,36 @@ class _CloudScreenState extends State<CloudScreen> {
                                             } catch (e) {
                                               print('파일 삭제 실패: $e');
                                             }
-                                          } else if (selected == 'add_to_important') {
+                                          } else if (selected ==
+                                              'add_to_important') {
                                             print("file.id: ${file.id}");
-                                            if (isAlreadyImportantFile(file.id!)) {
-                                              ScaffoldMessenger.of(context).showSnackBar(
-                                                SnackBar(content: Text('이미 중요 문서함에 추가된 파일입니다.')),
+                                            if (isAlreadyImportantFile(
+                                              file.id!,
+                                            )) {
+                                              ScaffoldMessenger.of(
+                                                context,
+                                              ).showSnackBar(
+                                                SnackBar(
+                                                  content: Text(
+                                                    '이미 중요 문서함에 추가된 파일입니다.',
+                                                  ),
+                                                ),
                                               );
                                               return;
                                             }
                                             try {
-                                              await addToImportant(userId: userId!, fileId: file.id);
-                                              ScaffoldMessenger.of(context).showSnackBar(
-                                                SnackBar(content: Text('${file.name} 파일이 중요 문서함에 추가됨')),
+                                              await addToImportant(
+                                                userId: userId!,
+                                                fileId: file.id,
+                                              );
+                                              ScaffoldMessenger.of(
+                                                context,
+                                              ).showSnackBar(
+                                                SnackBar(
+                                                  content: Text(
+                                                    '${file.name} 파일이 중요 문서함에 추가됨',
+                                                  ),
+                                                ),
                                               );
                                               await fetchImportantStatus();
                                               setState(() {});
@@ -986,27 +1105,64 @@ class _CloudScreenState extends State<CloudScreen> {
                                         _removePreviewOverlay();
                                       },
                                       child: ListTile(
-                                        leading: const Icon(Icons.insert_drive_file, size: 20),
-                                        title: Text(file.name, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 13)),
-                                        subtitle: Text('${file.type} • ${(file.sizeInBytes / 1024).toStringAsFixed(1)} KB', style: const TextStyle(fontSize: 11)),
+                                        leading: const Icon(
+                                          Icons.insert_drive_file,
+                                          size: 20,
+                                        ),
+                                        title: Text(
+                                          file.name,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: const TextStyle(fontSize: 13),
+                                        ),
+                                        subtitle: Text(
+                                          '${file.type} • ${(file.sizeInBytes / 1024).toStringAsFixed(1)} KB',
+                                          style: const TextStyle(fontSize: 11),
+                                        ),
                                         trailing: IconButton(
                                           icon: Icon(
                                             isAlreadyImportantFile(file.id!)
                                                 ? Icons.star
                                                 : Icons.star_border,
-                                            color: isAlreadyImportantFile(file.id!)
-                                                ? Colors.amber
-                                                : Colors.grey,
+                                            color:
+                                                isAlreadyImportantFile(file.id!)
+                                                    ? Colors.amber
+                                                    : Colors.grey,
                                             size: 13,
                                           ),
                                           onPressed: () async {
-                                            if (isAlreadyImportantFile(file.id!)) {
-                                              final target = importantFiles.firstWhere((f) => f.fileId == file.id);
-                                              await removeFromImportant(target.importantId);
-                                              ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('${file.name} 파일이 중요 문서함에서 삭제됨')));
+                                            if (isAlreadyImportantFile(
+                                              file.id!,
+                                            )) {
+                                              final target = importantFiles
+                                                  .firstWhere(
+                                                    (f) => f.fileId == file.id,
+                                                  );
+                                              await removeFromImportant(
+                                                target.importantId,
+                                              );
+                                              ScaffoldMessenger.of(
+                                                context,
+                                              ).showSnackBar(
+                                                SnackBar(
+                                                  content: Text(
+                                                    '${file.name} 파일이 중요 문서함에서 삭제됨',
+                                                  ),
+                                                ),
+                                              );
                                             } else {
-                                              await addToImportant(userId: userId!, fileId: file.id);
-                                              ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('${file.name} 파일이 중요 문서함에 추가됨')));
+                                              await addToImportant(
+                                                userId: userId!,
+                                                fileId: file.id,
+                                              );
+                                              ScaffoldMessenger.of(
+                                                context,
+                                              ).showSnackBar(
+                                                SnackBar(
+                                                  content: Text(
+                                                    '${file.name} 파일이 중요 문서함에 추가됨',
+                                                  ),
+                                                ),
+                                              );
                                             }
                                             await fetchImportantStatus();
                                             setState(() {});
@@ -1015,10 +1171,11 @@ class _CloudScreenState extends State<CloudScreen> {
                                         onTap: () {
                                           showDialog(
                                             context: context,
-                                            builder: (_) => FilePreviewDialog(
-                                              fileUrl: file.fileUrl!,
-                                              fileType: file.type,
-                                            ),
+                                            builder:
+                                                (_) => FilePreviewDialog(
+                                                  fileUrl: file.fileUrl!,
+                                                  fileType: file.type,
+                                                ),
                                           );
                                         },
                                       ),
@@ -1027,8 +1184,6 @@ class _CloudScreenState extends State<CloudScreen> {
                                 },
                               ),
                             ),
-
-
                           ],
                         ),
                       ),
