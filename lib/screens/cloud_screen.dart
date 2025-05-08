@@ -23,6 +23,7 @@ import 'package:flutter_application_1/models/important_file_item.dart';
 import 'package:flutter_application_1/models/important_folder_item.dart';
 import 'package:flutter_application_1/api/important.dart';
 import 'package:flutter_application_1/api/folder_create.dart';
+import 'package:flutter_application_1/screens/folder_grant_dialog.dart';
 
 class CloudScreen extends StatefulWidget {
   final String username;
@@ -254,7 +255,6 @@ class _CloudScreenState extends State<CloudScreen> {
       items: [
         PopupMenuItem(
           value: 'delete',
-          
           child: Row(
             children: [
               Icon(Icons.delete, size: 16, color: Colors.black54),
@@ -279,6 +279,19 @@ class _CloudScreenState extends State<CloudScreen> {
             ],
           ),
         ),
+        PopupMenuItem(
+              value: 'grant',
+              child: Row(
+            children: [
+              Icon(Icons.star, size: 16, color: Colors.black54),
+              SizedBox(width: 8),
+              Text(
+                '초대하기',
+                style: TextStyle(fontSize: 12, fontFamily: 'APPLESDGOTHICNEOR'),
+              ),
+            ],
+          ),
+        )
       ],
       elevation: 8,
       //color: Colors.white,
@@ -312,6 +325,10 @@ class _CloudScreenState extends State<CloudScreen> {
           value: 'add_to_important',
           child: Text('중요 문서함 추가'),
         ),
+        const PopupMenuItem<String>(
+          value: 'grant',
+          child: Text('초대하기'),
+        )
       ],
     );
 
@@ -730,6 +747,11 @@ class _CloudScreenState extends State<CloudScreen> {
                         SnackBar(content: Text('$folderName 폴더가 중요 문서함에 추가되었습니다.')),
                       );
                     }
+                  } else if (selected == 'grant') {
+                    showDialog(
+                      context: context,
+                      builder: (_) => FolderGrantDialog(folderId: folderId),
+                    );
                   }
                 },
               );
