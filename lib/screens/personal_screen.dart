@@ -159,7 +159,9 @@ class _PersonalScreenState extends State<PersonalScreen> {
                   ),
                   subtitle: Text(
                     item['parentFolderName'] != null
-                        ? '${item['parentFolderName']}'
+                        ? (item['folderType'] != null
+                            ? "${item['folderType']}: ${item['parentFolderName']}"
+                            : item['parentFolderName']) // 파일은 폴더타입 없음
                         : '',
                     style: TextStyle(fontSize: 12, color: Colors.grey[600]),
                   ),
