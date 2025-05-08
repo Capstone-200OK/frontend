@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/screens/folder_select_dialog.dart';
+import 'package:flutter_application_1/screens/show_loading_dialog.dart';
 import 'package:flutter_application_1/models/folder_item.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
@@ -252,8 +253,9 @@ class _FileSortyScreenState extends State<FileSortyScreen> {
                                   );
                                   return;
                                 }
+                                showLoadingDialog(context); //로딩바
 
-                                final response = await http.post(
+                                final response = await http.post( //정리요청
                                   Uri.parse('$url/organize/start'),
                                   headers: {'Content-Type': 'application/json'},
                                   body: jsonEncode({
@@ -265,13 +267,12 @@ class _FileSortyScreenState extends State<FileSortyScreen> {
                                     "isMaintain": isMaintain,
                                   }),
                                 );
-
-                                Navigator.of(context).pop();
+                                 Navigator.of(context, rootNavigator: true).pop(); 
 
                                 if (response.statusCode == 200) {
                                   ScaffoldMessenger.of(context).showSnackBar(
                                     const SnackBar(
-                                      content: Text('자동 정리가 시작되었습니다.'),
+                                      content: Text('자동 정리가 완료되었습니다.'),
                                     ),
                                   );
                                 } else {
