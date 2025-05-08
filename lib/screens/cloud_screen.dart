@@ -80,7 +80,7 @@ class _CloudScreenState extends State<CloudScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) async{
       userId = Provider.of<UserProvider>(context, listen: false).userId;
       await fetchImportantStatus();
-      fetchFolderHierarchy(2, userId!, pushToStack: false); // userId 초기화된 이후 호출
+      await fetchAccessibleCloudRoots(); // userId 초기화된 이후 호출
   });
   }
   Future<void> fetchImportantStatus() async {
@@ -96,6 +96,51 @@ class _CloudScreenState extends State<CloudScreen> {
         pathIds.map((id) => folderIdToName[id] ?? 'Unknown').toList();
     return pathNames.join('/');
   }
+
+  Future<void> fetchAccessibleCloudRoots() async {
+    final response = await http.get(
+      Uri.parse('$url/folder/cloud-visible/$userId'),
+      headers: {"Content-Type": "application/json"},
+    );
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body) as List;
+
+      folderNameToId.clear();
+      folderIdToName.clear();
+      folders.clear();
+      selectedFiles.clear();
+
+      for (final folder in data) {
+        final id = folder['id'];
+        final name = folder['name'];
+        folderNameToId[name] = id;
+        folderIdToName[id] = name;
+        folders.add(name);
+
+        // 파일도 포함되어 있다면 초기 파일 표시 가능
+        final fileList = folder['files'] ?? [];
+        for (final f in fileList) {
+          selectedFiles.add(FileItem(
+            id: f['id'],
+            name: f['name'],
+            type: f['fileType'],
+            sizeInBytes: f['size'],
+            fileUrl: f['fileUrl'],
+            fileThumbnail: f['fileThumbUrl'],
+          ));
+          fileNames.add(f['name']);
+        }
+      }
+
+      breadcrumbPath = ['CloudROOT'];
+      currentFolderId = 2; // CloudROOT는 논리적 루트
+      setState(() {});
+    } else {
+      print("🚫 클라우드 진입 가능 폴더 불러오기 실패: ${response.statusCode}");
+    }
+  }
+
 
   Future<void> fetchFolderHierarchy(
     int folderId,

@@ -32,6 +32,7 @@ class _FileSortyScreenState extends State<FileSortyScreen> {
   FolderItem? selectedDestinationFolder;
   late int? userId;
   bool isMaintain = false;
+  bool isFileNameChange = false;
   @override
   void initState() {
     super.initState();
@@ -226,6 +227,24 @@ class _FileSortyScreenState extends State<FileSortyScreen> {
                                   },
                                 ),
                               ),
+                              const Text(
+                                '기존 파일이름 유지',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontFamily: 'APPLESDGOTHICNEOEB',
+                                ),
+                              ),
+                              Transform.scale(
+                                scale: 0.7, // 🔸 0.8 = 80% 크기로 축소
+                                child: Checkbox(
+                                  value: isFileNameChange ?? false,
+                                  onChanged: (value) {
+                                    setState(() {
+                                      isFileNameChange = value ?? false;
+                                    });
+                                  },
+                                ),
+                              ),
                             ],
                           ),
                           const Spacer(),
@@ -265,6 +284,7 @@ class _FileSortyScreenState extends State<FileSortyScreen> {
                                         selectedDestinationFolder!.id,
                                     "userId": userId,
                                     "isMaintain": isMaintain,
+                                    "fileNameChange": isFileNameChange,
                                   }),
                                 );
                                  Navigator.of(context, rootNavigator: true).pop(); 
