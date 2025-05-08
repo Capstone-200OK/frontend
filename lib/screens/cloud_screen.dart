@@ -10,7 +10,7 @@ import 'package:flutter_application_1/screens/home_screen.dart';
 import 'package:flutter_application_1/models/file_item.dart';
 import 'package:flutter_application_1/models/folder_item.dart';
 import 'package:flutter_application_1/components/navigation_drawer.dart';
-
+import 'package:flutter_application_1/components/search_bar_with_overlay.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
@@ -81,8 +81,8 @@ class _CloudScreenState extends State<CloudScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       userId = Provider.of<UserProvider>(context, listen: false).userId;
       await fetchImportantStatus();
-      fetchFolderHierarchy(2, userId!, pushToStack: false); // userId 초기화된 이후 호출
-    });
+      await fetchAccessibleCloudRoots(); // userId 초기화된 이후 호출
+  });
   }
 
   Future<void> fetchImportantStatus() async {
@@ -98,6 +98,51 @@ class _CloudScreenState extends State<CloudScreen> {
         pathIds.map((id) => folderIdToName[id] ?? 'Unknown').toList();
     return pathNames.join('/');
   }
+
+  Future<void> fetchAccessibleCloudRoots() async {
+    final response = await http.get(
+      Uri.parse('$url/folder/cloud-visible/$userId'),
+      headers: {"Content-Type": "application/json"},
+    );
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body) as List;
+
+      folderNameToId.clear();
+      folderIdToName.clear();
+      folders.clear();
+      selectedFiles.clear();
+
+      for (final folder in data) {
+        final id = folder['id'];
+        final name = folder['name'];
+        folderNameToId[name] = id;
+        folderIdToName[id] = name;
+        folders.add(name);
+
+        // 파일도 포함되어 있다면 초기 파일 표시 가능
+        final fileList = folder['files'] ?? [];
+        for (final f in fileList) {
+          selectedFiles.add(FileItem(
+            id: f['id'],
+            name: f['name'],
+            type: f['fileType'],
+            sizeInBytes: f['size'],
+            fileUrl: f['fileUrl'],
+            fileThumbnail: f['fileThumbUrl'],
+          ));
+          fileNames.add(f['name']);
+        }
+      }
+
+      breadcrumbPath = ['CloudROOT'];
+      currentFolderId = 2; // CloudROOT는 논리적 루트
+      setState(() {});
+    } else {
+      print("🚫 클라우드 진입 가능 폴더 불러오기 실패: ${response.statusCode}");
+    }
+  }
+
 
   Future<void> fetchFolderHierarchy(
     int folderId,
@@ -1212,52 +1257,9 @@ class _CloudScreenState extends State<CloudScreen> {
             const SizedBox(height: 5),
 
             // 검색창
-            Align(
-              alignment: Alignment.center, // 센터 정렬
-              child: SizedBox(
-                width: 800, // 원하는 가로폭
-                child: TextField(
-                  style: TextStyle(
-                    fontSize: 16, // 입력 텍스트 크기
-                    fontFamily: 'APPLESDGOTHICNEOEB',
-                  ),
-                  decoration: InputDecoration(
-                    hintText: 'search', // 검색창의 힌트 텍스트
-                    hintStyle: TextStyle(
-                      fontSize: 16, // 힌트 텍스트 크기
-                      fontFamily: 'APPLESDGOTHICNEOEB',
-                    ),
-                    filled: true, // 🔹 배경색 적용할 때 필수
-                    fillColor: Color(0xFFCFD8DC), //  TextField 배경색
-                    contentPadding: EdgeInsets.symmetric(
-                      vertical: 18,
-                      horizontal: 20,
-                    ),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(15), // 둥근 정도 설정
-                      borderSide: BorderSide.none, // 기본 테두리 제거 (filled일 때 깔끔)
-                    ),
-
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(15),
-                      borderSide: BorderSide(
-                        color: Color(0xFF607D8B),
-                        width: 2,
-                      ), // 포커스 시 진한 테두리
-                    ),
-                    //border: OutlineInputBorder(), // 검색창의 테두리 설정
-                    prefixIcon: Icon(
-                      Icons.search,
-                      color: Color(0xff263238),
-                      // 검색 아이콘을 왼쪽에 추가
-                    ),
-                    suffixIcon: Icon(
-                      Icons.tune,
-                      color: Color(0xff263238),
-                    ), // 오른쪽 '조절' 아이콘
-                  ),
-                ),
-              ),
+            SearchBarWithOverlay(
+              baseUrl: dotenv.get("BaseUrl"),
+              username: widget.username,
             ),
           ],
         ),
