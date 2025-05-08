@@ -10,6 +10,7 @@ import 'package:flutter_application_1/screens/login_screen.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:provider/provider.dart';
 import 'package:http/http.dart' as http;
+import 'package:flutter_application_1/api/websocket_service.dart';
 
 class NavigationDrawerWidget extends StatelessWidget {
   final String username;
@@ -29,6 +30,7 @@ class NavigationDrawerWidget extends StatelessWidget {
 
   // 로그아웃 함수
   void _logout(BuildContext context) {
+    WebSocketService().disconnect();
     Provider.of<UserProvider>(context, listen: false).clearUser();
 
     Navigator.pushAndRemoveUntil(
@@ -36,7 +38,6 @@ class NavigationDrawerWidget extends StatelessWidget {
       MaterialPageRoute(builder: (context) => const LoginScreen()),
       (route) => false,
     );
-
     ScaffoldMessenger.of(
       context,
     ).showSnackBar(const SnackBar(content: Text('로그아웃되었습니다.')));

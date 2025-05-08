@@ -24,6 +24,10 @@ import 'package:flutter_application_1/models/important_folder_item.dart';
 import 'package:flutter_application_1/api/important.dart';
 import 'package:flutter_application_1/api/folder_create.dart';
 import 'package:flutter_application_1/screens/folder_grant_dialog.dart';
+import 'package:flutter_application_1/api/websocket_service.dart';
+import 'package:flutter_application_1/components/notification_button.dart'; // NotificationButton 위젯
+import 'package:provider/provider.dart';
+import 'package:flutter_application_1/providers/notification_provider.dart';
 
 class CloudScreen extends StatefulWidget {
   final String username;
@@ -591,15 +595,7 @@ class _CloudScreenState extends State<CloudScreen> {
                         print('최근 항목 눌림');
                       },
                     ),
-                    IconButton(
-                      icon: const Icon(
-                        Icons.notifications,
-                        color: Color(0xff263238),
-                      ), //알림 버튼튼
-                      onPressed: () {
-                        print('알림 눌림');
-                      },
-                    ),
+                    const NotificationButton(),
                   ],
                 ),
               ),

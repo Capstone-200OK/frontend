@@ -46,6 +46,7 @@ dependencies:
   syncfusion_flutter_pdfviewer: ^29.1.39
   webview_flutter: ^4.11.0
   webview_windows: ^0.4.0
+  web_socket_channel: ^2.4.0
   
 dev_dependencies:
   flutter_test:
