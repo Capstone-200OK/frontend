@@ -154,7 +154,6 @@ class _FileReservationScreenState extends State<FileReservationScreen> {
                           const SizedBox(height: 6),
                           GestureDetector(
                             onTap: () async {
-                              // 출발 폴더 선택
                               selectedPreviousFolder =
                                   await showDialog<FolderItem>(
                                     context: context,
@@ -167,19 +166,32 @@ class _FileReservationScreenState extends State<FileReservationScreen> {
                                 print(
                                   '출발 폴더 선택됨: ${selectedPreviousFolder!.name}',
                                 );
+                                setState(() {}); // ✅ UI 갱신
                               }
                             },
                             child: Container(
                               height: 40,
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                              ),
                               decoration: BoxDecoration(
                                 color: Colors.white,
                                 borderRadius: BorderRadius.circular(12),
                               ),
-                              child: const Center(
-                                child: Icon(
-                                  Icons.add_circle,
-                                  color: Color(0xFF37474F),
-                                ),
+                              child: Center(
+                                child:
+                                    selectedPreviousFolder == null
+                                        ? const Icon(
+                                          Icons.add_circle,
+                                          color: Color(0xFF37474F),
+                                        )
+                                        : Text(
+                                          selectedPreviousFolder!.name,
+                                          style: const TextStyle(
+                                            fontFamily: 'APPLESDGOTHICNEOR',
+                                            fontSize: 13,
+                                          ),
+                                        ),
                               ),
                             ),
                           ),
@@ -204,19 +216,33 @@ class _FileReservationScreenState extends State<FileReservationScreen> {
 
                               if (selectedNewFolder != null) {
                                 print('목적지 폴더 선택됨: ${selectedNewFolder!.name}');
+                                setState(() {}); // ✅ UI 갱신
                               }
                             },
                             child: Container(
                               height: 40,
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                              ),
                               decoration: BoxDecoration(
                                 color: Colors.white,
                                 borderRadius: BorderRadius.circular(12),
                               ),
-                              child: const Center(
-                                child: Icon(
-                                  Icons.drive_folder_upload,
-                                  color: Color(0xFF37474F),
-                                ),
+                              child: Center(
+                                child:
+                                    selectedNewFolder == null
+                                        ? const Icon(
+                                          Icons.drive_folder_upload,
+                                          color: Color(0xFF37474F),
+                                        )
+                                        : Text(
+                                          selectedNewFolder!.name,
+                                          style: const TextStyle(
+                                            fontFamily: 'APPLESDGOTHICNEOR',
+                                            fontSize: 13,
+                                          ),
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
                               ),
                             ),
                           ),

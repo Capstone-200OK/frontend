@@ -63,6 +63,8 @@ class _FolderCreateScreenState extends State<FolderCreateScreen> {
           _message = '폴더 생성 성공!';
           _folderNameController.clear();
           widget.onCreateFolder(folderName); // 콜백 실행
+          Navigator.pop(context);
+
         } else {
           _message = '실패: ${response.statusCode} - ${response.body}';
         }
@@ -117,20 +119,8 @@ class _FolderCreateScreenState extends State<FolderCreateScreen> {
                 ), // 실제 입력 텍스트의 폰트 크기
               ),
             ),
-            if (_isLoading)
-              const CircularProgressIndicator()
-            else if (_message.isNotEmpty)
-              Padding(
-                padding: const EdgeInsets.only(top: 4),
-                child: Text(
-                  _message,
-                  style: const TextStyle(
-                    color: Colors.black,
-                    fontSize: 5,
-                    fontFamily: 'APPLESDGOTHICNEOR',
-                  ),
-                ),
-              ),
+           
+            
           ],
         ),
       ),
