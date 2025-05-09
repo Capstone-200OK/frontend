@@ -154,106 +154,106 @@ class NavigationDrawerWidget extends StatelessWidget {
             const SizedBox(height: 70),
             // 업로드 메뉴
             if (showUploadButton)
-              ListTile(
-                leading: const Icon(
-                  Icons.file_upload,
-                  color: Colors.white,
-                  size: 16,
-                ),
-                title: const Text(
-                  '업로드',
-                  style: TextStyle(
-                    fontSize: 10,
-                    color: Colors.white,
-                    fontFamily: 'APPLESDGOTHICNEOR',
-                  ),
-                ),
-                tileColor: const Color(0xFF455A64),
-                onTap: () async {
-                  await Future.delayed(const Duration(milliseconds: 100));
+              // ListTile(
+              //   leading: const Icon(
+              //     Icons.file_upload,
+              //     color: Colors.white,
+              //     size: 16,
+              //   ),
+              //   title: const Text(
+              //     '업로드',
+              //     style: TextStyle(
+              //       fontSize: 10,
+              //       color: Colors.white,
+              //       fontFamily: 'APPLESDGOTHICNEOR',
+              //     ),
+              //   ),
+              //   tileColor: const Color(0xFF455A64),
+              //   onTap: () async {
+              //     await Future.delayed(const Duration(milliseconds: 100));
 
-                  final RenderBox overlay =
-                      Overlay.of(scaffoldContext).context.findRenderObject()
-                          as RenderBox;
-                  final RelativeRect position = RelativeRect.fromLTRB(
-                    100,
-                    210,
-                    overlay.size.width - 100,
-                    0,
-                  );
+              //     final RenderBox overlay =
+              //         Overlay.of(scaffoldContext).context.findRenderObject()
+              //             as RenderBox;
+              //     final RelativeRect position = RelativeRect.fromLTRB(
+              //       100,
+              //       210,
+              //       overlay.size.width - 100,
+              //       0,
+              //     );
 
-                //   final selected = await showMenu<String>(
-                //     context: scaffoldContext,
-                //     position: position,
-                //     items: [
-                //       const PopupMenuItem(
-                //         value: 'new_folder',
-                //         child: SizedBox(
-                //           width: 150,
-                //           child: Text(
-                //             '새 폴더',
-                //             style: TextStyle(
-                //               fontSize: 12,
-                //               color: Colors.black,
-                //               fontFamily: 'APPLESDGOTHICNEOR',
-                //             ),
-                //           ),
-                //         ),
-                //       ),
-                //       const PopupMenuItem(
-                //         value: 'upload_file',
-                //         child: Text(
-                //           '파일 업로드',
-                //           style: TextStyle(
-                //             fontSize: 12,
-                //             color: Colors.black,
-                //             fontFamily: 'APPLESDGOTHICNEOR',
-                //           ),
-                //         ),
-                //       ),
-                //       const PopupMenuItem(
-                //         value: 'upload_folder',
-                //         child: Text(
-                //           '폴더 업로드',
-                //           style: TextStyle(
-                //             fontSize: 12,
-                //             color: Colors.black,
-                //             fontFamily: 'APPLESDGOTHICNEOR',
-                //           ),
-                //         ),
-                //       ),
-                //     ],
-                //     elevation: 8,
-                //     color: Colors.white,
-                //   );
+              //     final selected = await showMenu<String>(
+              //       context: scaffoldContext,
+              //       position: position,
+              //       items: [
+              //         const PopupMenuItem(
+              //           value: 'new_folder',
+              //           child: SizedBox(
+              //             width: 150,
+              //             child: Text(
+              //               '새 폴더',
+              //               style: TextStyle(
+              //                 fontSize: 12,
+              //                 color: Colors.black,
+              //                 fontFamily: 'APPLESDGOTHICNEOR',
+              //               ),
+              //             ),
+              //           ),
+              //         ),
+              //         const PopupMenuItem(
+              //           value: 'upload_file',
+              //           child: Text(
+              //             '파일 업로드',
+              //             style: TextStyle(
+              //               fontSize: 12,
+              //               color: Colors.black,
+              //               fontFamily: 'APPLESDGOTHICNEOR',
+              //             ),
+              //           ),
+              //         ),
+              //         const PopupMenuItem(
+              //           value: 'upload_folder',
+              //           child: Text(
+              //             '폴더 업로드',
+              //             style: TextStyle(
+              //               fontSize: 12,
+              //               color: Colors.black,
+              //               fontFamily: 'APPLESDGOTHICNEOR',
+              //             ),
+              //           ),
+              //         ),
+              //       ],
+              //       elevation: 8,
+              //       color: Colors.white,
+              //     );
 
-                //   if (selected == 'new_folder') {
-                //     final result = await showDialog(
-                //       context: scaffoldContext,
-                //       builder: (context) {
-                //         return Dialog(
-                //           child: Container(
-                //             width: 350,
-                //             height: 280,
-                //             color: Colors.white,
-                //             child: FolderCreateScreen(
-                //               onCreateFolder: (folderName) {
-                //                 onFolderCreated(folderName);
-                //                 Navigator.of(context).pop();
-                //               },
-                //             ),
-                //           ),
-                //         );
-                //       },
-                //     );
+              //     if (selected == 'new_folder') {
+              //       final result = await showDialog(
+              //         context: scaffoldContext,
+              //         builder: (context) {
+              //           return Dialog(
+              //             child: Container(
+              //               width: 350,
+              //               height: 280,
+              //               color: Colors.white,
+              //               child: FolderCreateScreen(
+              //                 onCreateFolder: (folderName) {
+              //                   onFolderCreated(folderName);
+              //                   Navigator.of(context).pop();
+              //                 },
+              //               ),
+              //             ),
+              //           );
+              //         },
+              //       );
 
-                //     if (result == true) {
-                //       print('새 폴더 생성 완료');
-                //     }
-                //   }
-                // },
-                }
-              ),
+              //       if (result == true) {
+              //         print('새 폴더 생성 완료');
+              //       }
+              //     }
+              //   },
+              //   }
+              // ),
 
             ListTile(
               leading: const Icon(

@@ -401,9 +401,15 @@ class _CloudScreenState extends State<CloudScreen> {
             ],
           ),
         ),
-        const PopupMenuItem<String>(
+        PopupMenuItem(
           value: 'grant',
-          child: Text('초대하기'),
+          child: Row(
+            children: const [
+              Icon(Icons.person_add, size: 15, color: Colors.black54),
+              SizedBox(width: 8),
+              Text('초대하기', style: TextStyle(fontSize: 12)),
+            ]
+          )
         )
       ],
     );
