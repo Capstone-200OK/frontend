@@ -19,9 +19,10 @@ class NotificationButton extends StatelessWidget {
                     builder: (_) => StatefulBuilder(
                     builder: (context, setState) {
                         return AlertDialog(
-                        title: const Text('알림'),
+                  backgroundColor: Color(0xFFECEFF1),
+                         icon: const Icon(Icons.notifications, color: Color(0xff263238), size: 40,),
                         content: provider.notifications.isEmpty
-                            ? const Text('알림이 없습니다.')
+                            ? const Text('알림이 없습니다.',textAlign: TextAlign.center, style: TextStyle(fontFamily: 'APPLESDGOTHICNEOR', fontSize: 14),)
                             : SizedBox(
                                 width: double.maxFinite,
                                 child: ListView.builder(
@@ -47,7 +48,7 @@ class NotificationButton extends StatelessWidget {
                                 provider.markAllAsRead();
                                 Navigator.pop(context);
                             },
-                            child: const Text('닫기'),
+                            child: const Text('닫기', style: TextStyle(fontSize: 12, fontFamily: 'APPLESDGOTHICNEOR', color: Color(0xFF596D79)),),
                             )
                         ],
                         );

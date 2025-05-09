@@ -212,7 +212,7 @@ class _FileSortyScreenState extends State<FileSortyScreen> {
                               const Text(
                                 '기존 폴더 유지',
                                 style: TextStyle(
-                                  fontSize: 16,
+                                  fontSize: 13,
                                   fontFamily: 'APPLESDGOTHICNEOEB',
                                 ),
                               ),
@@ -227,10 +227,11 @@ class _FileSortyScreenState extends State<FileSortyScreen> {
                                   },
                                 ),
                               ),
+                              const SizedBox(width: 12),
                               const Text(
                                 '기존 파일이름 유지',
                                 style: TextStyle(
-                                  fontSize: 16,
+                                  fontSize: 13,
                                   fontFamily: 'APPLESDGOTHICNEOEB',
                                 ),
                               ),

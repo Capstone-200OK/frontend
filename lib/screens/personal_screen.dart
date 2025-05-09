@@ -108,7 +108,18 @@ class _PersonalScreenState extends State<PersonalScreen> {
     return pathNames.join('/');
   }
 
+  String getTruncatedPath({int showLast = 2}) {
+    //상위는 ...으로 표시하기기
+    if (breadcrumbPath.length <= showLast + 1) {
+      return breadcrumbPath.join("  >  ");
+    }
 
+    final start = '...';
+    final end = breadcrumbPath
+        .sublist(breadcrumbPath.length - showLast)
+        .join("  >  ");
+    return '$start  >  $end';
+  }
 
   Future<void> fetchImportantStatus() async {
     if (userId == null) return;
@@ -473,31 +484,26 @@ class _PersonalScreenState extends State<PersonalScreen> {
               IconButton(
                 icon: Icon(
                   Icons.arrow_back,
-                  color: Color(0xff263238),
+                  color:
+                      folderStack.isEmpty
+                          ? Colors.grey
+                          : Color(0xff263238), // 루트면 흐리게
                   size: 15,
                 ),
-                onPressed: () {
-                  if (folderStack.isEmpty) {
-                    // 루트이면 홈으로 이동
-                    Navigator.pushReplacement(
-                      context,
-                      MaterialPageRoute(
-                        builder:
-                            (context) => HomeScreen(username: widget.username),
-                      ),
-                    );
-                  } else {
-                    // 뒤로가기 로직
-                    int previousFolderId = folderStack.removeLast();
-                    breadcrumbPath.removeLast();
-                    fetchFolderHierarchy(
-                      previousFolderId,
-                      userId!,
-                      pushToStack: false,
-                    );
-                  }
-                },
+                onPressed:
+                    folderStack.isEmpty
+                        ? null
+                        : () {
+                          int previousFolderId = folderStack.removeLast();
+                          breadcrumbPath.removeLast();
+                          fetchFolderHierarchy(
+                            previousFolderId,
+                            userId!,
+                            pushToStack: false,
+                          );
+                        },
               ),
+
               const SizedBox(width: 8),
 
               // 타이틀
@@ -580,16 +586,16 @@ class _PersonalScreenState extends State<PersonalScreen> {
                           ),
                         );
                       },
-                      child: Row(
-                        children: [
-                          Text(
-                            '${breadcrumbPath.join("  >  ")}',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontFamily: 'APPLESDGOTHICNEOR',
-                            ),
+                      child: Tooltip(
+                        message: breadcrumbPath.join(" / "),
+                        child: Text(
+                          getTruncatedPath(),
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontFamily: 'APPLESDGOTHICNEOR',
                           ),
-                        ],
+                        ),
                       ),
                     ),
                   ),

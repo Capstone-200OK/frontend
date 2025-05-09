@@ -46,26 +46,36 @@ class _SearchBarWithOverlayState extends State<SearchBarWithOverlay> {
 
     while (index != -1) {
       if (index > start) {
-        matches.add(TextSpan(
-          text: source.substring(start, index),
-          style: const TextStyle(color: Colors.black, fontSize: 14),
-        ));
+        matches.add(
+          TextSpan(
+            text: source.substring(start, index),
+            style: const TextStyle(color: Colors.black, fontSize: 14),
+          ),
+        );
       }
 
-      matches.add(TextSpan(
-        text: source.substring(index, index + query.length),
-        style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.blue, fontSize: 14),
-      ));
+      matches.add(
+        TextSpan(
+          text: source.substring(index, index + query.length),
+          style: const TextStyle(
+            fontWeight: FontWeight.bold,
+            color: Colors.blue,
+            fontSize: 14,
+          ),
+        ),
+      );
 
       start = index + query.length;
       index = lcSource.indexOf(lcQuery, start);
     }
 
     if (start < source.length) {
-      matches.add(TextSpan(
-        text: source.substring(start),
-        style: const TextStyle(color: Colors.black, fontSize: 14),
-      ));
+      matches.add(
+        TextSpan(
+          text: source.substring(start),
+          style: const TextStyle(color: Colors.black, fontSize: 14),
+        ),
+      );
     }
 
     return TextSpan(children: matches);
@@ -77,8 +87,12 @@ class _SearchBarWithOverlayState extends State<SearchBarWithOverlay> {
 
     if (input.trim().isEmpty || userId == null) return;
 
-    final folderRes = await http.get(Uri.parse('$url/folder/search/$userId/$input'));
-    final fileRes = await http.get(Uri.parse('$url/file/search/$userId/$input'));
+    final folderRes = await http.get(
+      Uri.parse('$url/folder/search/$userId/$input'),
+    );
+    final fileRes = await http.get(
+      Uri.parse('$url/file/search/$userId/$input'),
+    );
 
     if (folderRes.statusCode == 200 && fileRes.statusCode == 200) {
       final folderJson = List<Map<String, dynamic>>.from(
@@ -105,65 +119,137 @@ class _SearchBarWithOverlayState extends State<SearchBarWithOverlay> {
     final position = renderBox.localToGlobal(Offset.zero);
 
     _searchOverlay = OverlayEntry(
-      builder: (context) => Positioned(
-        left: position.dx,
-        top: position.dy - 300,
-        width: 800,
-        child: Material(
-          elevation: 4,
-          borderRadius: BorderRadius.circular(10),
-          child: Container(
-            color: Colors.white,
-            child: ListView(
-              shrinkWrap: true,
-              children: results.map((item) {
-                final isFolder = item['type'] == 'folder';
-                return ListTile(
-                  leading: Icon(
-                    isFolder ? Icons.folder : Icons.insert_drive_file,
-                    color: isFolder ? Colors.amber : Colors.grey,
-                    size: 20,
-                  ),
-                  title: RichText(
-                    text: highlightOccurrences(
-                      item[isFolder ? 'folderName' : 'fileName'],
-                      _searchController.text,
+      builder:
+          (context) => Stack(
+            children: [
+              // 🔹 배경을 터치하면 오버레이 제거
+              GestureDetector(
+                onTap: _removeSearchOverlay,
+                behavior: HitTestBehavior.translucent,
+                child: Container(
+                  color: Colors.transparent, // 투명 배경
+                  width: MediaQuery.of(context).size.width,
+                  height: MediaQuery.of(context).size.height,
+                ),
+              ),
+
+              // 🔹 검색 결과 박스
+              Positioned(
+                left: position.dx + 97,
+                top: position.dy - 275,
+                width: 800,
+                child: Material(
+                  elevation: 4,
+                  //borderRadius: BorderRadius.circular(10),
+                  child: Container(
+                    constraints: BoxConstraints(
+                      maxHeight: 250, // ✅ 최대 높이 지정
+                     
                     ),
-                  ),
-                  subtitle: Text(
-                    item['parentFolderName'] != null
-                        ? (item['folderType'] != null
-                            ? "${item['folderType']}: ${item['parentFolderName']}"
-                            : item['parentFolderName'])
-                        : '',
-                    style: TextStyle(fontSize: 12, color: Colors.grey[600]),
-                  ),
-                  onTap: () async {
-                    final id = isFolder ? item['folderId'] : item['parentFolderId'];
-                    final response = await http.get(Uri.parse('${widget.baseUrl}/folder/path/$id'));
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Stack(
+                      children: [
+                        ListView(
+                          reverse: true,
+                          padding: const EdgeInsets.symmetric(vertical: 8),
+                          children:
+                              results.map((item) {
+                                final isFolder = item['type'] == 'folder';
+                                return ListTile(
+                                  leading: Icon(
+                                    isFolder
+                                        ? Icons.folder
+                                        : Icons.insert_drive_file,
+                                    color:
+                                        isFolder ? Colors.amber : Colors.grey,
+                                    size: 20,
+                                  ),
+                                  title: RichText(
+                                    text: highlightOccurrences(
+                                      item[isFolder
+                                          ? 'folderName'
+                                          : 'fileName'],
+                                      _searchController.text,
+                                    ),
+                                  ),
+                                  subtitle: Text(
+                                    item['parentFolderName'] != null
+                                        ? (item['folderType'] != null
+                                            ? "${item['folderType']}: ${item['parentFolderName']}"
+                                            : item['parentFolderName'])
+                                        : '',
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color: Colors.grey[600],
+                                    ),
+                                  ),
+                                  onTap: () async {
+                                    final id =
+                                        isFolder
+                                            ? item['folderId']
+                                            : item['parentFolderId'];
+                                    final response = await http.get(
+                                      Uri.parse(
+                                        '${widget.baseUrl}/folder/path/$id',
+                                      ),
+                                    );
+                                    if (response.statusCode == 200) {
+                                      final List<dynamic> jsonList = jsonDecode(
+                                        response.body,
+                                      );
+                                      final List<int> pathIds =
+                                          jsonList
+                                              .map((e) => e['folderId'] as int)
+                                              .toList();
+                                      _removeSearchOverlay();
+                                      Navigator.pushReplacement(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder:
+                                              (_) => PersonalScreen(
+                                                username: widget.username,
+                                                targetPathIds: pathIds,
+                                              ),
+                                        ),
+                                      );
+                                    }
+                                  },
+                                );
+                              }).toList(),
+                        ),
 
-                    if (response.statusCode == 200) {
-                      final List<dynamic> jsonList = jsonDecode(response.body);
-                      final List<int> pathIds = jsonList.map((e) => e['folderId'] as int).toList();
-
-                      _removeSearchOverlay();
-                      Navigator.pushReplacement(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => PersonalScreen(
-                            username: widget.username,
-                            targetPathIds: pathIds,
+                        // 🔽 위쪽 그라데이션
+                        Positioned(
+                          top: 0,
+                          left: 0,
+                          right: 0,
+                          height: 100,
+                          child: IgnorePointer(
+                            child: Container(
+                              decoration: const BoxDecoration(
+                                gradient: LinearGradient(
+                                  begin: Alignment.topCenter,
+                                  end: Alignment.bottomCenter,
+                                  colors: [
+                                    Colors.white,
+                                    Colors.white54,
+                                    //Colors.transparent,
+                                  ],
+                                ),
+                              ),
+                            ),
                           ),
                         ),
-                      );
-                    }
-                  },
-                );
-              }).toList(),
-            ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ],
           ),
-        ),
-      ),
     );
 
     Overlay.of(context).insert(_searchOverlay!);
@@ -178,13 +264,22 @@ class _SearchBarWithOverlayState extends State<SearchBarWithOverlay> {
         child: TextField(
           controller: _searchController,
           onSubmitted: (value) => searchFoldersAndFiles(value),
-          style: const TextStyle(fontSize: 16, fontFamily: 'APPLESDGOTHICNEOEB'),
+          style: const TextStyle(
+            fontSize: 16,
+            fontFamily: 'APPLESDGOTHICNEOEB',
+          ),
           decoration: InputDecoration(
             hintText: 'search',
-            hintStyle: const TextStyle(fontSize: 16, fontFamily: 'APPLESDGOTHICNEOEB'),
+            hintStyle: const TextStyle(
+              fontSize: 16,
+              fontFamily: 'APPLESDGOTHICNEOEB',
+            ),
             filled: true,
             fillColor: const Color(0xFFCFD8DC),
-            contentPadding: const EdgeInsets.symmetric(vertical: 18, horizontal: 20),
+            contentPadding: const EdgeInsets.symmetric(
+              vertical: 18,
+              horizontal: 20,
+            ),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(15),
               borderSide: BorderSide.none,
