@@ -116,7 +116,7 @@ class _CloudScreenState extends State<CloudScreen> {
       folderIdToName.clear();
       folders.clear();
       selectedFiles.clear();
-
+      folderStack.clear();
       for (final folder in data) {
         final id = folder['id'];
         final name = folder['name'];
@@ -533,19 +533,27 @@ class _CloudScreenState extends State<CloudScreen> {
                           : Color(0xff263238), // 스택 비었으면 회색
                   size: 15,
                 ),
-                onPressed:
-                    folderStack.isEmpty
-                        ? null // 스택 비었으면 비활성화
-                        : () {
-                          int previousFolderId =
-                              folderStack.removeLast(); // 마지막 폴더ID 꺼내기
-                          breadcrumbPath.removeLast(); // breadcrumb 경로도 하나 줄이기
-                          fetchFolderHierarchy(
-                            previousFolderId,
-                            userId!,
-                            pushToStack: false,
-                          );
-                        },
+                onPressed: () {
+                  // print("currentFolderId: ${currentFolderId}");
+                  // print("folderStack.isEmpty: ${folderStack.isEmpty}");
+                  // print("folderStack: ${folderStack}");
+                  if (folderStack[0] == 2) {
+                    // ✅ CloudROOT로 돌아가는 경우
+                    fetchAccessibleCloudRoots();
+                    print("currentFolderId: ${currentFolderId}");
+                    print("folderStack.isEmpty: ${folderStack.isEmpty}");
+                    print("folderStack: ${folderStack}");
+                  } else {
+                    // ✅ 일반적인 뒤로가기
+                    int previousFolderId = folderStack.removeLast();
+                    breadcrumbPath.removeLast();
+                    fetchFolderHierarchy(
+                      previousFolderId,
+                      userId!,
+                      pushToStack: false,
+                    );
+                  }
+                },
               ),
               const SizedBox(width: 8),
 
