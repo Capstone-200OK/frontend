@@ -31,8 +31,10 @@ import 'package:flutter_application_1/providers/notification_provider.dart';
 
 class CloudScreen extends StatefulWidget {
   final String username;
+  final List<int>? targetPathIds;
 
-  const CloudScreen({Key? key, required this.username}) : super(key: key);
+  const CloudScreen({Key? key, required this.username, this.targetPathIds})
+    : super(key: key);
 
   @override
   State<CloudScreen> createState() => _CloudScreenState();
@@ -56,7 +58,7 @@ class _CloudScreenState extends State<CloudScreen> {
   Set<String> fileNames = {}; // 중복 방지를 위한 파일 이름 저장용 집합
   late String url;
   late FileUploader uploader;
-  int currentFolderId = 1; // 시작 폴더 ID (예: 2번 루트)
+  int currentFolderId = 2; // 시작 폴더 ID (예: 2번 루트)
   String currentFolderName = 'CloudROOT'; // 현재 폴더명 ( ROOT로 시작 )
   List<String> breadcrumbPath = ['CloudROOT']; // 폴더명을 저장하는 List
   List<int> folderStack = []; // 상위 폴더 경로 추적
@@ -84,9 +86,15 @@ class _CloudScreenState extends State<CloudScreen> {
     // context 사용 가능한 시점에 userId 가져오기
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       userId = Provider.of<UserProvider>(context, listen: false).userId;
-      await fetchImportantStatus();
-      await fetchAccessibleCloudRoots(); // userId 초기화된 이후 호출
-  });
+      if (widget.targetPathIds != null && widget.targetPathIds!.isNotEmpty) {
+        for (final folderId in widget.targetPathIds!) {
+          await fetchFolderHierarchy(folderId, userId!, pushToStack: true);
+        }
+      } else {
+        await fetchAccessibleCloudRoots();
+      }
+      await fetchImportantStatus(); // 별표 상태 초기화
+    });
   }
 
   Future<void> fetchImportantStatus() async {
@@ -156,7 +164,7 @@ class _CloudScreenState extends State<CloudScreen> {
     final response = await http.get(
       Uri.parse(
         '$url/folder/hierarchy/$folderId/$userId',
-      ), // $url/folder/hierarchy/$folderId/$userId 로 수정 필요 (login 할때 받은 userId 전송)
+      ),
       headers: {"Content-Type": "application/json"},
     );
 
