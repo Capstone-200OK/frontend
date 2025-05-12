@@ -52,7 +52,7 @@ Future<void> restoreFromTrash(List<int> trashIds) async {
 
 Future<void> deleteFromTrash(List<int> trashIds) async {
   try {
-    final response = await http.delete(
+    final response = await http.post(
       Uri.parse(deleteFromTrashUrl),
       body: jsonEncode(trashIds),
       headers: {'Content-Type': 'application/json'},
