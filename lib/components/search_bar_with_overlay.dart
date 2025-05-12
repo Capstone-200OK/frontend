@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_application_1/screens/personal_screen.dart';
+import 'package:flutter_application_1/screens/cloud_screen.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:provider/provider.dart';
@@ -191,30 +192,59 @@ class _SearchBarWithOverlayState extends State<SearchBarWithOverlay> {
                                         isFolder
                                             ? item['folderId']
                                             : item['parentFolderId'];
-                                    final response = await http.get(
-                                      Uri.parse(
-                                        '${widget.baseUrl}/folder/path/$id',
-                                      ),
-                                    );
-                                    if (response.statusCode == 200) {
-                                      final List<dynamic> jsonList = jsonDecode(
-                                        response.body,
-                                      );
-                                      final List<int> pathIds =
-                                          jsonList
-                                              .map((e) => e['folderId'] as int)
-                                              .toList();
-                                      _removeSearchOverlay();
-                                      Navigator.pushReplacement(
-                                        context,
-                                        MaterialPageRoute(
-                                          builder:
-                                              (_) => PersonalScreen(
-                                                username: widget.username,
-                                                targetPathIds: pathIds,
-                                              ),
+                                    if (isFolder && item['folderType'] == 'CLOUD') {
+                                      final userId = Provider.of<UserProvider>(context, listen: false).userId;
+                                      final response = await http.get(
+                                        Uri.parse(
+                                          '${widget.baseUrl}/folder/cloudPath/$userId/$id',
                                         ),
                                       );
+                                      if (response.statusCode == 200) {
+                                        final List<dynamic> jsonList = jsonDecode(
+                                          response.body,
+                                        );
+                                        final List<int> pathIds =
+                                            jsonList
+                                                .map((e) => e['folderId'] as int)
+                                                .toList();
+                                        _removeSearchOverlay();
+                                        Navigator.pushReplacement(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder:
+                                                (_) => CloudScreen(
+                                                  username: widget.username,
+                                                  targetPathIds: pathIds,
+                                                ),
+                                          ),
+                                        );
+                                      }
+                                    } else {
+                                      final response = await http.get(
+                                        Uri.parse(
+                                          '${widget.baseUrl}/folder/path/$id',
+                                        ),
+                                      );
+                                      if (response.statusCode == 200) {
+                                        final List<dynamic> jsonList = jsonDecode(
+                                          response.body,
+                                        );
+                                        final List<int> pathIds =
+                                            jsonList
+                                                .map((e) => e['folderId'] as int)
+                                                .toList();
+                                        _removeSearchOverlay();
+                                        Navigator.pushReplacement(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder:
+                                                (_) => PersonalScreen(
+                                                  username: widget.username,
+                                                  targetPathIds: pathIds,
+                                                ),
+                                          ),
+                                        );
+                                      }
                                     }
                                   },
                                 );
