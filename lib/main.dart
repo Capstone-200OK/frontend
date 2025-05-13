@@ -38,6 +38,7 @@ class MyApp extends StatelessWidget {
     return ChangeNotifierProvider(
       create: (_) => CounterModel(),
       child: MaterialApp(
+        debugShowCheckedModeBanner: false,
         title: 'Flutter 로그인 앱',
         scaffoldMessengerKey: rootScaffoldMessengerKey,
         theme: ThemeData(primarySwatch: Colors.blue),
