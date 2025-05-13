@@ -3,6 +3,11 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_application_1/models/reservation_item.dart';
+import 'package:flutter_application_1/models/folder_item.dart';
+import 'package:flutter/cupertino.dart';
+import 'package:provider/provider.dart';
+import 'package:flutter_application_1/providers/user_provider.dart';
+import 'package:flutter_application_1/screens/file_reservation_screen.dart';
 
 class ReservationListScreen extends StatefulWidget {
   const ReservationListScreen({super.key});
@@ -12,16 +17,26 @@ class ReservationListScreen extends StatefulWidget {
 }
 
 class _ReservationListScreenState extends State<ReservationListScreen> {
-  late Future<List<Reservation>> reservationFuture;
+  Future<List<Reservation>> reservationFuture = Future.value([]);
   late String baseUrl;
+  late int? userId;
 
   @override
   void initState() {
     super.initState();
     baseUrl = dotenv.get("BaseUrl");
-    reservationFuture = fetchReservations(
-      1,
-    ); // TODO: Replace with actual user ID
+
+    // ✅ context 접근은 addPostFrameCallback 안에서
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      userId = Provider.of<UserProvider>(context, listen: false).userId;
+      if (userId != null) {
+        setState(() {
+          reservationFuture = fetchReservations(userId!);
+        });
+      } else {
+        print("❗ userId가 null입니다. 예약 목록을 불러오지 않습니다.");
+      }
+    });
   }
 
   Future<List<Reservation>> fetchReservations(int userId) async {
@@ -56,8 +71,31 @@ class _ReservationListScreenState extends State<ReservationListScreen> {
         return '유형';
       case 'NAME':
         return '이름';
+      case 'DATE':
+        return '날짜';
+      case 'CONTENT':
+        return '내용';
       default:
         return criteria;
+    }
+  }
+
+  Future<void> deleteReservation(int taskId) async {
+    final response = await http.delete(
+      Uri.parse('$baseUrl/scheduledTask/delete/$taskId'),
+    );
+
+    if (response.statusCode == 200) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('예약이 삭제되었습니다.')),
+      );
+      setState(() {
+        reservationFuture = fetchReservations(userId!);  // ✅ 새로고침
+      });
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('삭제 실패: ${response.statusCode}')),
+      );
     }
   }
 
@@ -128,40 +166,91 @@ class _ReservationListScreenState extends State<ReservationListScreen> {
                 final reservations = snapshot.data!;
                 return Column(
                   children:
-                      reservations.map((reservation) {
+                      reservations.map<Widget>((reservation) {
                         return Container(
                           padding: const EdgeInsets.symmetric(vertical: 16),
-                          child: Row(
-                            children: [
-                              Expanded(
-                                child: Center(
-                                  child: Text(
-                                    '${reservation.previousFoldername}',
+                          child: GestureDetector(
+                            onSecondaryTapDown: (details) async {
+                              final RenderBox overlay = Overlay.of(context).context.findRenderObject() as RenderBox;
+                              final positionRect = RelativeRect.fromLTRB(
+                                details.globalPosition.dx,
+                                details.globalPosition.dy,
+                                overlay.size.width - details.globalPosition.dx,
+                                overlay.size.height - details.globalPosition.dy,
+                              );
+
+                              final selected = await showMenu<String>(
+                                context: context,
+                                position: positionRect,
+                                color: Color(0xFFECEFF1),
+                                items: [
+                                  PopupMenuItem(
+                                    value: 'modify',
+                                    child: Row(
+                                      children: const [
+                                        Icon(Icons.edit, size: 16, color: Colors.black54),
+                                        SizedBox(width: 8),
+                                        Text('수정', style: TextStyle(fontSize: 12)),
+                                      ],
+                                    ),
+                                  ),
+                                  PopupMenuItem(
+                                    value: 'delete',
+                                    child: Row(
+                                      children: const [
+                                        Icon(Icons.delete, size: 16, color: Colors.black54),
+                                        SizedBox(width: 8),
+                                        Text('삭제', style: TextStyle(fontSize: 12)),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              );
+
+                              if (selected == 'delete') {
+                                await deleteReservation(reservation.taskId);
+                              } else if (selected == 'modify') {
+                                showDialog(
+                                  context: context,
+                                  builder: (context) => FileReservationScreen(
+                                    mode: 'modify',
+                                    reservation: reservation,
+                                  ),
+                                );
+                              }
+                            },
+                            child: Row(
+                              children: [
+                                Expanded(
+                                  child: Center(
+                                    child: Text(
+                                      '${reservation.previousFoldername}',
+                                    ),
                                   ),
                                 ),
-                              ),
-                              Expanded(
-                                child: Center(
-                                  child: Text(
-                                    '${reservation.newFoldername}',
+                                Expanded(
+                                  child: Center(
+                                    child: Text(
+                                      '${reservation.newFoldername}',
+                                    ),
                                   ),
                                 ),
-                              ),
-                              Expanded(
-                                child: Center(
-                                  child: Text(
-                                    formatInterval(reservation.interval),
+                                Expanded(
+                                  child: Center(
+                                    child: Text(
+                                      formatInterval(reservation.interval),
+                                    ),
                                   ),
                                 ),
-                              ),
-                              Expanded(
-                                child: Center(
-                                  child: Text(
-                                    formatCriteria(reservation.criteria),
+                                Expanded(
+                                  child: Center(
+                                    child: Text(
+                                      formatCriteria(reservation.criteria),
+                                    ),
                                   ),
                                 ),
-                              ),
-                            ],
+                              ],
+                            ),
                           ),
                         );
                       }).toList(),

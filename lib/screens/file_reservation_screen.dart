@@ -3,9 +3,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter_application_1/screens/folder_select_dialog.dart';
 import 'package:flutter_application_1/api/file_reservation_service.dart';
 import 'package:flutter_application_1/models/folder_item.dart';
+import 'package:flutter_application_1/models/reservation_item.dart';
+import 'package:provider/provider.dart';
+import 'package:flutter_application_1/providers/user_provider.dart';
 
 class FileReservationScreen extends StatefulWidget {
-  const FileReservationScreen({super.key});
+  final String mode; // 'create' or 'modify'
+  final Reservation? reservation;
+
+  const FileReservationScreen({super.key, this.mode = 'create', this.reservation});
 
   @override
   State<FileReservationScreen> createState() => _FileReservationScreenState();
@@ -18,6 +24,23 @@ class _FileReservationScreenState extends State<FileReservationScreen> {
   int selectedInterval = 0;
   int selectedHour = 12;
   String? selectedMode;
+  late int? userId;
+
+  @override
+  void initState() {
+    super.initState();
+    userId = Provider.of<UserProvider>(context, listen: false).userId;
+
+    // ⭐ modify 모드면 기존 값으로 초기화
+    if (widget.mode == 'modify' && widget.reservation != null) {
+      final r = widget.reservation!;
+      selectedPreviousFolder = FolderItem(id: r.previousFolderId, name: r.previousFoldername);
+      selectedNewFolder = FolderItem(id: r.newFolderId, name: r.newFoldername);
+      selectedMode = r.criteria.toLowerCase();
+      selectedInterval = r.interval == 'DAILY' ? 0 : r.interval == 'WEEKLY' ? 1 : 2;
+      selectedHour = r.nextExecuted.hour;
+    }
+  }
 
   void _changeInterval(int direction) {
     setState(() {
@@ -37,7 +60,6 @@ class _FileReservationScreenState extends State<FileReservationScreen> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            // 상단 바 (패딩 없이 가득)
             Container(
               width: double.infinity,
               decoration: BoxDecoration(
@@ -51,66 +73,42 @@ class _FileReservationScreenState extends State<FileReservationScreen> {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text(
-                    '파일 예약을 시작합니다 !',
-                    style: TextStyle(
+                  Text(
+                    widget.mode == 'modify' ? '파일 예약을 수정합니다 !' : '파일 예약을 시작합니다 !',
+                    style: const TextStyle(
                       fontSize: 16,
                       color: Colors.white,
                       fontFamily: 'APPLESDGOTHICNEOR',
                     ),
                   ),
                   GestureDetector(
-                    onTap: () => Navigator.pop(context),
+                    onTap: () => Navigator.of(context, rootNavigator: true).pop(),
                     child: const Icon(Icons.close, color: Colors.white),
                   ),
                 ],
               ),
             ),
-
             const SizedBox(height: 20),
 
-            // 본문은 Padding으로 감싸기
             Expanded(
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 40),
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // 왼쪽 부분
+                    // 왼쪽
                     Expanded(
                       flex: 2,
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Align(
-                            alignment: Alignment.centerLeft,
-                            child: Text(
-                              '주기를 설정하세요',
-                              style: TextStyle(
-                                fontSize: 14,
-                                fontFamily: 'APPLESDGOTHICNEOR',
-                              ),
-                            ),
-                          ),
-                          const SizedBox(height: 6),
+                          const Text('주기를 설정하세요', style: TextStyle(fontSize: 14)),
                           Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              IconButton(
-                                onPressed: () => _changeInterval(-1),
-                                icon: const Icon(Icons.arrow_left),
-                              ),
-                              Text(
-                                intervals[selectedInterval],
-                                style: const TextStyle(
-                                  fontSize: 14,
-                                  fontFamily: 'APPLESDGOTHICNEOR',
-                                ),
-                              ),
-                              IconButton(
-                                onPressed: () => _changeInterval(1),
-                                icon: const Icon(Icons.arrow_right),
-                              ),
+                              IconButton(onPressed: () => _changeInterval(-1), icon: const Icon(Icons.arrow_left)),
+                              Text(intervals[selectedInterval]),
+                              IconButton(onPressed: () => _changeInterval(1), icon: const Icon(Icons.arrow_right)),
                             ],
                           ),
                           const SizedBox(height: 10),
@@ -121,130 +119,38 @@ class _FileReservationScreenState extends State<FileReservationScreen> {
                             child: Container(
                               color: Colors.white,
                               child: CupertinoPicker(
-                                scrollController: FixedExtentScrollController(
-                                  initialItem: selectedHour,
-                                ),
+                                scrollController: FixedExtentScrollController(initialItem: selectedHour),
                                 itemExtent: 30,
-                                onSelectedItemChanged: (index) {
-                                  setState(() {
-                                    selectedHour = index;
-                                  });
-                                },
-                                children: List.generate(24, (index) {
-                                  return Center(
-                                    child: Text(
-                                      '${index.toString().padLeft(2, '0')}:00',
-                                      style: const TextStyle(
-                                        color: Colors.blueGrey,
-                                      ),
-                                    ),
-                                  );
-                                }),
+                                onSelectedItemChanged: (index) => setState(() => selectedHour = index),
+                                children: List.generate(24, (index) => Center(child: Text('${index.toString().padLeft(2, '0')}:00'))),
                               ),
                             ),
                           ),
                           const SizedBox(height: 10),
-                          const Text(
-                            '주기적으로 관리할 폴더를 선택해 주세요',
-                            style: TextStyle(
-                              fontFamily: 'APPLESDGOTHICNEOR',
-                              fontSize: 14,
-                            ),
-                          ),
-                          const SizedBox(height: 6),
+
+                          const Text('관리 폴더 선택'),
                           GestureDetector(
                             onTap: () async {
-                              selectedPreviousFolder =
-                                  await showDialog<FolderItem>(
-                                    context: context,
-                                    builder: (BuildContext context) {
-                                      return const FolderSelectDialog();
-                                    },
-                                  );
-
-                              if (selectedPreviousFolder != null) {
-                                print(
-                                  '출발 폴더 선택됨: ${selectedPreviousFolder!.name}',
-                                );
-                                setState(() {}); // ✅ UI 갱신
-                              }
+                              final result = await showDialog<FolderItem>(
+                                context: context,
+                                builder: (_) => const FolderSelectDialog(),
+                              );
+                              if (result != null) setState(() => selectedPreviousFolder = result);
                             },
-                            child: Container(
-                              height: 40,
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 12,
-                              ),
-                              decoration: BoxDecoration(
-                                color: Colors.white,
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: Center(
-                                child:
-                                    selectedPreviousFolder == null
-                                        ? const Icon(
-                                          Icons.add_circle,
-                                          color: Color(0xFF37474F),
-                                        )
-                                        : Text(
-                                          selectedPreviousFolder!.name,
-                                          style: const TextStyle(
-                                            fontFamily: 'APPLESDGOTHICNEOR',
-                                            fontSize: 13,
-                                          ),
-                                        ),
-                              ),
-                            ),
+                            child: folderBox(selectedPreviousFolder?.name ?? '', Icons.add_circle),
                           ),
                           const SizedBox(height: 12),
-                          const Text(
-                            '목적지 폴더를 선택하세요',
-                            style: TextStyle(
-                              fontFamily: 'APPLESDGOTHICNEOR',
-                              fontSize: 14,
-                            ),
-                          ),
-                          const SizedBox(height: 6),
+
+                          const Text('목적지 폴더 선택'),
                           GestureDetector(
                             onTap: () async {
-                              // 목적지 폴더 선택
-                              selectedNewFolder = await showDialog<FolderItem>(
+                              final result = await showDialog<FolderItem>(
                                 context: context,
-                                builder: (BuildContext context) {
-                                  return const FolderSelectDialog();
-                                },
+                                builder: (_) => const FolderSelectDialog(),
                               );
-
-                              if (selectedNewFolder != null) {
-                                print('목적지 폴더 선택됨: ${selectedNewFolder!.name}');
-                                setState(() {}); // ✅ UI 갱신
-                              }
+                              if (result != null) setState(() => selectedNewFolder = result);
                             },
-                            child: Container(
-                              height: 40,
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 12,
-                              ),
-                              decoration: BoxDecoration(
-                                color: Colors.white,
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: Center(
-                                child:
-                                    selectedNewFolder == null
-                                        ? const Icon(
-                                          Icons.drive_folder_upload,
-                                          color: Color(0xFF37474F),
-                                        )
-                                        : Text(
-                                          selectedNewFolder!.name,
-                                          style: const TextStyle(
-                                            fontFamily: 'APPLESDGOTHICNEOR',
-                                            fontSize: 13,
-                                          ),
-                                          overflow: TextOverflow.ellipsis,
-                                        ),
-                              ),
-                            ),
+                            child: folderBox(selectedNewFolder?.name ?? '', Icons.drive_folder_upload),
                           ),
                         ],
                       ),
@@ -252,23 +158,14 @@ class _FileReservationScreenState extends State<FileReservationScreen> {
 
                     const SizedBox(width: 20),
 
-                    // 오른쪽 부분
+                    // 오른쪽
                     Expanded(
                       flex: 1,
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           const SizedBox(height: 16),
-                          const Align(
-                            alignment: Alignment.centerLeft,
-                            child: Text(
-                              '정리 기준을 선택해 주세요!',
-                              style: TextStyle(
-                                fontFamily: 'APPLESDGOTHICNEOR',
-                                fontSize: 14,
-                              ),
-                            ),
-                          ),
+                          const Text('정리 기준 선택'),
                           const SizedBox(height: 8),
                           Wrap(
                             spacing: 10,
@@ -284,76 +181,54 @@ class _FileReservationScreenState extends State<FileReservationScreen> {
 
                           ElevatedButton(
                             onPressed: () async {
-                              if (selectedPreviousFolder == null ||
-                                  selectedNewFolder == null) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                    content: Text('폴더를 모두 선택해주세요'),
-                                  ),
-                                );
+                              if (selectedPreviousFolder == null || selectedNewFolder == null) {
+                                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('폴더를 모두 선택해주세요')));
                                 return;
                               }
 
-                              bool success =
-                                  await FileReservationService.addReservation(
-                                    userId: 1,
-                                    previousFolderId:
-                                        selectedPreviousFolder!.id, // 여기 ✅
-                                    newFolderId: selectedNewFolder!.id, // 여기 ✅
-                                    criteria:
-                                        selectedMode?.toUpperCase() ?? 'TYPE',
-                                    interval:
-                                        intervals[selectedInterval] == '하루'
-                                            ? 'DAILY'
-                                            : intervals[selectedInterval] ==
-                                                '일주일'
-                                            ? 'WEEKLY'
-                                            : 'MONTHLY',
-                                    nextExecuted: DateTime.now()
-                                        .add(
-                                          Duration(
-                                            days:
-                                                selectedInterval == 0
-                                                    ? 1
-                                                    : selectedInterval == 1
-                                                    ? 7
-                                                    : 30,
-                                          ),
-                                        )
-                                        .copyWith(
-                                          hour: selectedHour,
-                                          minute: 0,
-                                        ),
-                                  );
+                              String convertedInterval = intervals[selectedInterval] == '하루'
+                                  ? 'DAILY'
+                                  : intervals[selectedInterval] == '일주일'
+                                      ? 'WEEKLY'
+                                      : 'MONTHLY';
 
-                              if (success) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                    content: Text('파일 예약이 완료되었습니다!'),
-                                  ),
+                              DateTime selectedDateTime = DateTime.now().copyWith(
+                                hour: selectedHour,
+                                minute: 0,
+                              );
+
+                              bool success = false;
+                              if (widget.mode == 'modify') {
+                                success = await FileReservationService.modifyReservation(
+                                  taskId: widget.reservation!.taskId,
+                                  userId: userId!,
+                                  previousFolderId: selectedPreviousFolder!.id,
+                                  newFolderId: selectedNewFolder!.id,
+                                  criteria: selectedMode?.toUpperCase() ?? 'TYPE',
+                                  interval: convertedInterval,
+                                  nextExecuted: selectedDateTime,
                                 );
-                                Navigator.pop(context);
                               } else {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                    content: Text('파일 예약에 실패했습니다 😢'),
-                                  ),
+                                success = await FileReservationService.addReservation(
+                                  userId: userId!,
+                                  previousFolderId: selectedPreviousFolder!.id,
+                                  newFolderId: selectedNewFolder!.id,
+                                  criteria: selectedMode?.toUpperCase() ?? 'TYPE',
+                                  interval: convertedInterval,
+                                  nextExecuted: selectedDateTime,
                                 );
                               }
-                            },
 
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFF2E24E0),
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 53,
-                                vertical: 20,
-                              ),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                            ),
-                            child: const Text(
-                              '예약하기',
+                              if (success) {
+                                ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(widget.mode == 'modify' ? '파일 예약 수정 완료!' : '파일 예약 등록 완료!')));
+                                Navigator.of(context, rootNavigator: true).pop();
+                              } else {
+                                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('작업 실패 😢')));
+                              }
+                            },
+                            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF2E24E0)),
+                            child: Text(
+                              widget.mode == 'modify' ? '수정하기' : '예약하기',
                               style: TextStyle(
                                 fontSize: 14,
                                 color: Colors.white,
@@ -374,38 +249,28 @@ class _FileReservationScreenState extends State<FileReservationScreen> {
     );
   }
 
-  // Widget _buildTag(String label) {
-  //   return Container(
-  //     padding: const EdgeInsets.symmetric(horizontal: 25, vertical: 14),
-  //     decoration: BoxDecoration(
-  //       color: Colors.white,
-  //       borderRadius: BorderRadius.circular(13),
-  //     ),
-  //     child: Text(
-  //       label,
-  //       style: const TextStyle(fontSize: 14, fontFamily: 'APPLESDGOTHICNEOR'),
-  //     ),
-  //   );
-  // }
+  Widget folderBox(String text, IconData icon) {
+    return Container(
+      height: 40,
+      padding: const EdgeInsets.symmetric(horizontal: 12),
+      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12)),
+      child: Center(
+        child: text.isEmpty
+            ? Icon(icon, color: const Color(0xFF37474F))
+            : Text(text, style: const TextStyle(fontSize: 13)),
+      ),
+    );
+  }
 
   Widget _buildTag(BuildContext context, String label, String mode) {
     return ElevatedButton(
       style: ElevatedButton.styleFrom(
-        backgroundColor:
-            selectedMode == mode ? Color(0xFF37474F) : Colors.white,
-        foregroundColor:
-            selectedMode == mode ? Colors.white : Color(0xFF37474F),
+        backgroundColor: selectedMode == mode ? const Color(0xFF37474F) : Colors.white,
+        foregroundColor: selectedMode == mode ? Colors.white : const Color(0xFF37474F),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       ),
-      onPressed: () {
-        setState(() {
-          selectedMode = mode;
-        });
-      },
-      child: Text(
-        label,
-        style: TextStyle(fontSize: 14, fontFamily: 'APPLESDGOTHICNEOR'),
-      ),
+      onPressed: () => setState(() => selectedMode = mode),
+      child: Text(label, style: const TextStyle(fontSize: 14)),
     );
   }
 }
