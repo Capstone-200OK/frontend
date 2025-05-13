@@ -3,6 +3,8 @@
 class Reservation {
   final int taskId;
   final int userId;
+  final int previousFolderId;
+  final int newFolderId; 
   final String previousFoldername;
   final String newFoldername;
   final String criteria;
@@ -12,6 +14,8 @@ class Reservation {
   Reservation({
     required this.taskId,
     required this.userId,
+    required this.previousFolderId,
+    required this.newFolderId,
     required this.previousFoldername,
     required this.newFoldername,
     required this.criteria,
@@ -23,6 +27,8 @@ class Reservation {
     return Reservation(
       taskId: json['taskId'],
       userId: json['userId'],
+      previousFolderId: json['previousFolderId'],
+      newFolderId: json['newFolderId'],
       previousFoldername: json['previousFolderName'],
       newFoldername: json['newFolderName'],
       criteria: json['criteria'],

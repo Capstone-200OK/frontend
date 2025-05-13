@@ -314,11 +314,9 @@ class NavigationDrawerWidget extends StatelessWidget {
               ),
               tileColor: const Color(0xFF455A64),
               onTap: () {
-                Navigator.pushReplacement(
-                  scaffoldContext,
-                  MaterialPageRoute(
-                    builder: (context) => FileReservationScreen(),
-                  ),
+                showDialog(
+                  context: scaffoldContext,
+                  builder: (context) => const FileReservationScreen(mode: 'create'),
                 );
               },
               visualDensity: VisualDensity(vertical: -4),
