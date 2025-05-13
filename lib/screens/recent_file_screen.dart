@@ -30,6 +30,7 @@ class _RecentFileScreenState extends State<RecentFileScreen> {
   int? latestSortingId;
   DateTime? latestDate;
   List<DateTime> historyDates = [];
+  bool isExist = true;
   bool isLoading = true;
   // 폴더 목록 상태 관리
   List<String> folders = [];
@@ -49,52 +50,61 @@ class _RecentFileScreenState extends State<RecentFileScreen> {
     });
   }
 
- Future<void> fetchSortyHistory() async {
-  try {
-    // (1) userId는 로그인 정보에서 받아야 함. 일단 임시 1
-    //final userId = 1; // 실제로는 Provider 같은 데서 받아와야 함
+  Future<void> fetchSortyHistory() async {
+    try {
+      // (1) userId는 로그인 정보에서 받아야 함. 일단 임시 1
+      //final userId = 1; // 실제로는 Provider 같은 데서 받아와야 함
 
-    // (2) 가장 최근 sortingId 가져오기
-    latestSortingId = await SortingHistoryService.fetchLatestSortingHistoryId(userId!);
+      // (2) 가장 최근 sortingId 가져오기
+      latestSortingId = await SortingHistoryService.fetchLatestSortingHistoryId(
+        userId!,
+      );
 
     if (latestSortingId != null) {
       // print('✅ 최신 sortingId: $latestSortingId');
 
-      // (3) 최신 sortingId로 정리 기록 가져오기
-      final histories = await SortingHistoryService.fetchSortingHistory(latestSortingId!);
+        // (3) 최신 sortingId로 정리 기록 가져오기
+        final histories = await SortingHistoryService.fetchSortingHistory(
+          latestSortingId!,
+        );
 
-      // (4) 여기서 날짜 계산도 실제 API 응답 기반으로
-      final response = await http.get(
-        Uri.parse('$url/sorting-history/list/$userId'),
-        headers: {"Content-Type": "application/json"},
-      );
+        // (4) 여기서 날짜 계산도 실제 API 응답 기반으로
+        final response = await http.get(
+          Uri.parse('$url/sorting-history/list/$userId'),
+          headers: {"Content-Type": "application/json"},
+        );
 
-      if (response.statusCode == 200) {
-        final List<dynamic> data = jsonDecode(response.body);
+        if (response.statusCode == 200) {
+          final List<dynamic> data = jsonDecode(response.body);
 
-        List<DateTime> fetchedDates = data.map((entry) {
-          return DateTime.parse(entry['sortingDate']);
-        }).toList();
+          List<DateTime> fetchedDates =
+              data.map((entry) {
+                return DateTime.parse(entry['sortingDate']);
+              }).toList();
 
-        setState(() {
-          historyDates = fetchedDates;
-          latestDate = fetchedDates.isNotEmpty ? fetchedDates.first : null;
-          isLoading = false;
-        });
-      } else {
-      print('❌ 최신 sortingId 가져오기 실패');
+          setState(() {
+            historyDates = fetchedDates;
+            latestDate = fetchedDates.isNotEmpty ? fetchedDates.first : null;
+            isLoading = false;
+            isExist = false;
+          });
+        } else {
+          print('❌ 최신 sortingId 가져오기 실패');
+
+          setState(() {
+            isLoading = false;
+            isExist = false;
+          });
+        }
+      }
+    } catch (e) {
+      print('에러 발생: $e');
       setState(() {
         isLoading = false;
+        isExist = false;
       });
     }
-  } 
-  }catch (e) {
-    print('에러 발생: $e');
-    setState(() {
-      isLoading = false;
-    });
   }
-}
 
   String formatDate(DateTime dt) {
     return "${dt.year}-${dt.month.toString().padLeft(2, '0')}-${dt.day.toString().padLeft(2, '0')} ${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}";
@@ -159,7 +169,44 @@ class _RecentFileScreenState extends State<RecentFileScreen> {
       ),
       body: SafeArea(
         child:
-            isLoading
+            isExist
+                ? Center(
+                  child: Padding(
+                    padding: const EdgeInsets.only(
+                      top: 150,
+                    ),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.start, 
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.insert_drive_file,
+                          size: 80,
+                          color: Colors.grey[400],
+                        ),
+                        const SizedBox(height: 16),
+                        const Text(
+                          "아직 정리된 기록이 없습니다.",
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontFamily: 'APPLESDGOTHICNEOEB',
+                            color: Colors.black54,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        const Text(
+                          "파일을 정리하고 기록을 확인해보세요!",
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontFamily: 'APPLESDGOTHICNEOR',
+                            color: Colors.black45,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                )
+                : isLoading
                 ? const Center(child: CircularProgressIndicator())
                 : Column(
                   children: [
@@ -210,11 +257,12 @@ class _RecentFileScreenState extends State<RecentFileScreen> {
                                       fileName,
                                       allHistories: histories, // 전체 이력 넘겨줌
                                     );
-                                  }
-                                  else {
+                                  } else {
                                     print('❌ 정리 내역 없음');
                                     ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(content: Text('파일 정리 내역이 없습니다.')),
+                                      SnackBar(
+                                        content: Text('파일 정리 내역이 없습니다.'),
+                                      ),
                                     );
                                   }
                                 },
@@ -350,17 +398,32 @@ class _RecentFileScreenState extends State<RecentFileScreen> {
                                       child: TextButton(
                                         onPressed: () async {
                                           print('날짜 ${formatDate(date)} 클릭됨!');
-                                          
+
                                           try {
                                             if (userId == null) return;
-                                            final sortingId = await SortingHistoryService.fetchSortingIdByDate(userId!, date);
+                                            final sortingId =
+                                                await SortingHistoryService.fetchSortingIdByDate(
+                                                  userId!,
+                                                  date,
+                                                );
                                             if (sortingId == null) return;
-                                            final histories = await SortingHistoryService.fetchSortingHistory(sortingId);
+                                            final histories =
+                                                await SortingHistoryService.fetchSortingHistory(
+                                                  sortingId,
+                                                );
 
                                             if (histories.isNotEmpty) {
-                                              final fromPath = histories.first['previousPath'] ?? '';
-                                              final toPath = histories.first['currentPath'] ?? '';
-                                              final fileName = histories.first['fileName'] ?? '';
+                                              final fromPath =
+                                                  histories
+                                                      .first['previousPath'] ??
+                                                  '';
+                                              final toPath =
+                                                  histories
+                                                      .first['currentPath'] ??
+                                                  '';
+                                              final fileName =
+                                                  histories.first['fileName'] ??
+                                                  '';
 
                                               showFileMoveDialog(
                                                 context,
@@ -369,17 +432,28 @@ class _RecentFileScreenState extends State<RecentFileScreen> {
                                                 fileName,
                                                 allHistories: histories,
                                               );
-                                            }
-                                            else {
+                                            } else {
                                               print('❌ 정리 내역 없음');
-                                              ScaffoldMessenger.of(context).showSnackBar(
-                                                SnackBar(content: Text('파일 정리 내역이 없습니다.')),
+                                              ScaffoldMessenger.of(
+                                                context,
+                                              ).showSnackBar(
+                                                SnackBar(
+                                                  content: Text(
+                                                    '파일 정리 내역이 없습니다.',
+                                                  ),
+                                                ),
                                               );
                                             }
                                           } catch (e) {
                                             print('❌ 정리 이력 불러오기 실패: $e');
-                                            ScaffoldMessenger.of(context).showSnackBar(
-                                              SnackBar(content: Text('정리 기록을 불러오지 못했습니다.')),
+                                            ScaffoldMessenger.of(
+                                              context,
+                                            ).showSnackBar(
+                                              SnackBar(
+                                                content: Text(
+                                                  '정리 기록을 불러오지 못했습니다.',
+                                                ),
+                                              ),
                                             );
                                           }
                                         },
