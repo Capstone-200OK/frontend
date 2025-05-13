@@ -11,13 +11,17 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:provider/provider.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter_application_1/api/websocket_service.dart';
+import 'package:flutter_application_1/components/navigation_stack.dart';
+import 'package:flutter_application_1/components/navigation_stack.dart';
+import 'package:flutter_application_1/components/navigation_helper.dart';
 
 class NavigationDrawerWidget extends StatelessWidget {
   final String username;
   final Function(String) onFolderCreated;
   final List<String> folders;
   final BuildContext scaffoldContext; // scaffold.of(context) 때문에 추가
-  final bool showUploadButton;
+  final String? preScreen;
+  final List<int>? prePathIds;
 
   const NavigationDrawerWidget({
     Key? key,
@@ -25,14 +29,15 @@ class NavigationDrawerWidget extends StatelessWidget {
     required this.onFolderCreated,
     required this.folders,
     required this.scaffoldContext,
-    required this.showUploadButton,
+    this.preScreen,
+    this.prePathIds,
   }) : super(key: key);
 
   // 로그아웃 함수
   void _logout(BuildContext context) {
     WebSocketService().disconnect();
     Provider.of<UserProvider>(context, listen: false).clearUser();
-
+    NavigationStack.clear();
     Navigator.pushAndRemoveUntil(
       context,
       MaterialPageRoute(builder: (context) => const LoginScreen()),
@@ -152,109 +157,6 @@ class NavigationDrawerWidget extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 70),
-            // 업로드 메뉴
-            if (showUploadButton)
-              // ListTile(
-              //   leading: const Icon(
-              //     Icons.file_upload,
-              //     color: Colors.white,
-              //     size: 16,
-              //   ),
-              //   title: const Text(
-              //     '업로드',
-              //     style: TextStyle(
-              //       fontSize: 10,
-              //       color: Colors.white,
-              //       fontFamily: 'APPLESDGOTHICNEOR',
-              //     ),
-              //   ),
-              //   tileColor: const Color(0xFF455A64),
-              //   onTap: () async {
-              //     await Future.delayed(const Duration(milliseconds: 100));
-
-              //     final RenderBox overlay =
-              //         Overlay.of(scaffoldContext).context.findRenderObject()
-              //             as RenderBox;
-              //     final RelativeRect position = RelativeRect.fromLTRB(
-              //       100,
-              //       210,
-              //       overlay.size.width - 100,
-              //       0,
-              //     );
-
-              //     final selected = await showMenu<String>(
-              //       context: scaffoldContext,
-              //       position: position,
-              //       items: [
-              //         const PopupMenuItem(
-              //           value: 'new_folder',
-              //           child: SizedBox(
-              //             width: 150,
-              //             child: Text(
-              //               '새 폴더',
-              //               style: TextStyle(
-              //                 fontSize: 12,
-              //                 color: Colors.black,
-              //                 fontFamily: 'APPLESDGOTHICNEOR',
-              //               ),
-              //             ),
-              //           ),
-              //         ),
-              //         const PopupMenuItem(
-              //           value: 'upload_file',
-              //           child: Text(
-              //             '파일 업로드',
-              //             style: TextStyle(
-              //               fontSize: 12,
-              //               color: Colors.black,
-              //               fontFamily: 'APPLESDGOTHICNEOR',
-              //             ),
-              //           ),
-              //         ),
-              //         const PopupMenuItem(
-              //           value: 'upload_folder',
-              //           child: Text(
-              //             '폴더 업로드',
-              //             style: TextStyle(
-              //               fontSize: 12,
-              //               color: Colors.black,
-              //               fontFamily: 'APPLESDGOTHICNEOR',
-              //             ),
-              //           ),
-              //         ),
-              //       ],
-              //       elevation: 8,
-              //       color: Colors.white,
-              //     );
-
-              //     if (selected == 'new_folder') {
-              //       final result = await showDialog(
-              //         context: scaffoldContext,
-              //         builder: (context) {
-              //           return Dialog(
-              //             child: Container(
-              //               width: 350,
-              //               height: 280,
-              //               color: Colors.white,
-              //               child: FolderCreateScreen(
-              //                 onCreateFolder: (folderName) {
-              //                   onFolderCreated(folderName);
-              //                   Navigator.of(context).pop();
-              //                 },
-              //               ),
-              //             ),
-              //           );
-              //         },
-              //       );
-
-              //       if (result == true) {
-              //         print('새 폴더 생성 완료');
-              //       }
-              //     }
-              //   },
-              //   }
-              // ),
-
             ListTile(
               leading: const Icon(
                 Icons.star_border,
@@ -271,6 +173,24 @@ class NavigationDrawerWidget extends StatelessWidget {
               ),
               tileColor: const Color(0xFF455A64),
               onTap: () {
+                if (prePathIds != null) {
+                  NavigationStack.pop();
+                  if (preScreen == 'CLOUD') {
+                    NavigationStack.push('CloudScreen2', arguments: {
+                    'username': username,
+                    'targetPathIds': prePathIds,
+                    });
+                  }
+                  else if (preScreen == 'PERSONAL') {
+                    NavigationStack.push('PersonalScreen2', arguments: {
+                    'username': username,
+                    'targetPathIds': prePathIds,
+                    });
+                  }
+                  NavigationStack.printStack();
+                }
+                NavigationStack.push('ImportantScreen', arguments: {'username': username});
+                NavigationStack.printStack();
                 Navigator.pushReplacement(
                   scaffoldContext,
                   MaterialPageRoute(
@@ -293,14 +213,77 @@ class NavigationDrawerWidget extends StatelessWidget {
               ),
               tileColor: const Color(0xFF455A64),
               onTap: () {
+                if (prePathIds != null) {
+                  NavigationStack.pop();
+                  if (preScreen == 'CLOUD') {
+                    NavigationStack.push('CloudScreen2', arguments: {
+                    'username': username,
+                    'targetPathIds': prePathIds,
+                    });
+                  }
+                  else if (preScreen == 'PERSONAL') {
+                    NavigationStack.push('PersonalScreen2', arguments: {
+                    'username': username,
+                    'targetPathIds': prePathIds,
+                    });
+                  }
+                  NavigationStack.printStack();
+                }
+                NavigationStack.push('TrashScreen', arguments: {'username': username});
                 Navigator.pushReplacement(
-                  scaffoldContext,
+                  context,
                   MaterialPageRoute(
                     builder: (context) => TrashScreen(username: username),
                   ),
                 );
+                NavigationStack.printStack();
               },
               visualDensity: VisualDensity(vertical: -4),
+            ),
+            ListTile(
+              leading: const Icon(Icons.history, color: Colors.white, size: 16),
+              title: const Text(
+                'SORTY 목록',
+                style: TextStyle(
+                  fontSize: 10,
+                  color: Colors.white,
+                  fontFamily: 'APPLESDGOTHICNEOR',
+                ),
+              ),
+              tileColor: const Color(0xFF455A64),
+              onTap: () {
+                if (prePathIds != null) {
+                  NavigationStack.pop();
+                  if (preScreen == 'CLOUD') {
+                    NavigationStack.push('CloudScreen2', arguments: {
+                    'username': username,
+                    'targetPathIds': prePathIds,
+                    });
+                  }
+                  else if (preScreen == 'PERSONAL') {
+                    NavigationStack.push('PersonalScreen2', arguments: {
+                    'username': username,
+                    'targetPathIds': prePathIds,
+                    });
+                  }
+                  NavigationStack.printStack();
+                }
+                final userId = Provider.of<UserProvider>(context, listen: false).userId;
+                NavigationStack.push('RecentFileScreen', arguments: {'username': username, 'userId': userId});
+                NavigationStack.printStack();
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(
+                    builder:
+                        (context) => RecentFileScreen(
+                          username: username,
+                          userId: userId,
+                        ),
+                  ),
+                );
+
+                // print('최근 항목 눌림');
+              },
             ),
             ListTile(
               leading: const Icon(Icons.check, color: Colors.white, size: 16),
@@ -339,53 +322,6 @@ class NavigationDrawerWidget extends StatelessWidget {
                 );
               },
               visualDensity: VisualDensity(vertical: -4),
-            ),
-            ListTile(
-              leading: const Icon(
-                Icons.sd_storage,
-                color: Colors.white,
-                size: 16,
-              ),
-              title: const Text(
-                '저장용량',
-                style: TextStyle(
-                  fontSize: 10,
-                  color: Colors.white,
-                  fontFamily: 'APPLESDGOTHICNEOR',
-                ),
-              ),
-              tileColor: const Color(0xFF455A64),
-              onTap: () => Navigator.pop(scaffoldContext),
-              visualDensity: VisualDensity(vertical: -4),
-            ),
-            ListTile(
-              leading: const Icon(Icons.history, color: Colors.white, size: 16),
-              title: const Text(
-                'SORTY 목록',
-                style: TextStyle(
-                  fontSize: 10,
-                  color: Colors.white,
-                  fontFamily: 'APPLESDGOTHICNEOR',
-                ),
-              ),
-              tileColor: const Color(0xFF455A64),
-              onTap: () {
-                final userId =
-                    Provider.of<UserProvider>(context, listen: false).userId;
-
-                Navigator.pushReplacement(
-                  context,
-                  MaterialPageRoute(
-                    builder:
-                        (context) => RecentFileScreen(
-                          username: username,
-                          userId: userId,
-                        ),
-                  ),
-                );
-
-                print('최근 항목 눌림');
-              },
             ),
 
             Divider(

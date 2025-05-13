@@ -26,6 +26,8 @@ import 'package:flutter_application_1/api/websocket_service.dart';
 import 'package:flutter_application_1/components/notification_button.dart'; // NotificationButton 위젯
 import 'package:provider/provider.dart';
 import 'package:flutter_application_1/providers/notification_provider.dart';
+import 'package:flutter_application_1/components/navigation_stack.dart';
+import 'package:flutter_application_1/components/navigation_helper.dart';
 
 class PersonalScreen extends StatefulWidget {
   final String username;
@@ -139,7 +141,7 @@ class _PersonalScreenState extends State<PersonalScreen> {
     final response = await http.get(
       Uri.parse(
         '$url/folder/hierarchy/$folderId/$userId',
-      ), // $url/folder/hierarchy/$folderId/$userId 로 수정 필요 (login 할때 받은 userId 전송)
+      ),
       headers: {"Content-Type": "application/json"},
     );
 
@@ -464,17 +466,15 @@ class _PersonalScreenState extends State<PersonalScreen> {
             children: [
               const SizedBox(width: 22), //햄버거 버튼과의 간격
               IconButton(
-                icon: const Icon(
-                  Icons.home, // 홈 모양 아이콘
-                  color: Color(0xff263238), // 짙은 남색 계열
-                  size: 24, // 아이콘 크기 (적당한 크기)
-                ),
+                icon: const Icon(Icons.home, color: Color(0xff263238), size: 24),
                 onPressed: () {
+                  NavigationStack.clear();
+                  NavigationStack.push('HomeScreen', arguments: {'username': widget.username});
+                  NavigationStack.printStack();
                   Navigator.pushReplacement(
                     context,
                     MaterialPageRoute(
-                      builder:
-                          (context) => HomeScreen(username: widget.username),
+                      builder: (_) => HomeScreen(username: widget.username),
                     ),
                   );
                 },
@@ -484,26 +484,22 @@ class _PersonalScreenState extends State<PersonalScreen> {
               IconButton(
                 icon: Icon(
                   Icons.arrow_back,
-                  color:
-                      folderStack.isEmpty
-                          ? Colors.grey
-                          : Color(0xff263238), // 루트면 흐리게
+                  color: Color(0xff263238),
                   size: 15,
                 ),
-                onPressed:
-                    folderStack.isEmpty
-                        ? null
-                        : () {
-                          int previousFolderId = folderStack.removeLast();
-                          breadcrumbPath.removeLast();
-                          fetchFolderHierarchy(
-                            previousFolderId,
-                            userId!,
-                            pushToStack: false,
-                          );
-                        },
+                onPressed: () {
+                  final currentRoute = NavigationStack.peek()?['route'];
+                  
+                  if (folderStack.isEmpty || currentRoute == 'SearchPersonalScreen') {
+                    // ✅ stack이 비어있거나 현재 route가 SearchPersonalSceen이면 NavigationHelper 사용
+                    NavigationHelper.navigateToPrevious(context);
+                  } else {
+                    // ✅ 일반 폴더 뒤로가기
+                    int previousFolderId = folderStack.removeLast();
+                    fetchFolderHierarchy(previousFolderId, userId!, pushToStack: false);
+                  }
+                },
               ),
-
               const SizedBox(width: 8),
 
               // 타이틀
@@ -523,23 +519,25 @@ class _PersonalScreenState extends State<PersonalScreen> {
                 child: Row(
                   children: [
                     IconButton(
-                      icon: const Icon(
-                        Icons.history,
-                        color: Color(0xff263238),
-                      ), //최근항목아이콘
+                      icon: const Icon(Icons.history, color: Color(0xff263238)),
                       onPressed: () {
-                        // 최근 항목 페이지 이동 로직
+                        NavigationStack.pop();
+                        NavigationStack.push('PersonalScreen2', arguments: {
+                          'username': widget.username,
+                          'targetPathIds': [...folderStack, currentFolderId],
+                        });
+                        NavigationStack.printStack();
+                        NavigationStack.push('RecentFileScreen', arguments: {'username': widget.username, 'userId': userId});
+                        NavigationStack.printStack();
                         Navigator.pushReplacement(
                           context,
                           MaterialPageRoute(
-                            builder:
-                                (context) => RecentFileScreen(
-                                  username: widget.username,
-                                  userId: userId,
-                                ),
+                            builder: (_) => RecentFileScreen(
+                              username: widget.username,
+                              userId: userId,
+                            ),
                           ),
                         );
-                        print('최근 항목 눌림');
                       },
                     ),
                     const NotificationButton(),
@@ -561,7 +559,8 @@ class _PersonalScreenState extends State<PersonalScreen> {
         },
         folders: folders,
         scaffoldContext: context,
-        showUploadButton: true,
+        preScreen: 'PERSONAL',
+        prePathIds: [...folderStack, currentFolderId],
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -576,6 +575,8 @@ class _PersonalScreenState extends State<PersonalScreen> {
                     padding: const EdgeInsets.only(left: 100.0),
                     child: GestureDetector(
                       onTap: () {
+                        NavigationStack.push('PersonalScreen1', arguments: {'username': widget.username});
+                        NavigationStack.printStack();
                         Navigator.pushReplacement(
                           context,
                           MaterialPageRoute(
@@ -984,11 +985,6 @@ class _PersonalScreenState extends State<PersonalScreen> {
                             currentFolderPath: currentFolderPath,
                           );
                           await refreshCurrentFolderFiles();
-                          // setState(() {
-                          //   //파일 추가 후 selectedFiles 초기화화
-                          //   selectedFiles.clear();
-                          //   fileNames.clear();
-                          // });
 
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(
@@ -1231,6 +1227,8 @@ class _PersonalScreenState extends State<PersonalScreen> {
             SearchBarWithOverlay(
               baseUrl: dotenv.get("BaseUrl"),
               username: widget.username,
+              preScreen: 'PERSONAL',
+              prePathIds: [...folderStack, currentFolderId],
             ),
           ],
         ),

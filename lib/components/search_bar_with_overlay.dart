@@ -6,15 +6,20 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:provider/provider.dart';
 import 'package:flutter_application_1/providers/user_provider.dart';
+import 'package:flutter_application_1/components/navigation_stack.dart';
 
 class SearchBarWithOverlay extends StatefulWidget {
   final String baseUrl;
   final String username;
+  final String? preScreen;
+  final List<int>? prePathIds;
 
   const SearchBarWithOverlay({
     Key? key,
     required this.baseUrl,
     required this.username,
+    this.preScreen,
+    this.prePathIds,
   }) : super(key: key);
 
   @override
@@ -208,6 +213,27 @@ class _SearchBarWithOverlayState extends State<SearchBarWithOverlay> {
                                                 .map((e) => e['folderId'] as int)
                                                 .toList();
                                         _removeSearchOverlay();
+                                        if (widget.prePathIds != null) {
+                                          NavigationStack.pop();
+                                          if (widget.preScreen == 'CLOUD') {
+                                            NavigationStack.push('CloudScreen2', arguments: {
+                                            'username': widget.username,
+                                            'targetPathIds': widget.prePathIds,
+                                            });
+                                          }
+                                          else if (widget.preScreen == 'PERSONAL') {
+                                            NavigationStack.push('PersonalScreen2', arguments: {
+                                            'username': widget.username,
+                                            'targetPathIds': widget.prePathIds,
+                                            });
+                                          }
+                                          NavigationStack.printStack();
+                                        }
+                                        NavigationStack.push('SearchCloudScreen', arguments: {
+                                          'username': widget.username,
+                                          'targetPathIds': pathIds,
+                                        });
+                                        NavigationStack.printStack();
                                         Navigator.pushReplacement(
                                           context,
                                           MaterialPageRoute(
@@ -234,6 +260,27 @@ class _SearchBarWithOverlayState extends State<SearchBarWithOverlay> {
                                                 .map((e) => e['folderId'] as int)
                                                 .toList();
                                         _removeSearchOverlay();
+                                        if (widget.prePathIds != null) {
+                                          NavigationStack.pop();
+                                          if (widget.preScreen == 'CLOUD') {
+                                            NavigationStack.push('CloudScreen2', arguments: {
+                                            'username': widget.username,
+                                            'targetPathIds': widget.prePathIds,
+                                            });
+                                          }
+                                          else if (widget.preScreen == 'PERSONAL') {
+                                            NavigationStack.push('PersonalScreen2', arguments: {
+                                            'username': widget.username,
+                                            'targetPathIds': widget.prePathIds,
+                                            });
+                                          }
+                                          NavigationStack.printStack();
+                                        }
+                                        NavigationStack.push('SearchPersonalScreen', arguments: {
+                                          'username': widget.username,
+                                          'targetPathIds': pathIds,
+                                        });
+                                        NavigationStack.printStack();
                                         Navigator.pushReplacement(
                                           context,
                                           MaterialPageRoute(

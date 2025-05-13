@@ -2,12 +2,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/api/sorting_rollback_service.dart';
 import 'package:flutter_application_1/screens/show_filemove_dialog.dart';
+import 'package:flutter_application_1/screens/home_screen.dart';
 import 'package:flutter_application_1/api/sorting_history_service.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_application_1/providers/user_provider.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:flutter_application_1/components/navigation_stack.dart';
+import 'package:flutter_application_1/components/navigation_helper.dart';
 
 class RecentFileScreen extends StatefulWidget {
   final String username;
@@ -55,7 +58,7 @@ class _RecentFileScreenState extends State<RecentFileScreen> {
     latestSortingId = await SortingHistoryService.fetchLatestSortingHistoryId(userId!);
 
     if (latestSortingId != null) {
-      print('✅ 최신 sortingId: $latestSortingId');
+      // print('✅ 최신 sortingId: $latestSortingId');
 
       // (3) 최신 sortingId로 정리 기록 가져오기
       final histories = await SortingHistoryService.fetchSortingHistory(latestSortingId!);
@@ -115,14 +118,28 @@ class _RecentFileScreenState extends State<RecentFileScreen> {
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 IconButton(
+                  icon: const Icon(Icons.home, color: Color(0xff263238)),
+                  onPressed: () {
+                    NavigationStack.clear();
+                    NavigationStack.push('HomeScreen', arguments: {'username': widget.username});
+                    NavigationStack.printStack();
+                    Navigator.pushReplacement(
+                      context,
+                      MaterialPageRoute(
+                        builder:
+                            (context) => HomeScreen(username: widget.username),
+                      ),
+                    );
+                  },
+                ),
+                const SizedBox(width: 22),
+                IconButton(
                   icon: const Icon(
                     Icons.arrow_back,
                     color: Color(0xff263238),
                     size: 15,
                   ),
-                  onPressed: () {
-                    Navigator.pop(context);
-                  },
+                  onPressed: () => NavigationHelper.navigateToPrevious(context),
                 ),
                 const SizedBox(width: 8),
                 Expanded(
