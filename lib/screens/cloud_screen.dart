@@ -28,6 +28,8 @@ import 'package:flutter_application_1/api/websocket_service.dart';
 import 'package:flutter_application_1/components/notification_button.dart'; // NotificationButton 위젯
 import 'package:provider/provider.dart';
 import 'package:flutter_application_1/providers/notification_provider.dart';
+import 'package:flutter_application_1/components/navigation_stack.dart';
+import 'package:flutter_application_1/components/navigation_helper.dart';
 
 class CloudScreen extends StatefulWidget {
   final String username;
@@ -111,6 +113,19 @@ class _CloudScreenState extends State<CloudScreen> {
     return pathNames.join('/');
   }
 
+  String getTruncatedPath({int showLast = 2}) {
+    //상위는 ...으로 표시하기기
+    if (breadcrumbPath.length <= showLast + 1) {
+      return breadcrumbPath.join("  >  ");
+    }
+
+    final start = '...';
+    final end = breadcrumbPath
+        .sublist(breadcrumbPath.length - showLast)
+        .join("  >  ");
+    return '$start  >  $end';
+  }
+
   Future<void> fetchAccessibleCloudRoots() async {
     final response = await http.get(
       Uri.parse('$url/folder/cloud-visible/$userId'),
@@ -182,7 +197,7 @@ class _CloudScreenState extends State<CloudScreen> {
 
       setState(() {
         currentFolderName = data['name'] ?? 'CloudROOT';
-        folderIdToName[folderId] = currentFolderName;
+
         if (pushToStack && currentFolderId != folderId) {
           folderStack.add(currentFolderId);
           breadcrumbPath.add(currentFolderName);
@@ -528,6 +543,9 @@ class _CloudScreenState extends State<CloudScreen> {
                   size: 24, // 아이콘 크기 (적당한 크기)
                 ),
                 onPressed: () {
+                  NavigationStack.clear();
+                  NavigationStack.push('HomeScreen', arguments: {'username': widget.username});
+                  NavigationStack.printStack();
                   Navigator.pushReplacement(
                     context,
                     MaterialPageRoute(
@@ -542,31 +560,27 @@ class _CloudScreenState extends State<CloudScreen> {
               IconButton(
                 icon: Icon(
                   Icons.arrow_back,
-                  color:
-                      folderStack.isEmpty
-                          ? Colors.grey
-                          : Color(0xff263238), // 스택 비었으면 회색
+                  color: Color(0xff263238), // 스택 비었으면 회색
                   size: 15,
                 ),
                 onPressed: () {
-                  // print("currentFolderId: ${currentFolderId}");
-                  // print("folderStack.isEmpty: ${folderStack.isEmpty}");
-                  // print("folderStack: ${folderStack}");
-                  if (folderStack[0] == 2) {
-                    // ✅ CloudROOT로 돌아가는 경우
-                    fetchAccessibleCloudRoots();
-                    print("currentFolderId: ${currentFolderId}");
-                    print("folderStack.isEmpty: ${folderStack.isEmpty}");
-                    print("folderStack: ${folderStack}");
+                  final currentRoute = NavigationStack.peek()?['route'];
+
+                  if (folderStack.isNotEmpty) {
+                    if (currentRoute == 'SearchCloudScreen') {
+                      // ✅ stack이 비어있거나 현재 route가 SearchCloudScreen이면 NavigationHelper 사용
+                      NavigationHelper.navigateToPrevious(context);
+                    } else if (folderStack.length == 1) {
+                      int previousFolderId = folderStack.removeLast();
+                      fetchAccessibleCloudRoots();
+                    } else {
+                      // ✅ local 폴더 뒤로가기
+                      int previousFolderId = folderStack.removeLast();
+                      fetchFolderHierarchy(previousFolderId, userId!, pushToStack: false);
+                    }
                   } else {
-                    // ✅ 일반적인 뒤로가기
-                    int previousFolderId = folderStack.removeLast();
-                    breadcrumbPath.removeLast();
-                    fetchFolderHierarchy(
-                      previousFolderId,
-                      userId!,
-                      pushToStack: false,
-                    );
+                    // ✅ local stack이 없으면 전역 NavigationStack 뒤로가기
+                    NavigationHelper.navigateToPrevious(context);
                   }
                 },
               ),
@@ -605,6 +619,14 @@ class _CloudScreenState extends State<CloudScreen> {
                       ), //최근항목아이콘
                       onPressed: () {
                         // 최근 항목 페이지 이동 로직
+                        NavigationStack.pop();
+                        NavigationStack.push('CloudScreen2', arguments: {
+                          'username': widget.username,
+                          'targetPathIds': [...folderStack, currentFolderId],
+                        });
+                        NavigationStack.printStack();
+                        NavigationStack.push('RecentFileScreen', arguments: {'username': widget.username, 'userId': userId});
+                        NavigationStack.printStack();
                         Navigator.pushReplacement(
                           context,
                           MaterialPageRoute(
@@ -615,7 +637,7 @@ class _CloudScreenState extends State<CloudScreen> {
                                 ),
                           ),
                         );
-                        print('최근 항목 눌림');
+                        // print('최근 항목 눌림');
                       },
                     ),
                     const NotificationButton(),
@@ -636,7 +658,8 @@ class _CloudScreenState extends State<CloudScreen> {
         },
         folders: folders,
         scaffoldContext: context,
-        showUploadButton: true,
+        preScreen: 'CLOUD',
+        prePathIds: [...folderStack, currentFolderId],
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -650,6 +673,8 @@ class _CloudScreenState extends State<CloudScreen> {
                     padding: const EdgeInsets.only(left: 100.0),
                     child: GestureDetector(
                       onTap: () {
+                        NavigationStack.push('CloudScreen1', arguments: {'username': widget.username});
+                        NavigationStack.printStack();
                         Navigator.pushReplacement(
                           context,
                           MaterialPageRoute(
@@ -659,16 +684,16 @@ class _CloudScreenState extends State<CloudScreen> {
                           ),
                         );
                       },
-                      child: Row(
-                        children: [
-                          Text(
-                            '${breadcrumbPath.join("  >  ")}',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontFamily: 'APPLESDGOTHICNEOR',
-                            ),
+                      child: Tooltip(
+                        message: breadcrumbPath.join(" / "),
+                        child: Text(
+                          getTruncatedPath(),
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontFamily: 'APPLESDGOTHICNEOR',
                           ),
-                        ],
+                        ),
                       ),
                     ),
                   ),
@@ -1287,6 +1312,8 @@ class _CloudScreenState extends State<CloudScreen> {
             SearchBarWithOverlay(
               baseUrl: dotenv.get("BaseUrl"),
               username: widget.username,
+              preScreen: 'CLOUD',
+              prePathIds: [...folderStack, currentFolderId],
             ),
           ],
         ),

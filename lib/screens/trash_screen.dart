@@ -6,6 +6,8 @@ import 'package:flutter_application_1/components/navigation_drawer.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_application_1/providers/user_provider.dart';
 import 'package:flutter_application_1/screens/home_screen.dart';
+import 'package:flutter_application_1/components/navigation_stack.dart';
+import 'package:flutter_application_1/components/navigation_helper.dart';
 
 class TrashScreen extends StatefulWidget {
   final String username;
@@ -100,6 +102,9 @@ class _TrashScreenState extends State<TrashScreen> {
               IconButton(
                 icon: const Icon(Icons.home, color: Color(0xff263238)),
                 onPressed: () {
+                  NavigationStack.clear();
+                  NavigationStack.push('HomeScreen', arguments: {'username': widget.username});
+                  NavigationStack.printStack();
                   Navigator.pushReplacement(
                     context,
                     MaterialPageRoute(
@@ -116,7 +121,7 @@ class _TrashScreenState extends State<TrashScreen> {
                   color: Color(0xff263238),
                   size: 15,
                 ),
-                onPressed: () => Navigator.pop(context),
+                onPressed: () => NavigationHelper.navigateToPrevious(context),
               ),
               const SizedBox(width: 8),
               Expanded(

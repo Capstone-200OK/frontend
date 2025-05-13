@@ -7,6 +7,8 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_application_1/providers/user_provider.dart';
 import 'package:flutter_application_1/api/websocket_service.dart';
+import 'package:flutter_application_1/components/navigation_stack.dart';
+import 'package:flutter_application_1/components/navigation_helper.dart';
 
 // 사용자 정보를 담을 클래스
 class User {
@@ -68,6 +70,10 @@ class _LoginScreenState extends State<LoginScreen> {
         Provider.of<UserProvider>(context, listen: false).setUserId(userId);
         WebSocketService().connect(context, userId);
         // 로그인 성공
+        NavigationStack.push('HomeScreen', arguments: {
+          'username': username,
+        });
+        NavigationStack.printStack();
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(
