@@ -125,6 +125,7 @@ class _CloudScreenState extends State<CloudScreen> {
       folders.clear();
       selectedFiles.clear();
       folderStack.clear();
+      folderIdToName[2] = "CloudROOT"; 
       for (final folder in data) {
         final id = folder['id'];
         final name = folder['name'];
@@ -871,7 +872,12 @@ class _CloudScreenState extends State<CloudScreen> {
                                               },
                                             ),
                                       );
-                                    }
+                                    } else if (selected == 'grant') {
+                                    showDialog(
+                                      context: context,
+                                      builder: (_) => FolderGrantDialog(folderId: folderId),
+                                    );
+                                  }
                                   },
                                 );
                               },
@@ -1040,7 +1046,10 @@ class _CloudScreenState extends State<CloudScreen> {
                             selectedFiles.addAll(newFileItems);
                           });
 
-                          final currentFolderPath = getCurrentFolderPath();
+                          final currentFolderPath = () {
+                            folderIdToName.putIfAbsent(currentFolderId, () => currentFolderName);
+                            return getCurrentFolderPath();
+                          }();
                           // 업로드 호출
                           print('📦 folderIdToName: $folderIdToName');
                           print('📁 folderStack: $folderStack');
