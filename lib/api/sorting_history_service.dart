@@ -4,10 +4,10 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 class SortingHistoryService {
   static Future<List<Map<String, String>>> fetchSortingHistory(
-    int sortingId,
+    int sortingId, int userId,
   ) async {
     final baseUrl = dotenv.get("BaseUrl");
-    final url = Uri.parse("$baseUrl/sorting-history/selectedList/$sortingId");
+    final url = Uri.parse("$baseUrl/sorting-history/selectedList/$sortingId/$userId");
     
 
     try {

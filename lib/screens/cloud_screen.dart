@@ -149,18 +149,18 @@ class _CloudScreenState extends State<CloudScreen> {
         folders.add(name);
 
         // 파일도 포함되어 있다면 초기 파일 표시 가능
-        final fileList = folder['files'] ?? [];
-        for (final f in fileList) {
-          selectedFiles.add(FileItem(
-            id: f['id'],
-            name: f['name'],
-            type: f['fileType'],
-            sizeInBytes: f['size'],
-            fileUrl: f['fileUrl'],
-            fileThumbnail: f['fileThumbUrl'],
-          ));
-          fileNames.add(f['name']);
-        }
+        // final fileList = folder['files'] ?? [];
+        // for (final f in fileList) {
+        //   selectedFiles.add(FileItem(
+        //     id: f['id'],
+        //     name: f['name'],
+        //     type: f['fileType'],
+        //     sizeInBytes: f['size'],
+        //     fileUrl: f['fileUrl'],
+        //     fileThumbnail: f['fileThumbUrl'],
+        //   ));
+        //   fileNames.add(f['name']);
+        // }
       }
 
       breadcrumbPath = ['CloudROOT'];
@@ -1143,16 +1143,19 @@ class _CloudScreenState extends State<CloudScreen> {
                             folderIdToName.putIfAbsent(currentFolderId, () => currentFolderName);
                             return getCurrentFolderPath();
                           }();
+                          // 업로드 전에 절대경로 요청
+                          final pathRes = await http.get(Uri.parse('$url/folder/absolute-path/$currentFolderId'));
+                          final absolutePath = pathRes.body;
                           // 업로드 호출
                           print('📦 folderIdToName: $folderIdToName');
                           print('📁 folderStack: $folderStack');
                           print('📁 currentFolderId: $currentFolderId');
-                          print('📁 경로: $currentFolderPath');
+                          print('📁 경로: $absolutePath');
                           await uploader.uploadFiles(
                             file: droppedFiles[0],
                             userId: userId!, // login 할때때 받아올 값으로 수정
                             folderId: currentFolderId,
-                            currentFolderPath: currentFolderPath,
+                            currentFolderPath: '$absolutePath}',
                           );
                           await refreshCurrentFolderFiles();
                           // setState(() {

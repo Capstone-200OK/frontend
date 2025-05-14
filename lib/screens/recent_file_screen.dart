@@ -63,10 +63,8 @@ class _RecentFileScreenState extends State<RecentFileScreen> {
     if (latestSortingId != null) {
       // print('✅ 최신 sortingId: $latestSortingId');
 
-        // (3) 최신 sortingId로 정리 기록 가져오기
-        final histories = await SortingHistoryService.fetchSortingHistory(
-          latestSortingId!,
-        );
+      // (3) 최신 sortingId로 정리 기록 가져오기
+      final histories = await SortingHistoryService.fetchSortingHistory(latestSortingId!, userId!);
 
         // (4) 여기서 날짜 계산도 실제 API 응답 기반으로
         final response = await http.get(
@@ -239,7 +237,7 @@ class _RecentFileScreenState extends State<RecentFileScreen> {
                                   print('텍스트 버튼 클릭됨');
                                   final histories =
                                       await SortingHistoryService.fetchSortingHistory(
-                                        latestSortingId!,
+                                        latestSortingId!,userId!,
                                       ); // 예시 ID
 
                                   if (histories.isNotEmpty) {
@@ -407,10 +405,7 @@ class _RecentFileScreenState extends State<RecentFileScreen> {
                                                   date,
                                                 );
                                             if (sortingId == null) return;
-                                            final histories =
-                                                await SortingHistoryService.fetchSortingHistory(
-                                                  sortingId,
-                                                );
+                                            final histories = await SortingHistoryService.fetchSortingHistory(sortingId, userId!);
 
                                             if (histories.isNotEmpty) {
                                               final fromPath =
