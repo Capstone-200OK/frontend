@@ -671,28 +671,96 @@ class _CloudScreenState extends State<CloudScreen> {
                 Expanded(
                   child: Padding(
                     padding: const EdgeInsets.only(left: 100.0),
-                    child: GestureDetector(
-                      onTap: () {
-                        NavigationStack.push('CloudScreen1', arguments: {'username': widget.username});
-                        NavigationStack.printStack();
-                        Navigator.pushReplacement(
-                          context,
-                          MaterialPageRoute(
-                            builder:
-                                (context) =>
-                                    CloudScreen(username: widget.username),
-                          ),
-                        );
-                      },
-                      child: Tooltip(
-                        message: breadcrumbPath.join(" / "),
-                        child: Text(
-                          getTruncatedPath(),
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                            fontSize: 16,
-                            fontFamily: 'APPLESDGOTHICNEOR',
-                          ),
+                    child: Tooltip(
+                      message: breadcrumbPath.join(" / "),
+                      child: SingleChildScrollView(
+                        scrollDirection: Axis.horizontal,
+                        child: Row(
+                          children: List.generate(breadcrumbPath.length, (index) {
+                            int showLast = 2;
+                            bool isEllipsis = (breadcrumbPath.length > showLast + 1 && index == 0);
+                            bool isHidden = (breadcrumbPath.length > showLast + 1 && index < breadcrumbPath.length - showLast);
+                            bool isLast = index == breadcrumbPath.length - 1;
+                            bool clickable = !isLast && !isEllipsis;
+
+                            if (!isEllipsis && isHidden) return SizedBox.shrink();
+
+                            return Row(
+                              children: [
+                                GestureDetector(
+                                  onTapDown: isEllipsis
+                                      ? (details) async {
+                                          final hiddenItems = breadcrumbPath.sublist(
+                                              0, breadcrumbPath.length - showLast);
+                                          final selected = await showMenu<String>(
+                                            context: context,
+                                            position: RelativeRect.fromLTRB(
+                                              details.globalPosition.dx,
+                                              details.globalPosition.dy,
+                                              details.globalPosition.dx,
+                                              details.globalPosition.dy,
+                                            ),
+                                            items: hiddenItems.map((name) {
+                                              return PopupMenuItem<String>(
+                                                value: name,
+                                                child: Text(name),
+                                              );
+                                            }).toList(),
+                                          );
+                                          if (selected != null) {
+                                            int targetIndex = breadcrumbPath.indexOf(selected);
+                                            int diff = (breadcrumbPath.length - 1) - targetIndex;
+
+                                            for (int i = 0; i < diff; i++) {
+                                              if (folderStack.isNotEmpty) {
+                                                int previousFolderId = folderStack.removeLast();
+                                                await fetchFolderHierarchy(
+                                                    previousFolderId, userId!,
+                                                    pushToStack: false);
+                                              }
+                                            }
+                                          }
+                                        }
+                                      : null,
+                                  onTap: (isEllipsis || !clickable)
+                                      ? null
+                                      : () async {
+                                          int diff = (breadcrumbPath.length - 1) - index;
+
+                                          for (int i = 0; i < diff; i++) {
+                                            if (folderStack.isNotEmpty) {
+                                              int previousFolderId = folderStack.removeLast();
+                                              await fetchFolderHierarchy(
+                                                  previousFolderId, userId!,
+                                                  pushToStack: false);
+                                            }
+                                          }
+                                        },
+                                  child: Text(
+                                    isEllipsis ? "..." : breadcrumbPath[index],
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      fontFamily: 'APPLESDGOTHICNEOR',
+                                      color: (isEllipsis || clickable)
+                                          ? Colors.black
+                                          : Colors.black,
+                                      decoration: (isEllipsis || clickable)
+                                          ? TextDecoration.underline
+                                          : TextDecoration.none,
+                                    ),
+                                  ),
+                                ),
+                                if (!isLast)
+                                  const Text(
+                                    "  >  ",
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      fontFamily: 'APPLESDGOTHICNEOR',
+                                    ),
+                                  ),
+                              ],
+                            );
+                          }),
                         ),
                       ),
                     ),
