@@ -13,6 +13,8 @@ import 'package:flutter_application_1/api/websocket_service.dart';
 import 'package:flutter_application_1/components/notification_button.dart'; // NotificationButton 위젯
 import 'package:provider/provider.dart';
 import 'package:flutter_application_1/providers/notification_provider.dart';
+import 'package:flutter_application_1/components/navigation_stack.dart';
+import 'package:flutter_application_1/components/navigation_helper.dart';
 
 class HomeScreen extends StatefulWidget {
   final String username;
@@ -58,8 +60,9 @@ class _HomeScreenState extends State<HomeScreen> {
                     color: Color(0xff263238),
                   ),
                   onPressed: () {
-                    final userId =
-                        Provider.of<UserProvider>(context, listen: false).userId;
+                    final userId = Provider.of<UserProvider>(context, listen: false).userId;
+                    NavigationStack.push('RecentFileScreen', arguments: {'username': widget.username, 'userId': userId});
+                    NavigationStack.printStack();
                     Navigator.push(
                       context,
                       MaterialPageRoute(
@@ -69,7 +72,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         ),
                       ),
                     );
-                    print('최근 항목 눌림');
+                    // print('최근 항목 눌림');
                   },
                 ),
                 const NotificationButton(),
@@ -83,7 +86,6 @@ class _HomeScreenState extends State<HomeScreen> {
         onFolderCreated: (folderName) {},
         folders: const [],
         scaffoldContext: context,
-        showUploadButton: false,
       ),
       body: Container(
         color: Colors.white,
@@ -107,7 +109,13 @@ class _HomeScreenState extends State<HomeScreen> {
               children: [
                 ElevatedButton(
                   onPressed: () {
-                    Navigator.push(
+                    NavigationStack.push('PersonalScreen1', arguments: {
+                      'username': widget.username,
+                      'targetPathIds': null,
+                    });
+                    NavigationStack.printStack();
+
+                    Navigator.pushReplacement(
                       context,
                       MaterialPageRoute(
                         builder: (context) => PersonalScreen(
@@ -151,7 +159,11 @@ class _HomeScreenState extends State<HomeScreen> {
                 const SizedBox(width: 150),
                 ElevatedButton(
                   onPressed: () {
-                    Navigator.push(
+                    NavigationStack.push('CloudScreen1', arguments: {
+                      'username': widget.username,
+                    });
+
+                    Navigator.pushReplacement(
                       context,
                       MaterialPageRoute(
                         builder: (context) => CloudScreen(

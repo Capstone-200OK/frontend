@@ -12,6 +12,8 @@ import 'dart:convert';
 import 'dart:async';
 import 'package:flutter_application_1/screens/file_view_dialog.dart';
 import 'package:syncfusion_flutter_pdfviewer/pdfviewer.dart';
+import 'package:flutter_application_1/components/navigation_stack.dart';
+import 'package:flutter_application_1/components/navigation_helper.dart';
 
 class ImportantScreen extends StatefulWidget {
   final String username;
@@ -155,6 +157,9 @@ class _ImportantScreenState extends State<ImportantScreen> {
               IconButton(
                 icon: const Icon(Icons.home, color: Color(0xff263238)),
                 onPressed: () {
+                  NavigationStack.clear();
+                  NavigationStack.push('HomeScreen', arguments: {'username': widget.username});
+                  NavigationStack.printStack();
                   Navigator.pushReplacement(
                     context,
                     MaterialPageRoute(
@@ -171,7 +176,7 @@ class _ImportantScreenState extends State<ImportantScreen> {
                   color: Color(0xff263238),
                   size: 15,
                 ),
-                onPressed: () => Navigator.pop(context),
+                onPressed: () => NavigationHelper.navigateToPrevious(context),
               ),
               const SizedBox(width: 8),
               Expanded(

@@ -49,6 +49,7 @@ class SortingHistoryService {
         final data = jsonDecode(response.body);
 
         final latestId = data['latestSortingHistoryId'];
+        
 
         if (latestId != null) {
           return latestId as int;
