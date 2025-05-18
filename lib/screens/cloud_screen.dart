@@ -61,8 +61,8 @@ class _CloudScreenState extends State<CloudScreen> {
   late String url;
   late FileUploader uploader;
   int currentFolderId = 2; // 시작 폴더 ID (예: 2번 루트)
-  String currentFolderName = 'CloudROOT'; // 현재 폴더명 ( ROOT로 시작 )
-  List<String> breadcrumbPath = ['CloudROOT']; // 폴더명을 저장하는 List
+  String currentFolderName = 'Cloud'; // 현재 폴더명 ( ROOT로 시작 )
+  List<String> breadcrumbPath = ['Cloud']; // 폴더명을 저장하는 List
   List<int> folderStack = []; // 상위 폴더 경로 추적
   Map<String, int> folderNameToId = {};
   Map<int, String> folderIdToName = {};
@@ -140,7 +140,7 @@ class _CloudScreenState extends State<CloudScreen> {
       folders.clear();
       selectedFiles.clear();
       folderStack.clear();
-      folderIdToName[2] = "CloudROOT"; 
+      folderIdToName[2] = "Cloud"; 
       for (final folder in data) {
         final id = folder['id'];
         final name = folder['name'];
@@ -163,8 +163,8 @@ class _CloudScreenState extends State<CloudScreen> {
         // }
       }
 
-      breadcrumbPath = ['CloudROOT'];
-      currentFolderId = 2; // CloudROOT는 논리적 루트
+      breadcrumbPath = ['Cloud'];
+      currentFolderId = 2; // Cloud는 논리적 루트
       setState(() {});
     } else {
       print("🚫 클라우드 진입 가능 폴더 불러오기 실패: ${response.statusCode}");
@@ -196,7 +196,7 @@ class _CloudScreenState extends State<CloudScreen> {
       folderIdToName.addAll({for (var f in folderList) f['id']: f['name']});
 
       setState(() {
-        currentFolderName = data['name'] ?? 'CloudROOT';
+        currentFolderName = data['name'] ?? 'Cloud';
 
         if (pushToStack && currentFolderId != folderId) {
           folderStack.add(currentFolderId);
