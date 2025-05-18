@@ -58,8 +58,8 @@ class _PersonalScreenState extends State<PersonalScreen> {
   late String url;
   late FileUploader uploader;
   int currentFolderId = 1; // 시작 폴더 ID (예: 2번 루트)
-  String currentFolderName = 'ROOT'; // 현재 폴더명 ( ROOT로 시작 )
-  List<String> breadcrumbPath = ['ROOT']; // 폴더명을 저장하는 List
+  String currentFolderName = 'Personal'; // 현재 폴더명 ( personal로 시작 )
+  List<String> breadcrumbPath = ['Personal']; // 폴더명을 저장하는 List
   List<int> folderStack = []; // 상위 폴더 경로 추적
   Map<String, int> folderNameToId = {};
   Map<int, String> folderIdToName = {};
@@ -86,7 +86,7 @@ class _PersonalScreenState extends State<PersonalScreen> {
     url = dotenv.get("BaseUrl");
     s3BaseUrl = dotenv.get("S3BaseUrl");
     uploader = FileUploader(baseUrl: url, s3BaseUrl: s3BaseUrl);
-    folderIdToName[1] = 'Root';
+    folderIdToName[1] = 'Personal';
     // context 사용 가능한 시점에 userId 가져오기
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       userId = Provider.of<UserProvider>(context, listen: false).userId;
@@ -157,7 +157,7 @@ class _PersonalScreenState extends State<PersonalScreen> {
       folderIdToName.addAll({for (var f in folderList) f['id']: f['name']});
 
       setState(() {
-        currentFolderName = data['name'] ?? 'ROOT';
+        currentFolderName = data['name'] ?? 'Personal';
 
         if (pushToStack && currentFolderId != folderId) {
           folderStack.add(currentFolderId);
