@@ -227,27 +227,29 @@ class _FileSortyScreenState extends State<FileSortyScreen> {
                                   },
                                 ),
                               ),
-                              const SizedBox(width: 12),
-                              const Text(
-                                '기존 파일이름 유지',
-                                style: TextStyle(
-                                  fontSize: 13,
-                                  fontFamily: 'APPLESDGOTHICNEOEB',
-                                ),
+                                  if (selectedMode == 'content') ...[
+                                    const SizedBox(width: 12),
+                                    const Text(
+                                      '기존 파일이름 유지',
+                                      style: TextStyle(
+                                        fontSize: 13,
+                                        fontFamily: 'APPLESDGOTHICNEOEB',
+                                      ),
+                                    ),
+                                    Transform.scale(
+                                      scale: 0.7,
+                                      child: Checkbox(
+                                        value: isFileNameChange,
+                                        onChanged: (value) {
+                                          setState(() {
+                                            isFileNameChange = value ?? false;
+                                          });
+                                        },
+                                      ),
+                                    ),
+                                  ],
+                                ],
                               ),
-                              Transform.scale(
-                                scale: 0.7, // 🔸 0.8 = 80% 크기로 축소
-                                child: Checkbox(
-                                  value: isFileNameChange ?? false,
-                                  onChanged: (value) {
-                                    setState(() {
-                                      isFileNameChange = value ?? false;
-                                    });
-                                  },
-                                ),
-                              ),
-                            ],
-                          ),
                           const Spacer(),
 
                           // ③ 정리하기 버튼

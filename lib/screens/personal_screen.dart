@@ -314,6 +314,80 @@ class _PersonalScreenState extends State<PersonalScreen> {
     return TextSpan(children: matches);
   }
 
+OverlayEntry? _uploadOverlayEntry;
+List<String> _uploadingFiles = [];
+Set<String> _completedFiles = {};
+Set<String> _failedFiles = {};
+void _showUploadStatusOverlayUI() {
+  _uploadOverlayEntry?.remove();
+
+  _uploadOverlayEntry = OverlayEntry(
+    builder: (context) => Positioned(
+      bottom: 30,
+      right: 30,
+      child: Material(
+        color: Colors.transparent,
+        child: Container(
+          width: 320,
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Colors.black87,
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text(
+                '📦 파일 업로드 중...',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 8),
+              ..._uploadingFiles.map((fileName) {
+                Widget statusIcon;
+                if (_completedFiles.contains(fileName)) {
+                  statusIcon = const Icon(Icons.check, color: Colors.green, size: 16);
+                } else if (_failedFiles.contains(fileName)) {
+                  statusIcon = const Icon(Icons.error, color: Colors.red, size: 16);
+                } else {
+                  statusIcon = const SizedBox(
+                    width: 16,
+                    height: 16,
+                    child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                  );
+                }
+
+                return Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 3),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Expanded(
+                        child: Text(
+                          fileName,
+                          style: const TextStyle(color: Colors.white, fontSize: 13),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      statusIcon,
+                    ],
+                  ),
+                );
+              }),
+            ],
+          ),
+        ),
+      ),
+    ),
+  );
+
+  Overlay.of(context).insert(_uploadOverlayEntry!);
+}
+
+
   Future<void> showContextMenuAtPosition({
     required BuildContext context,
     required Offset position,
@@ -1005,65 +1079,67 @@ class _PersonalScreenState extends State<PersonalScreen> {
                         _dragHandled = true;
 
                         try {
-                          List<File> droppedFiles =
-                              detail.files.map((f) => File(f.path)).toList();
+                          List<File> droppedFiles = detail.files.map((f) => File(f.path)).toList();
 
-                          List<FileItem> newFileItems = [];
-
-                          // 드래그 앤 드롭한 파일이 비어있는지 확인
+                          // 드래그된 파일이 없으면 리턴
                           if (droppedFiles.isEmpty) {
                             print('드래그된 파일이 없습니다.');
                             return;
                           }
 
-                          // 중복 체크 및 파일 정보 업데이트
-                          for (final file in detail.files) {
-                            final fileName = file.name;
+                          // 업로드 상태 초기화
+                          _uploadingFiles = droppedFiles.map((f) => f.path.split(Platform.pathSeparator).last).toList();
+                          _completedFiles.clear();
+                          _failedFiles.clear();
+                          _showUploadStatusOverlayUI();
 
+                          // 새 파일 추가 (UI용)
+                          List<FileItem> newFileItems = [];
+                          for (final f in droppedFiles) {
+                            final fileName = f.path.split(Platform.pathSeparator).last;
                             if (!fileNames.contains(fileName)) {
                               final fileType = fileName.split('.').last;
-                              final fileSize = File(file.path).lengthSync();
-                              final fileItem = FileItem(
-                                name: fileName,
-                                type: fileType,
-                                sizeInBytes: fileSize,
-                              );
-                              newFileItems.add(fileItem);
+                              final fileSize = f.lengthSync();
+                              newFileItems.add(FileItem(name: fileName, type: fileType, sizeInBytes: fileSize));
                               fileNames.add(fileName);
                             }
                           }
-
                           setState(() {
                             selectedFiles.addAll(newFileItems);
                           });
-                          final int fixedFolderId =
-                              currentFolderId; // 💥 여기서 고정
+
+                          final int fixedFolderId = currentFolderId;
                           final currentFolderPath = getCurrentFolderPath();
-                          // 업로드 호출
-                          print('📦 folderIdToName: $folderIdToName');
-                          print('📁 folderStack: $folderStack');
-                          print('📁 currentFolderId: $currentFolderId');
-                          print('📁 경로: $currentFolderPath');
-                          await uploader.uploadFiles(
-                            file: droppedFiles[0],
-                            userId: userId!, // login 할때때 받아올 값으로 수정
-                            folderId: fixedFolderId,
-                            currentFolderPath: currentFolderPath,
-                          );
+
+                          // 실제 업로드 수행
+                          for (final file in droppedFiles) {
+                            final fileName = file.path.split(Platform.pathSeparator).last;
+                            try {
+                              await uploader.uploadFiles(
+                                file: file,
+                                userId: userId!,
+                                folderId: fixedFolderId,
+                                currentFolderPath: currentFolderPath,
+                              );
+                              _completedFiles.add(fileName);
+                            } catch (e) {
+                              print("❌ 업로드 실패: $fileName → $e");
+                              _failedFiles.add(fileName);
+                            }
+                            _showUploadStatusOverlayUI(); // 상태 갱신
+                          }
+
                           await refreshCurrentFolderFiles();
 
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text(
-                                '${droppedFiles.length}개의 파일 업로드 완료!',
-                              ),
-                            ),
-                          );
+                          // 업로드 오버레이 일정 시간 후 자동 제거
+                          Future.delayed(const Duration(seconds: 3), () {
+                            _uploadOverlayEntry?.remove();
+                            _uploadOverlayEntry = null;
+                          });
                         } catch (e) {
-                          // 예외 발생 시 처리
-                          print('파일 업로드 중 오류 발생: $e');
+                          print('파일 업로드 전체 실패: $e');
                           ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text('파일 업로드 실패: $e')),
+                            SnackBar(content: Text('파일 업로드 중 오류 발생: $e')),
                           );
                         } finally {
                           _isUploading = false;

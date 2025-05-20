@@ -60,46 +60,46 @@ class _RecentFileScreenState extends State<RecentFileScreen> {
         userId!,
       );
 
-    if (latestSortingId != null) {
-      // print('✅ 최신 sortingId: $latestSortingId');
+      if (latestSortingId == null) {
+        setState(() {
+          isExist = true;
+          isLoading = false;
+        });
+        return;
+      }
 
-      // (3) 최신 sortingId로 정리 기록 가져오기
       final histories = await SortingHistoryService.fetchSortingHistory(latestSortingId!, userId!);
 
-        // (4) 여기서 날짜 계산도 실제 API 응답 기반으로
-        final response = await http.get(
-          Uri.parse('$url/sorting-history/list/$userId'),
-          headers: {"Content-Type": "application/json"},
-        );
+      final response = await http.get(
+        Uri.parse('$url/sorting-history/list/$userId'),
+        headers: {"Content-Type": "application/json"},
+      );
 
-        if (response.statusCode == 200) {
-          final List<dynamic> data = jsonDecode(response.body);
+      if (response.statusCode == 200) {
+        final List<dynamic> data = jsonDecode(response.body);
 
-          List<DateTime> fetchedDates =
-              data.map((entry) {
-                return DateTime.parse(entry['sortingDate']);
-              }).toList();
+        List<DateTime> fetchedDates = data
+            .map((entry) => DateTime.parse(entry['sortingDate']))
+            .toList();
 
-          setState(() {
-            historyDates = fetchedDates;
-            latestDate = fetchedDates.isNotEmpty ? fetchedDates.first : null;
-            isLoading = false;
-            isExist = false;
-          });
-        } else {
-          print('❌ 최신 sortingId 가져오기 실패');
-
-          setState(() {
-            isLoading = false;
-            isExist = false;
-          });
-        }
+        setState(() {
+          historyDates = fetchedDates;
+          latestDate = fetchedDates.isNotEmpty ? fetchedDates.first : null;
+          isLoading = false;
+          isExist = fetchedDates.isEmpty;
+        });
+      } else {
+        print('❌ 정리 기록 가져오기 실패');
+        setState(() {
+          isExist = true;
+          isLoading = false;
+        });
       }
     } catch (e) {
-      print('에러 발생: $e');
+      print('❌ 에러 발생: $e');
       setState(() {
+        isExist = true;
         isLoading = false;
-        isExist = false;
       });
     }
   }
@@ -166,8 +166,9 @@ class _RecentFileScreenState extends State<RecentFileScreen> {
         ),
       ),
       body: SafeArea(
-        child:
-            isExist
+        child: isLoading
+          ? const Center(child: CircularProgressIndicator()) // 🔹 무조건 먼저 보여줌
+            : isExist
                 ? Center(
                   child: Padding(
                     padding: const EdgeInsets.only(
