@@ -144,15 +144,6 @@ class NavigationDrawerWidget extends StatelessWidget {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 6),
-                  Text(
-                    '$username@example.com',
-                    style: const TextStyle(
-                      fontSize: 13,
-                      color: Colors.white70,
-                      fontFamily: 'APPLESDGOTHICNEOR',
-                    ),
-                  ),
                 ],
               ),
             ),
