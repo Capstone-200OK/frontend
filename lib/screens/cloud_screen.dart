@@ -99,6 +99,77 @@ class _CloudScreenState extends State<CloudScreen> {
       await fetchImportantStatus(); // 별표 상태 초기화
     });
   }
+List<PopupMenuEntry<String>> buildContextMenuItems({
+  required bool isFolder,
+  required bool isCloud,
+}) {
+  List<PopupMenuEntry<String>> items = [];
+
+  if (isFolder) {
+    items.addAll([
+      const PopupMenuItem(
+        value: 'delete',
+        child: Row(
+          children: [
+            Icon(Icons.delete, size: 16, color: Colors.black54),
+            SizedBox(width: 8),
+            Text('삭제', style: TextStyle(fontSize: 12)),
+          ],
+        ),
+      ),
+      const PopupMenuItem(
+        value: 'add_to_important',
+        child: Row(
+          children: [
+            Icon(Icons.star, size: 15, color: Colors.black54),
+            SizedBox(width: 8),
+            Text('중요 폴더로 추가', style: TextStyle(fontSize: 12)),
+          ],
+        ),
+      ),
+    ]);
+
+    if (isCloud) {
+      items.add(
+        const PopupMenuItem(
+          value: 'grant',
+          child: Row(
+            children: [
+              Icon(Icons.person_add, size: 15, color: Colors.black54),
+              SizedBox(width: 8),
+              Text('초대하기', style: TextStyle(fontSize: 12)),
+            ],
+          ),
+        ),
+      );
+    }
+  } else {
+    items.addAll([
+      const PopupMenuItem(
+        value: 'delete',
+        child: Row(
+          children: [
+            Icon(Icons.delete, size: 16, color: Colors.black54),
+            SizedBox(width: 8),
+            Text('삭제', style: TextStyle(fontSize: 12)),
+          ],
+        ),
+      ),
+      const PopupMenuItem(
+        value: 'add_to_important',
+        child: Row(
+          children: [
+            Icon(Icons.star, size: 15, color: Colors.black54),
+            SizedBox(width: 8),
+            Text('중요 문서로 추가', style: TextStyle(fontSize: 12)),
+          ],
+        ),
+      ),
+    ]);
+  }
+
+  return items;
+}
 
 OverlayEntry? _uploadOverlayEntry;
 List<String> _uploadingFiles = [];
@@ -481,71 +552,36 @@ void _showUploadStatusOverlayUI() {
     onSelected(selected);
   }
 
-  Future<void> showContextMenuAtPosition({
-    required BuildContext context,
-    required Offset position,
-    required Function(String?) onSelected,
-  }) async {
-    final RenderBox overlay =
-        Overlay.of(context).context.findRenderObject() as RenderBox;
+Future<void> showContextMenuAtPosition({
+  required BuildContext context,
+  required Offset position,
+  required Function(String?) onSelected,
+  required bool isFolder,
+  required bool isCloud,
+}) async {
+  final RenderBox overlay =
+      Overlay.of(context).context.findRenderObject() as RenderBox;
 
-    final RelativeRect positionRect = RelativeRect.fromLTRB(
-      position.dx,
-      position.dy,
-      overlay.size.width - position.dx,
-      overlay.size.height - position.dy,
-    );
+  final RelativeRect positionRect = RelativeRect.fromLTRB(
+    position.dx,
+    position.dy,
+    overlay.size.width - position.dx,
+    overlay.size.height - position.dy,
+  );
 
-    final selected = await showMenu<String>(
-      context: context,
-      position: positionRect,
-      color: Color(0xFFECEFF1),
-      items: [
-        PopupMenuItem(
-          value: 'create',
-          child: Row(
-            children: const [
-              Icon(Icons.create_new_folder, size: 16, color: Colors.black54),
-              SizedBox(width: 8),
-              Text('새 폴더', style: TextStyle(fontSize: 12)),
-            ],
-          ),
-        ),
-        PopupMenuItem(
-          value: 'delete',
-          child: Row(
-            children: const [
-              Icon(Icons.delete, size: 16, color: Colors.black54),
-              SizedBox(width: 8),
-              Text('삭제', style: TextStyle(fontSize: 12)),
-            ],
-          ),
-        ),
-        PopupMenuItem(
-          value: 'add_to_important',
-          child: Row(
-            children: const [
-              Icon(Icons.star, size: 15, color: Colors.black54),
-              SizedBox(width: 8),
-              Text('중요 문서로 추가', style: TextStyle(fontSize: 12)),
-            ],
-          ),
-        ),
-        PopupMenuItem(
-          value: 'grant',
-          child: Row(
-            children: const [
-              Icon(Icons.person_add, size: 15, color: Colors.black54),
-              SizedBox(width: 8),
-              Text('초대하기', style: TextStyle(fontSize: 12)),
-            ]
-          )
-        )
-      ],
-    );
+  final selected = await showMenu<String>(
+    context: context,
+    position: positionRect,
+    color: const Color(0xFFECEFF1),
+    items: buildContextMenuItems(
+      isFolder: isFolder,
+      isCloud: isCloud,
+    ),
+  );
 
-    onSelected(selected);
-  }
+  onSelected(selected);
+}
+
 
   Widget _buildPreviewContent(String url, String type, {String? thumbnailUrl}) {
     final lower = type.toLowerCase();
@@ -1077,7 +1113,9 @@ void _showUploadStatusOverlayUI() {
                                       builder: (_) => FolderGrantDialog(folderId: folderId),
                                     );
                                   }
-                                  },
+                                  },    
+                                  isFolder: true,
+                                  isCloud: true, // Personal은 false
                                 );
                               },
 
@@ -1367,7 +1405,9 @@ void _showUploadStatusOverlayUI() {
                                               print('중요 문서 추가 실패: $e');
                                             }
                                           }
-                                        },
+                                        },    
+                                        isFolder: false,
+                                        isCloud: true, // Personal은 false
                                       );
                                     },
                                     child: MouseRegion(
