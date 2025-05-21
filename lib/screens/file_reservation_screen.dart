@@ -20,7 +20,7 @@ class FileReservationScreen extends StatefulWidget {
 class _FileReservationScreenState extends State<FileReservationScreen> {
   FolderItem? selectedPreviousFolder;
   FolderItem? selectedNewFolder;
-  List<String> intervals = ['하루', '일주일', '한 달'];
+  List<String> intervals = ['DAILY', 'WEEKLY', 'MONTHLY'];
   int selectedInterval = 0;
   int selectedHour = 12;
   String? selectedMode;
@@ -33,7 +33,7 @@ class _FileReservationScreenState extends State<FileReservationScreen> {
     userId = Provider.of<UserProvider>(context, listen: false).userId;
     _intervalPageController = PageController(
       initialPage: 1000 * intervals.length + 0, // 무한스크롤 느낌
-      viewportFraction: 0.4,
+      viewportFraction: 0.58,
     );
 
     // ⭐ modify 모드면 기존 값으로 초기화
