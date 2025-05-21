@@ -722,10 +722,18 @@ void _showUploadStatusOverlayUI() {
                                               details.globalPosition.dx,
                                               details.globalPosition.dy,
                                             ),
+                                            color: Color(0xFFECEFF1),
                                             items: hiddenItems.map((name) {
                                               return PopupMenuItem<String>(
                                                 value: name,
-                                                child: Text(name),
+                                                child: Text(
+                                                  name,
+                                                  style: TextStyle(
+                                                    fontFamily: 'APPLESDGOTHICNEOR',
+                                                    fontSize: 14,
+                                                    color: Colors.black,
+                                                  ),
+                                                ),
                                               );
                                             }).toList(),
                                           );
@@ -790,7 +798,7 @@ void _showUploadStatusOverlayUI() {
                 ),
                 Expanded(
                   child: Padding(
-                    padding: const EdgeInsets.only(left: 110.0),
+                    padding: const EdgeInsets.only(left: 135.0),
                     child: Text(
                       '파일',
                       style: TextStyle(
