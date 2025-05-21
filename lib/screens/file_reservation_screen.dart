@@ -25,11 +25,16 @@ class _FileReservationScreenState extends State<FileReservationScreen> {
   int selectedHour = 12;
   String? selectedMode;
   late int? userId;
+  late PageController _intervalPageController;
 
   @override
   void initState() {
     super.initState();
     userId = Provider.of<UserProvider>(context, listen: false).userId;
+    _intervalPageController = PageController(
+      initialPage: 1000 * intervals.length + 0, // 무한스크롤 느낌
+      viewportFraction: 0.4,
+    );
 
     // ⭐ modify 모드면 기존 값으로 초기화
     if (widget.mode == 'modify' && widget.reservation != null) {
@@ -41,13 +46,95 @@ class _FileReservationScreenState extends State<FileReservationScreen> {
       selectedHour = r.nextExecuted.hour;
     }
   }
-
+  @override
+  void dispose() {
+    _intervalPageController.dispose();
+    super.dispose();
+  }
   void _changeInterval(int direction) {
     setState(() {
       selectedInterval = (selectedInterval + direction) % intervals.length;
-      if (selectedInterval < 0) selectedInterval += intervals.length;
+      if (selectedInterval < 0) {
+        selectedInterval += intervals.length;
+      }
     });
   }
+Widget buildIntervalSelector() {
+  return SizedBox(
+    height: 50,
+    child: Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        IconButton(
+          icon: const Icon(Icons.chevron_left),
+          onPressed: () {
+            _intervalPageController.previousPage(
+              duration: const Duration(milliseconds: 300),
+              curve: Curves.easeInOut,
+            );
+          },
+        ),
+        SizedBox(
+          width: 150,
+          height: 40,
+          child: PageView.builder(
+            controller: _intervalPageController,
+            scrollDirection: Axis.horizontal,
+            itemBuilder: (context, index) {
+              final actualIndex = index % intervals.length;
+              final isSelected =
+                _intervalPageController.hasClients &&
+                ((_intervalPageController.page?.round() ?? 0) % intervals.length == actualIndex);
+              return Center(
+                child: TweenAnimationBuilder<double>(
+                  tween: Tween<double>(
+                    begin: isSelected ? 1.0 : 0.8,
+                    end: isSelected ? 1.0 : 0.8,
+                  ),
+                  duration: const Duration(milliseconds: 100),
+                  curve: Curves.easeOut,
+                  builder: (context, scale, child) {
+                    return Opacity(
+                      opacity: isSelected ? 1.0 : 0.4,
+                      child: Transform.scale(
+                        scale: scale,
+                        child: Text(
+                          intervals[actualIndex],
+                          style: const TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              );
+            },
+            onPageChanged: (index) {
+              setState(() {
+                selectedInterval = index % intervals.length;
+              });
+            },
+          ),
+        ),
+        IconButton(
+          icon: const Icon(Icons.chevron_right),
+          onPressed: () {
+            _intervalPageController.nextPage(
+              duration: const Duration(milliseconds: 300),
+              curve: Curves.easeInOut,
+            );
+          },
+        ),
+      ],
+    ),
+  );
+}
+
+
+
+
 
   @override
   Widget build(BuildContext context) {
@@ -103,14 +190,7 @@ class _FileReservationScreenState extends State<FileReservationScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           const Text('주기를 설정하세요', style: TextStyle(fontSize: 14)),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              IconButton(onPressed: () => _changeInterval(-1), icon: const Icon(Icons.arrow_left)),
-                              Text(intervals[selectedInterval]),
-                              IconButton(onPressed: () => _changeInterval(1), icon: const Icon(Icons.arrow_right)),
-                            ],
-                          ),
+                          buildIntervalSelector(),
                           const SizedBox(height: 10),
 
                           // 시간 선택
@@ -122,7 +202,19 @@ class _FileReservationScreenState extends State<FileReservationScreen> {
                                 scrollController: FixedExtentScrollController(initialItem: selectedHour),
                                 itemExtent: 30,
                                 onSelectedItemChanged: (index) => setState(() => selectedHour = index),
-                                children: List.generate(24, (index) => Center(child: Text('${index.toString().padLeft(2, '0')}:00'))),
+                                children: List.generate(24, (index) {
+                                  final isSelected = index == selectedHour;
+                                  return Center(
+                                    child: Text(
+                                      '${index.toString().padLeft(2, '0')}:00',
+                                      style: TextStyle(
+                                        fontSize: 18,
+                                        color: isSelected ? Colors.black : Colors.grey.shade600, // 🔹 흐림 효과
+                                        fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                                      ),
+                                    ),
+                                  );
+                                }),
                               ),
                             ),
                           ),
