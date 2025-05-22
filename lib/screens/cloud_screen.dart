@@ -861,42 +861,53 @@ Future<void> showContextMenuAtPosition({
                                             int targetIndex = breadcrumbPath.indexOf(selected);
                                             int diff = (breadcrumbPath.length - 1) - targetIndex;
 
-                                            for (int i = 0; i < diff; i++) {
-                                              if (folderStack.isNotEmpty) {
-                                                int previousFolderId = folderStack.removeLast();
-                                                await fetchFolderHierarchy(
-                                                    previousFolderId, userId!,
-                                                    pushToStack: false);
+                                              for (int i = 0; i < diff; i++) {
+                                                if (folderStack.isNotEmpty) {
+                                                  int previousFolderId =
+                                                      folderStack.removeLast();
+                                                  await fetchFolderHierarchy(
+                                                    previousFolderId,
+                                                    userId!,
+                                                    pushToStack: false,
+                                                  );
+                                                }
                                               }
                                             }
                                           }
-                                        }
-                                      : null,
-                                  onTap: (isEllipsis || !clickable)
-                                      ? null
-                                      : () async {
-                                          int diff = (breadcrumbPath.length - 1) - index;
+                                          : null,
+                                  onTap:
+                                      (isEllipsis || !clickable)
+                                          ? null
+                                          : () async {
+                                            int diff =
+                                                (breadcrumbPath.length - 1) -
+                                                index;
 
-                                          for (int i = 0; i < diff; i++) {
-                                            if (folderStack.isNotEmpty) {
-                                              int previousFolderId = folderStack.removeLast();
-                                              await fetchFolderHierarchy(
-                                                  previousFolderId, userId!,
-                                                  pushToStack: false);
+                                            for (int i = 0; i < diff; i++) {
+                                              if (folderStack.isNotEmpty) {
+                                                int previousFolderId =
+                                                    folderStack.removeLast();
+                                                await fetchFolderHierarchy(
+                                                  previousFolderId,
+                                                  userId!,
+                                                  pushToStack: false,
+                                                );
+                                              }
                                             }
-                                          }
-                                        },
+                                          },
                                   child: Text(
                                     isEllipsis ? "..." : breadcrumbPath[index],
                                     style: TextStyle(
                                       fontSize: 16,
                                       fontFamily: 'APPLESDGOTHICNEOR',
-                                      color: (isEllipsis || clickable)
-                                          ? Colors.black
-                                          : Colors.black,
-                                      decoration: (isEllipsis || clickable)
-                                          ? TextDecoration.underline
-                                          : TextDecoration.none,
+                                      color:
+                                          (isEllipsis || clickable)
+                                              ? Colors.black
+                                              : Colors.black,
+                                      decoration:
+                                          (isEllipsis || clickable)
+                                              ? TextDecoration.underline
+                                              : TextDecoration.none,
                                     ),
                                   ),
                                 ),

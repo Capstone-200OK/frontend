@@ -212,9 +212,7 @@ class _PersonalScreenState extends State<PersonalScreen> {
     bool pushToStack = true,
   }) async {
     final response = await http.get(
-      Uri.parse(
-        '$url/folder/hierarchy/$folderId/$userId',
-      ),
+      Uri.parse('$url/folder/hierarchy/$folderId/$userId'),
       headers: {"Content-Type": "application/json"},
     );
 
@@ -587,10 +585,17 @@ void _showUploadStatusOverlayUI() {
             children: [
               const SizedBox(width: 22), //햄버거 버튼과의 간격
               IconButton(
-                icon: const Icon(Icons.home, color: Color(0xff263238), size: 24),
+                icon: const Icon(
+                  Icons.home,
+                  color: Color(0xff263238),
+                  size: 24,
+                ),
                 onPressed: () {
                   NavigationStack.clear();
-                  NavigationStack.push('HomeScreen', arguments: {'username': widget.username});
+                  NavigationStack.push(
+                    'HomeScreen',
+                    arguments: {'username': widget.username},
+                  );
                   NavigationStack.printStack();
                   Navigator.pushReplacement(
                     context,
@@ -610,14 +615,19 @@ void _showUploadStatusOverlayUI() {
                 ),
                 onPressed: () {
                   final currentRoute = NavigationStack.peek()?['route'];
-                  
-                  if (folderStack.isEmpty || currentRoute == 'SearchPersonalScreen') {
+
+                  if (folderStack.isEmpty ||
+                      currentRoute == 'SearchPersonalScreen') {
                     // ✅ stack이 비어있거나 현재 route가 SearchPersonalSceen이면 NavigationHelper 사용
                     NavigationHelper.navigateToPrevious(context);
                   } else {
                     // ✅ 일반 폴더 뒤로가기
                     int previousFolderId = folderStack.removeLast();
-                    fetchFolderHierarchy(previousFolderId, userId!, pushToStack: false);
+                    fetchFolderHierarchy(
+                      previousFolderId,
+                      userId!,
+                      pushToStack: false,
+                    );
                   }
                 },
               ),
@@ -643,20 +653,30 @@ void _showUploadStatusOverlayUI() {
                       icon: const Icon(Icons.history, color: Color(0xff263238)),
                       onPressed: () {
                         NavigationStack.pop();
-                        NavigationStack.push('PersonalScreen2', arguments: {
-                          'username': widget.username,
-                          'targetPathIds': [...folderStack, currentFolderId],
-                        });
+                        NavigationStack.push(
+                          'PersonalScreen2',
+                          arguments: {
+                            'username': widget.username,
+                            'targetPathIds': [...folderStack, currentFolderId],
+                          },
+                        );
                         NavigationStack.printStack();
-                        NavigationStack.push('RecentFileScreen', arguments: {'username': widget.username, 'userId': userId});
+                        NavigationStack.push(
+                          'RecentFileScreen',
+                          arguments: {
+                            'username': widget.username,
+                            'userId': userId,
+                          },
+                        );
                         NavigationStack.printStack();
                         Navigator.pushReplacement(
                           context,
                           MaterialPageRoute(
-                            builder: (_) => RecentFileScreen(
-                              username: widget.username,
-                              userId: userId,
-                            ),
+                            builder:
+                                (_) => RecentFileScreen(
+                                  username: widget.username,
+                                  userId: userId,
+                                ),
                           ),
                         );
                       },
@@ -698,14 +718,21 @@ void _showUploadStatusOverlayUI() {
                       child: SingleChildScrollView(
                         scrollDirection: Axis.horizontal,
                         child: Row(
-                          children: List.generate(breadcrumbPath.length, (index) {
+                          children: List.generate(breadcrumbPath.length, (
+                            index,
+                          ) {
                             int showLast = 2;
-                            bool isEllipsis = (breadcrumbPath.length > showLast + 1 && index == 0);
-                            bool isHidden = (breadcrumbPath.length > showLast + 1 && index < breadcrumbPath.length - showLast);
+                            bool isEllipsis =
+                                (breadcrumbPath.length > showLast + 1 &&
+                                    index == 0);
+                            bool isHidden =
+                                (breadcrumbPath.length > showLast + 1 &&
+                                    index < breadcrumbPath.length - showLast);
                             bool isLast = index == breadcrumbPath.length - 1;
                             bool clickable = !isLast && !isEllipsis;
 
-                            if (!isEllipsis && isHidden) return SizedBox.shrink();
+                            if (!isEllipsis && isHidden)
+                              return SizedBox.shrink();
 
                             return Row(
                               children: [
@@ -741,42 +768,53 @@ void _showUploadStatusOverlayUI() {
                                             int targetIndex = breadcrumbPath.indexOf(selected);
                                             int diff = (breadcrumbPath.length - 1) - targetIndex;
 
-                                            for (int i = 0; i < diff; i++) {
-                                              if (folderStack.isNotEmpty) {
-                                                int previousFolderId = folderStack.removeLast();
-                                                await fetchFolderHierarchy(
-                                                    previousFolderId, userId!,
-                                                    pushToStack: false);
+                                              for (int i = 0; i < diff; i++) {
+                                                if (folderStack.isNotEmpty) {
+                                                  int previousFolderId =
+                                                      folderStack.removeLast();
+                                                  await fetchFolderHierarchy(
+                                                    previousFolderId,
+                                                    userId!,
+                                                    pushToStack: false,
+                                                  );
+                                                }
                                               }
                                             }
                                           }
-                                        }
-                                      : null,
-                                  onTap: (isEllipsis || !clickable)
-                                      ? null
-                                      : () async {
-                                          int diff = (breadcrumbPath.length - 1) - index;
+                                          : null,
+                                  onTap:
+                                      (isEllipsis || !clickable)
+                                          ? null
+                                          : () async {
+                                            int diff =
+                                                (breadcrumbPath.length - 1) -
+                                                index;
 
-                                          for (int i = 0; i < diff; i++) {
-                                            if (folderStack.isNotEmpty) {
-                                              int previousFolderId = folderStack.removeLast();
-                                              await fetchFolderHierarchy(
-                                                  previousFolderId, userId!,
-                                                  pushToStack: false);
+                                            for (int i = 0; i < diff; i++) {
+                                              if (folderStack.isNotEmpty) {
+                                                int previousFolderId =
+                                                    folderStack.removeLast();
+                                                await fetchFolderHierarchy(
+                                                  previousFolderId,
+                                                  userId!,
+                                                  pushToStack: false,
+                                                );
+                                              }
                                             }
-                                          }
-                                        },
+                                          },
                                   child: Text(
                                     isEllipsis ? "..." : breadcrumbPath[index],
                                     style: TextStyle(
                                       fontSize: 16,
                                       fontFamily: 'APPLESDGOTHICNEOR',
-                                      color: (isEllipsis || clickable)
-                                          ? Colors.black
-                                          : Colors.black,
-                                      decoration: (isEllipsis || clickable)
-                                          ? TextDecoration.underline
-                                          : TextDecoration.none,
+                                      color:
+                                          (isEllipsis || clickable)
+                                              ? Colors.black
+                                              : Colors.black,
+                                      decoration:
+                                          (isEllipsis || clickable)
+                                              ? TextDecoration.underline
+                                              : TextDecoration.none,
                                     ),
                                   ),
                                 ),
