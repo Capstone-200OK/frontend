@@ -374,7 +374,7 @@ class _SearchBarWithOverlayState extends State<SearchBarWithOverlay> {
               borderSide: const BorderSide(color: Color(0xFF607D8B), width: 2),
             ),
             prefixIcon: const Icon(Icons.search, color: Color(0xff263238)),
-            suffixIcon: const Icon(Icons.tune, color: Color(0xff263238)),
+            //suffixIcon: const Icon(Icons.tune, color: Color(0xff263238)),
           ),
         ),
       ),

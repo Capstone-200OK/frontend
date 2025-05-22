@@ -14,6 +14,8 @@ class FileReservationService {
     required String criteria, // 정렬 기준 (예: TYPE, TITLE, DATE, CONTENT)
     required String interval, // 실행 주기 (예: DAILY, WEEKLY, MONTHLY)
     required DateTime nextExecuted, // 다음 실행 시간
+    required bool keepFolder,
+    required bool keepFileName,
   }) async {
     final baseUrl = dotenv.get('BaseUrl'); // 환경변수에서 BaseUrl 가져오기
     final url = Uri.parse('$baseUrl/scheduledTask/add'); // 예약 추가 API URL
@@ -26,6 +28,8 @@ class FileReservationService {
       "criteria": criteria,
       "interval": interval,
       "nextExecuted": nextExecuted.toIso8601String(), // ISO 8601 형식으로 날짜 변환
+      "isMaintain": keepFolder,
+      "fileNameChange": keepFileName,
     });
 
     try {
@@ -61,6 +65,8 @@ class FileReservationService {
     required String criteria,
     required String interval,
     required DateTime nextExecuted,
+    required bool keepFolder,
+    required bool keepFileName,
   }) async {
     final baseUrl = dotenv.get("BaseUrl"); // 환경변수에서 BaseUrl 가져오기
     final url = Uri.parse('$baseUrl/scheduledTask/modify/$taskId'); // 예약 수정 API URL
