@@ -26,7 +26,8 @@ class _FileReservationScreenState extends State<FileReservationScreen> {
   String? selectedMode;
   late int? userId;
   late PageController _intervalPageController;
-
+  bool keepFolder = false;
+  bool keepFileName = false;
   @override
   void initState() {
     super.initState();
@@ -101,7 +102,7 @@ Widget buildIntervalSelector() {
                         child: Text(
                           intervals[actualIndex],
                           style: const TextStyle(
-                            fontSize: 18,
+                            fontSize: 16,
                             fontWeight: FontWeight.w600,
                           ),
                         ),
@@ -189,9 +190,9 @@ Widget buildIntervalSelector() {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text('주기를 설정하세요', style: TextStyle(fontSize: 14)),
+                          const Text('주기를 설정하세요', style: TextStyle(fontSize: 14,fontFamily: 'APPLESDGOTHICNEOEB',)),
                           buildIntervalSelector(),
-                          const SizedBox(height: 10),
+                          const SizedBox(height: 4),
 
                           // 시간 선택
                           SizedBox(
@@ -219,8 +220,8 @@ Widget buildIntervalSelector() {
                             ),
                           ),
                           const SizedBox(height: 10),
-
-                          const Text('관리 폴더 선택'),
+                          const Text('관리 폴더 선택', style: TextStyle(fontFamily: 'APPLESDGOTHICNEOEB',)),
+                          const SizedBox(height: 10),
                           GestureDetector(
                             onTap: () async {
                               final result = await showDialog<FolderItem>(
@@ -231,9 +232,10 @@ Widget buildIntervalSelector() {
                             },
                             child: folderBox(selectedPreviousFolder?.name ?? '', Icons.add_circle),
                           ),
-                          const SizedBox(height: 12),
+                          const SizedBox(height: 10),
 
-                          const Text('목적지 폴더 선택'),
+                          const Text('목적지 폴더 선택', style: TextStyle(fontFamily: 'APPLESDGOTHICNEOEB',)),
+                          const SizedBox(height: 10),
                           GestureDetector(
                             onTap: () async {
                               final result = await showDialog<FolderItem>(
@@ -257,7 +259,7 @@ Widget buildIntervalSelector() {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           const SizedBox(height: 16),
-                          const Text('정리 기준 선택'),
+                          const Text('정리 기준 선택', style: TextStyle(fontFamily: 'APPLESDGOTHICNEOEB',)),
                           const SizedBox(height: 8),
                           Wrap(
                             spacing: 10,
@@ -269,8 +271,23 @@ Widget buildIntervalSelector() {
                               _buildTag(context, '유형', 'type'),
                             ],
                           ),
-                          const SizedBox(height: 20),
-
+                          const SizedBox(height: 8),
+                          CheckboxListTile(
+                            contentPadding: EdgeInsets.zero,
+                            title: const Text('기존 폴더 유지', style: TextStyle(fontSize: 12, fontFamily: 'APPLESDGOTHICNEOR',)),
+                            value: keepFolder,
+                            onChanged: (val) => setState(() => keepFolder = val!),
+                            controlAffinity: ListTileControlAffinity.leading,
+                          ),
+                          if (selectedMode == 'content')
+                            CheckboxListTile(
+                              contentPadding: EdgeInsets.zero,
+                              title: const Text('기존 파일이름 유지', style: TextStyle(fontSize: 12, fontFamily: 'APPLESDGOTHICNEOR',)),
+                              value: keepFileName,
+                              onChanged: (val) => setState(() => keepFileName = val!),
+                              controlAffinity: ListTileControlAffinity.leading,
+                            ),
+                          const SizedBox(height: 10),
                           ElevatedButton(
                             onPressed: () async {
                               if (selectedPreviousFolder == null || selectedNewFolder == null) {
@@ -278,11 +295,7 @@ Widget buildIntervalSelector() {
                                 return;
                               }
 
-                              String convertedInterval = intervals[selectedInterval] == '하루'
-                                  ? 'DAILY'
-                                  : intervals[selectedInterval] == '일주일'
-                                      ? 'WEEKLY'
-                                      : 'MONTHLY';
+                              String convertedInterval = intervals[selectedInterval];
 
                               DateTime selectedDateTime = DateTime.now().copyWith(
                                 hour: selectedHour,
@@ -299,6 +312,8 @@ Widget buildIntervalSelector() {
                                   criteria: selectedMode?.toUpperCase() ?? 'TYPE',
                                   interval: convertedInterval,
                                   nextExecuted: selectedDateTime,
+                                  keepFolder: keepFolder,
+                                  keepFileName: keepFileName,
                                 );
                               } else {
                                 success = await FileReservationService.addReservation(
@@ -308,9 +323,10 @@ Widget buildIntervalSelector() {
                                   criteria: selectedMode?.toUpperCase() ?? 'TYPE',
                                   interval: convertedInterval,
                                   nextExecuted: selectedDateTime,
+                                  keepFolder: keepFolder,
+                                  keepFileName: keepFileName,
                                 );
                               }
-
                               if (success) {
                                 ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(widget.mode == 'modify' ? '파일 예약 수정 완료!' : '파일 예약 등록 완료!')));
                                 Navigator.of(context, rootNavigator: true).pop();
