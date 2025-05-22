@@ -8,12 +8,14 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_application_1/providers/user_provider.dart';
 
+// 자동 정리 화면 클래스 - 사용자가 선택한 폴더들을 정리할 수 있는 화면
 class FileSortyScreen extends StatefulWidget {
-  final List<FolderItem> folders; // 폴더 리스트로 변경
-  final String username;
-  final List<int> sourceFolderIds;
-  final int destinationFolderId;
+  final List<FolderItem> folders; // 정리 대상이 되는 폴더 목록
+  final String username; // 현재 로그인한 사용자 이름
+  final List<int> sourceFolderIds; // 정리 대상이 되는 폴더들의 ID목록
+  final int destinationFolderId; // 정리 결과가 저장될 목적지 폴더의 ID
 
+  // 생성자 - 필수 값들을 파라미터로 받음
   const FileSortyScreen({
     super.key,
     required this.folders, // 폴더 리스트 받기
@@ -23,21 +25,22 @@ class FileSortyScreen extends StatefulWidget {
   });
 
   @override
-  State<FileSortyScreen> createState() => _FileSortyScreenState();
+  State<FileSortyScreen> createState() => _FileSortyScreenState(); // State 객체 생성
 }
 
+// FileSortyScreen의 상태 클래스
 class _FileSortyScreenState extends State<FileSortyScreen> {
-  String? selectedMode;
-  late String url;
-  FolderItem? selectedDestinationFolder;
-  late int? userId;
-  bool isMaintain = false;
-  bool isFileNameChange = false;
+  String? selectedMode; // 선택된 정리 기준
+  late String url; // 서버 URL
+  FolderItem? selectedDestinationFolder; // 선택된 목적지 폴더
+  late int? userId; // 사용자 ID
+  bool isMaintain = false; // 기존 폴더 유지 여부
+  bool isFileNameChange = false; // 파일 이름 유지 여부 ( 내용 기준일 경우만 )
   @override
   void initState() {
     super.initState();
-    url = dotenv.get("BaseUrl");
-    userId = Provider.of<UserProvider>(context, listen: false).userId;
+    url = dotenv.get("BaseUrl"); // .env에서 BaseUrl 가져오기
+    userId = Provider.of<UserProvider>(context, listen: false).userId; // Provider 통해 userId 가져오기
   }
 
   @override
@@ -53,7 +56,7 @@ class _FileSortyScreenState extends State<FileSortyScreen> {
         ),
         child: ListView(
           children: [
-            // 타이틀 영역
+            // 상단 타이틀 영역
             Container(
               padding: const EdgeInsets.symmetric(vertical: 10),
               width: double.infinity,
@@ -75,12 +78,12 @@ class _FileSortyScreenState extends State<FileSortyScreen> {
             ),
             const SizedBox(height: 20),
 
-            // 본문 레이아웃: 좌우 분할
+            // 좌우 화면 분할 영역
             SizedBox(
               height: 400,
               child: Row(
                 children: [
-                  // 왼쪽: 선택된 폴더 리스트
+                  // 선택 폴더 목록 ( 왼쪽 )
                   Expanded(
                     child: Container(
                       margin: const EdgeInsets.only(left: 20),
@@ -135,7 +138,6 @@ class _FileSortyScreenState extends State<FileSortyScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          // ① 목적지 폴더 표시
                           const Text(
                             '목적지 폴더',
                             style: TextStyle(
@@ -144,6 +146,7 @@ class _FileSortyScreenState extends State<FileSortyScreen> {
                             ),
                           ),
                           const SizedBox(height: 8),
+                          // 폴더 선택 영역
                           Container(
                             padding: const EdgeInsets.symmetric(
                               vertical: 12,
@@ -187,7 +190,7 @@ class _FileSortyScreenState extends State<FileSortyScreen> {
                           ),
                           const SizedBox(height: 20),
 
-                          // ② 정리 기준 선택
+                          // 정리 기준 선택
                           const Text(
                             '정리 기준을 선택해 주세요!',
                             style: TextStyle(
@@ -207,6 +210,8 @@ class _FileSortyScreenState extends State<FileSortyScreen> {
                             ],
                           ),
                           const SizedBox(height: 12),
+
+                          // 옵션 체크박스
                           Row(
                             children: [
                               const Text(
@@ -217,7 +222,7 @@ class _FileSortyScreenState extends State<FileSortyScreen> {
                                 ),
                               ),
                               Transform.scale(
-                                scale: 0.7, // 🔸 0.8 = 80% 크기로 축소
+                                scale: 0.7, 
                                 child: Checkbox(
                                   value: isMaintain ?? false,
                                   onChanged: (value) {
@@ -227,38 +232,38 @@ class _FileSortyScreenState extends State<FileSortyScreen> {
                                   },
                                 ),
                               ),
-                                  if (selectedMode == 'content') ...[
-                                    const SizedBox(width: 12),
-                                    const Text(
-                                      '기존 파일이름 유지',
-                                      style: TextStyle(
-                                        fontSize: 13,
-                                        fontFamily: 'APPLESDGOTHICNEOEB',
-                                      ),
-                                    ),
-                                    Transform.scale(
-                                      scale: 0.7,
-                                      child: Checkbox(
-                                        value: isFileNameChange,
-                                        onChanged: (value) {
-                                          setState(() {
-                                            isFileNameChange = value ?? false;
-                                          });
-                                        },
-                                      ),
-                                    ),
-                                  ],
-                                ],
-                              ),
+                              if (selectedMode == 'content') ...[
+                                const SizedBox(width: 12),
+                                const Text(
+                                  '기존 파일이름 유지',
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                     fontFamily: 'APPLESDGOTHICNEOEB',
+                                  ),
+                                ),
+                                 Transform.scale(
+                                  scale: 0.7,
+                                  child: Checkbox(
+                                    value: isFileNameChange,
+                                    onChanged: (value) {
+                                      setState(() {
+                                        isFileNameChange = value ?? false;
+                                      });
+                                    },
+                                  ),
+                                ),
+                              ],
+                            ],
+                          ),
                           const Spacer(),
 
-                          // ③ 정리하기 버튼
-                          Align(
-                            alignment: Alignment.bottomRight,
-                            child: ElevatedButton.icon(
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: const Color(0xFF2E24E0),
-                                padding: const EdgeInsets.symmetric(
+                            // 정리하기 버튼
+                            Align(
+                              alignment: Alignment.bottomRight,
+                              child: ElevatedButton.icon(
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: const Color(0xFF2E24E0),
+                                 padding: const EdgeInsets.symmetric(
                                   horizontal: 32,
                                   vertical: 22,
                                 ),
@@ -275,7 +280,7 @@ class _FileSortyScreenState extends State<FileSortyScreen> {
                                   );
                                   return;
                                 }
-                                showLoadingDialog(context); //로딩바
+                                showLoadingDialog(context); //로딩 다이얼로그 표시
 
                                 final response = await http.post( //정리요청
                                   Uri.parse('$url/organize/start'),
@@ -290,7 +295,7 @@ class _FileSortyScreenState extends State<FileSortyScreen> {
                                     "fileNameChange": isFileNameChange,
                                   }),
                                 );
-                                 Navigator.of(context, rootNavigator: true).pop(); 
+                                 Navigator.of(context, rootNavigator: true).pop(); // 로딩 다이얼로그 닫기
 
                                 if (response.statusCode == 200) {
                                   ScaffoldMessenger.of(context).showSnackBar(
@@ -335,6 +340,7 @@ class _FileSortyScreenState extends State<FileSortyScreen> {
     );
   }
 
+  // 정리 기준 버튼 위젯
   Widget _sortButton(BuildContext context, String label, String mode) {
     return ElevatedButton(
       style: ElevatedButton.styleFrom(
