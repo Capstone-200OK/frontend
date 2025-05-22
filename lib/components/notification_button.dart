@@ -15,45 +15,81 @@ class NotificationButton extends StatelessWidget {
               icon: const Icon(Icons.notifications, color: Color(0xff263238)),
               onPressed: () {
                 showDialog(
-                    context: context,
-                    builder: (_) => StatefulBuilder(
+                  context: context,
+                  builder: (_) => StatefulBuilder(
                     builder: (context, setState) {
-                        return AlertDialog(
-                  backgroundColor: Color(0xFFECEFF1),
-                         icon: const Icon(Icons.notifications, color: Color(0xff263238), size: 40,),
+                      return AlertDialog(
+                        backgroundColor: const Color(0xFFECEFF1),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                        titlePadding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
+                        contentPadding: const EdgeInsets.fromLTRB(20, 10, 20, 10),
+                        title: Column(
+                          children: [
+                            const Icon(Icons.notifications, color: Color(0xff263238), size: 40),
+                            const SizedBox(height: 8),
+                            const Divider(thickness: 1, color: Colors.black26),
+                          ],
+                        ),
                         content: provider.notifications.isEmpty
-                            ? const Text('알림이 없습니다.',textAlign: TextAlign.center, style: TextStyle(fontFamily: 'APPLESDGOTHICNEOR', fontSize: 14),)
+                            ? const SizedBox(
+                                height: 100,
+                                child: Center(
+                                  child: Text('알림이 없습니다.',
+                                      textAlign: TextAlign.center,
+                                      style: TextStyle(
+                                          fontFamily: 'APPLESDGOTHICNEOR',
+                                          fontSize: 14,
+                                          color: Colors.black54)),
+                                ),
+                              )
                             : SizedBox(
                                 width: double.maxFinite,
                                 child: ListView.builder(
-                                    shrinkWrap: true,
-                                    itemCount: provider.notifications.length,
-                                    itemBuilder: (context, index) {
-                                    return ListTile(
-                                        title: Text(provider.notifications[index]),
-                                        trailing: IconButton(
-                                        icon: const Icon(Icons.delete, size: 20),
-                                        onPressed: () {
-                                            provider.removeNotification(index);
-                                            setState(() {}); // ✅ 팝업 내부 갱신
-                                        },
+                                  shrinkWrap: true,
+                                  itemCount: provider.notifications.length,
+                                  itemBuilder: (context, index) {
+                                    return Column(
+                                      children: [
+                                        ListTile(
+                                          title: Text(
+                                            provider.notifications[index],
+                                            style: TextStyle(
+                                              fontFamily: 'APPLESDGOTHICNEOEB',
+                                              fontSize: 18,
+                                              color: Colors.black,
+                                              ),
+                                          ),
+                                          trailing: IconButton(
+                                            icon: const Icon(Icons.delete, size: 25),
+                                            onPressed: () {
+                                              provider.removeNotification(index);
+                                              setState(() {});
+                                            },
+                                          ),
                                         ),
+                                        const SizedBox(height: 13,),
+                                        const Divider(height: 1, thickness: 0.5),
+                                      ],
                                     );
-                                    },
+                                  },
                                 ),
-                                ),
+                              ),
                         actions: [
-                            TextButton(
+                          TextButton(
                             onPressed: () {
-                                provider.markAllAsRead();
-                                Navigator.pop(context);
+                              provider.markAllAsRead();
+                              Navigator.pop(context);
                             },
-                            child: const Text('닫기', style: TextStyle(fontSize: 12, fontFamily: 'APPLESDGOTHICNEOR', color: Color(0xFF596D79)),),
-                            )
+                            child: const Text('닫기',
+                                style: TextStyle(
+                                    fontSize: 12,
+                                    fontFamily: 'APPLESDGOTHICNEOR',
+                                    color: Color(0xFF596D79))),
+                          )
                         ],
-                        );
+                      );
                     },
-                    ),
+                  ),
                 );
                 },
             ),

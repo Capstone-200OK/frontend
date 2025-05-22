@@ -12,6 +12,8 @@ class FileReservationService {
     required String criteria, // 예: TYPE, TITLE, DATE, CONTENT
     required String interval, // 예: DAILY, WEEKLY, MONTHLY
     required DateTime nextExecuted,
+    required bool keepFolder,
+    required bool keepFileName,
   }) async {
     final baseUrl = dotenv.get('BaseUrl');
     final url = Uri.parse('$baseUrl/scheduledTask/add');
@@ -23,6 +25,8 @@ class FileReservationService {
       "criteria": criteria,
       "interval": interval,
       "nextExecuted": nextExecuted.toIso8601String(),
+      "isMaintain": keepFolder,
+      "fileNameChange": keepFileName,
     });
 
     try {
@@ -53,6 +57,8 @@ class FileReservationService {
     required String criteria,
     required String interval,
     required DateTime nextExecuted,
+    required bool keepFolder,
+    required bool keepFileName,
   }) async {
     final baseUrl = dotenv.get("BaseUrl");
     final url = Uri.parse('$baseUrl/scheduledTask/modify/$taskId');
