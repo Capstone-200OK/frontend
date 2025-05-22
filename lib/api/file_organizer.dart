@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 
-// 파일 자동 분류 기능을 담당하는 클래스
+/// 파일 자동 분류 기능을 담당하는 클래스
 class FileOrganizer {
   final String baseUrl;
 

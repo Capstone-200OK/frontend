@@ -5,9 +5,10 @@ import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
 import 'package:flutter_application_1/providers/user_provider.dart';
 
+/// 폴더 생성 화면 위젯
 class FolderCreateScreen extends StatefulWidget {
-  final Function(String) onCreateFolder;
-  final int parentFolderId;
+  final Function(String) onCreateFolder; // 폴더 생성 후 실행할 콜백 함수
+  final int parentFolderId; // 부모 폴더 ID
 
   const FolderCreateScreen({Key? key, required this.onCreateFolder, required this.parentFolderId})
     : super(key: key);
@@ -17,21 +18,23 @@ class FolderCreateScreen extends StatefulWidget {
 }
 
 class _FolderCreateScreenState extends State<FolderCreateScreen> {
-  final TextEditingController _folderNameController = TextEditingController();
-  bool _isLoading = false;
-  String _message = '';
-  String url = dotenv.get("BaseUrl");
+  final TextEditingController _folderNameController = TextEditingController(); // 폴더 이름 입력 컨트롤러
+  bool _isLoading = false; // 로딩 상태
+  String _message = ''; // 사용자에게 보여줄 메시지
+  String url = dotenv.get("BaseUrl"); // .env에서 API 기본 URL 가져오기
   //final int userId = 1;
   late final int parentFolderId;
   @override
   void initState() {
     super.initState();
-    parentFolderId = widget.parentFolderId;
+    parentFolderId = widget.parentFolderId; // 전달받은 부모 폴더 ID 저장
   }
+
+  // 폴더 생성 요청 함수
   Future<void> createFolder() async {
     final userProvider = Provider.of<UserProvider>(context, listen: false);
-    final userId = userProvider.userId;
-    final folderName = _folderNameController.text.trim();
+    final userId = userProvider.userId; // Provider로부터 사용자 ID 가져오기
+    final folderName = _folderNameController.text.trim(); // 폴더 이름 공백 제거
 
     if (folderName.isEmpty) {
       setState(() {
@@ -45,7 +48,8 @@ class _FolderCreateScreenState extends State<FolderCreateScreen> {
       _message = '';
     });
 
-    final URL = Uri.parse('$url/folder/add');
+    final URL = Uri.parse('$url/folder/add'); // 폴더 생성 API 엔드포인트
+
     try {
       final response = await http.post(
         URL,
@@ -63,7 +67,7 @@ class _FolderCreateScreenState extends State<FolderCreateScreen> {
           _message = '폴더 생성 성공!';
           _folderNameController.clear();
           widget.onCreateFolder(folderName); // 콜백 실행
-          Navigator.pop(context);
+          Navigator.pop(context); // 다이얼로그 닫기
 
         } else {
           _message = '실패: ${response.statusCode} - ${response.body}';
@@ -77,6 +81,7 @@ class _FolderCreateScreenState extends State<FolderCreateScreen> {
     }
   }
 
+  // 다이얼로그 UI 구성
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
@@ -96,8 +101,9 @@ class _FolderCreateScreenState extends State<FolderCreateScreen> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
+            // 폴더 이름 입력 필드
             Container(
-              height: 45, // TextField의 높이를 설정
+              height: 45, 
               child: TextField(
                 controller: _folderNameController,
                 decoration: const InputDecoration(
@@ -111,12 +117,12 @@ class _FolderCreateScreenState extends State<FolderCreateScreen> {
                   contentPadding: EdgeInsets.symmetric(
                     vertical: 7,
                     horizontal: 12,
-                  ), // 패딩 조정
+                  ), 
                 ),
                 style: const TextStyle(
                   fontSize: 13,
                   fontFamily: 'APPLESDGOTHICNEOR',
-                ), // 실제 입력 텍스트의 폰트 크기
+                ), 
               ),
             ),
            
@@ -124,17 +130,18 @@ class _FolderCreateScreenState extends State<FolderCreateScreen> {
           ],
         ),
       ),
-      actionsAlignment: MainAxisAlignment.center,
+      actionsAlignment: MainAxisAlignment.center, // 버튼 가운데 정렬
       actions: [
+        // 취소 버튼
         TextButton(
           onPressed: () {
-            Navigator.pop(context); // 닫기
+            Navigator.pop(context); // 다이얼로그 닫기
           },
           style: TextButton.styleFrom(
             foregroundColor: Colors.black,
             side: BorderSide(
-              color:  Color(0xFF455A64), // 획(테두리) 색상
-              width: 1, // 획(테두리) 두께
+              color:  Color(0xFF455A64),
+              width: 1, 
             ),
           ),
           child: const Text(
@@ -142,8 +149,9 @@ class _FolderCreateScreenState extends State<FolderCreateScreen> {
             style: TextStyle(fontSize: 13, fontFamily: 'APPLESDGOTHICNEOR'),
           ),
         ),
+        // 만들기 버튼
         TextButton(
-          onPressed: createFolder,
+          onPressed: createFolder, // 폴더 생성 함수 호출
           style: TextButton.styleFrom(
             foregroundColor: Colors.black,
             backgroundColor: Color(0xFF263238),
