@@ -2,18 +2,22 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_application_1/providers/notification_provider.dart';
 
+/// 상단바에 표시되는 알림 아이콘 버튼 위젯
 class NotificationButton extends StatelessWidget {
   const NotificationButton({super.key});
 
   @override
   Widget build(BuildContext context) {
     return Consumer<NotificationProvider>(
+      // NotificationProvider의 상태 변화에 따라 UI 갱신
       builder: (context, provider, _) {
         return Stack(
           children: [
+            // 기본 알림 아이콘 버튼
             IconButton(
               icon: const Icon(Icons.notifications, color: Color(0xff263238)),
               onPressed: () {
+                // 알림 아이콘 클릭 시 알림 다이얼로그 표시
                 showDialog(
                   context: context,
                   builder: (_) => StatefulBuilder(
@@ -31,6 +35,7 @@ class NotificationButton extends StatelessWidget {
                           ],
                         ),
                         content: provider.notifications.isEmpty
+                            // 알림이 없을 경우
                             ? const SizedBox(
                                 height: 100,
                                 child: Center(
@@ -42,6 +47,7 @@ class NotificationButton extends StatelessWidget {
                                           color: Colors.black54)),
                                 ),
                               )
+                            // 알림이 있을 경우 목록으로 표시
                             : SizedBox(
                                 width: double.maxFinite,
                                 child: ListView.builder(
@@ -62,8 +68,8 @@ class NotificationButton extends StatelessWidget {
                                           trailing: IconButton(
                                             icon: const Icon(Icons.delete, size: 25),
                                             onPressed: () {
-                                              provider.removeNotification(index);
-                                              setState(() {});
+                                              provider.removeNotification(index); // 알림 개별 삭제
+                                              setState(() {}); // 다이얼로그 내에서 즉시 갱신
                                             },
                                           ),
                                         ),
@@ -75,10 +81,11 @@ class NotificationButton extends StatelessWidget {
                                 ),
                               ),
                         actions: [
+                          // 닫기 버튼 (전체 읽음 처리 후 닫기)
                           TextButton(
                             onPressed: () {
-                              provider.markAllAsRead();
-                              Navigator.pop(context);
+                              provider.markAllAsRead(); // 모든 알림 읽음 처리
+                              Navigator.pop(context); // 다이얼로그 닫기
                             },
                             child: const Text('닫기',
                                 style: TextStyle(
@@ -93,6 +100,7 @@ class NotificationButton extends StatelessWidget {
                 );
                 },
             ),
+            // 읽지 않은 알림이 있을 경우 빨간 점 표시
             if (provider.hasUnread)
               const Positioned(
                 right: 6,
