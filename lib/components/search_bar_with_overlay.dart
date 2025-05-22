@@ -8,11 +8,12 @@ import 'package:provider/provider.dart';
 import 'package:flutter_application_1/providers/user_provider.dart';
 import 'package:flutter_application_1/components/navigation_stack.dart';
 
+/// 검색창과 오버레이(검색 결과 창)를 포함한 위젯
 class SearchBarWithOverlay extends StatefulWidget {
-  final String baseUrl;
-  final String username;
-  final String? preScreen;
-  final List<int>? prePathIds;
+  final String baseUrl; // API 호출용 base URL
+  final String username; // 사용자 이름
+  final String? preScreen; // 검색 이전 화면 (ex. CLOUD, PERSONAL)
+  final List<int>? prePathIds; // 검색 이전 경로 ID 목록
 
   const SearchBarWithOverlay({
     Key? key,
@@ -27,14 +28,16 @@ class SearchBarWithOverlay extends StatefulWidget {
 }
 
 class _SearchBarWithOverlayState extends State<SearchBarWithOverlay> {
-  final TextEditingController _searchController = TextEditingController();
-  OverlayEntry? _searchOverlay;
+  final TextEditingController _searchController = TextEditingController(); // 검색어 입력 컨트롤러
+  OverlayEntry? _searchOverlay; // 검색 결과를 표시할 오버레이
 
+  // 오버레이 제거 함수
   void _removeSearchOverlay() {
     _searchOverlay?.remove();
     _searchOverlay = null;
   }
 
+  // 검색어 일치 부분 강조 텍스트 스타일 생성
   TextSpan highlightOccurrences(String source, String query) {
     if (query.isEmpty) {
       return TextSpan(
@@ -87,6 +90,7 @@ class _SearchBarWithOverlayState extends State<SearchBarWithOverlay> {
     return TextSpan(children: matches);
   }
 
+  // 폴더 및 파일 검색 요청
   Future<void> searchFoldersAndFiles(String input) async {
     final userId = Provider.of<UserProvider>(context, listen: false).userId;
     final url = widget.baseUrl;
@@ -118,17 +122,18 @@ class _SearchBarWithOverlayState extends State<SearchBarWithOverlay> {
     }
   }
 
+  // 검색 결과 오버레이 생성 및 삽입
   void showSearchOverlay(List<Map<String, dynamic>> results, int userId) {
-    _removeSearchOverlay();
+    _removeSearchOverlay(); // 기존 오버레이 제거
 
     final renderBox = context.findRenderObject() as RenderBox;
-    final position = renderBox.localToGlobal(Offset.zero);
+    final position = renderBox.localToGlobal(Offset.zero); // 위치 계산
 
     _searchOverlay = OverlayEntry(
       builder:
           (context) => Stack(
             children: [
-              // 🔹 배경을 터치하면 오버레이 제거
+              // 배경 클릭 시 오버레이 닫기
               GestureDetector(
                 onTap: _removeSearchOverlay,
                 behavior: HitTestBehavior.translucent,
@@ -139,18 +144,16 @@ class _SearchBarWithOverlayState extends State<SearchBarWithOverlay> {
                 ),
               ),
 
-              // 🔹 검색 결과 박스
+              // 검색 결과 박스
               Positioned(
                 left: position.dx + 97,
                 top: position.dy - 275,
                 width: 800,
                 child: Material(
                   elevation: 4,
-                  //borderRadius: BorderRadius.circular(10),
                   child: Container(
                     constraints: BoxConstraints(
-                      maxHeight: 250, // ✅ 최대 높이 지정
-                     
+                      maxHeight: 250, 
                     ),
                     decoration: BoxDecoration(
                       color: Colors.white,
@@ -158,6 +161,7 @@ class _SearchBarWithOverlayState extends State<SearchBarWithOverlay> {
                     ),
                     child: Stack(
                       children: [
+                        // 결과 리스트 출력
                         ListView(
                           reverse: true,
                           padding: const EdgeInsets.symmetric(vertical: 8),
@@ -197,6 +201,7 @@ class _SearchBarWithOverlayState extends State<SearchBarWithOverlay> {
                                         isFolder
                                             ? item['folderId']
                                             : item['parentFolderId'];
+                                    // 클라우드 폴더일 경우 경로 조회
                                     if (isFolder && item['folderType'] == 'CLOUD') {
                                       final userId = Provider.of<UserProvider>(context, listen: false).userId;
                                       final response = await http.get(
@@ -213,6 +218,7 @@ class _SearchBarWithOverlayState extends State<SearchBarWithOverlay> {
                                                 .map((e) => e['folderId'] as int)
                                                 .toList();
                                         _removeSearchOverlay();
+                                        // 이전 화면 복원
                                         if (widget.prePathIds != null) {
                                           NavigationStack.pop();
                                           if (widget.preScreen == 'CLOUD') {
@@ -229,6 +235,7 @@ class _SearchBarWithOverlayState extends State<SearchBarWithOverlay> {
                                           }
                                           NavigationStack.printStack();
                                         }
+                                        // 새 화면 이동
                                         NavigationStack.push('SearchCloudScreen', arguments: {
                                           'username': widget.username,
                                           'targetPathIds': pathIds,
@@ -246,6 +253,7 @@ class _SearchBarWithOverlayState extends State<SearchBarWithOverlay> {
                                         );
                                       }
                                     } else {
+                                      // 개인 폴더 또는 파일 → 경로 조회 후 이동
                                       final response = await http.get(
                                         Uri.parse(
                                           '${widget.baseUrl}/folder/path/$id',
@@ -298,7 +306,7 @@ class _SearchBarWithOverlayState extends State<SearchBarWithOverlay> {
                               }).toList(),
                         ),
 
-                        // 🔽 위쪽 그라데이션
+                        // 위쪽 그라데이션
                         Positioned(
                           top: 0,
                           left: 0,
@@ -313,7 +321,6 @@ class _SearchBarWithOverlayState extends State<SearchBarWithOverlay> {
                                   colors: [
                                     Colors.white,
                                     Colors.white54,
-                                    //Colors.transparent,
                                   ],
                                 ),
                               ),
@@ -329,9 +336,10 @@ class _SearchBarWithOverlayState extends State<SearchBarWithOverlay> {
           ),
     );
 
-    Overlay.of(context).insert(_searchOverlay!);
+    Overlay.of(context).insert(_searchOverlay!); // 오버레이 삽입
   }
 
+  // 검색창 UI 구성
   @override
   Widget build(BuildContext context) {
     return Align(
@@ -340,7 +348,7 @@ class _SearchBarWithOverlayState extends State<SearchBarWithOverlay> {
         width: 800,
         child: TextField(
           controller: _searchController,
-          onSubmitted: (value) => searchFoldersAndFiles(value),
+          onSubmitted: (value) => searchFoldersAndFiles(value), // 엔터 누르면 검색
           style: const TextStyle(
             fontSize: 16,
             fontFamily: 'APPLESDGOTHICNEOEB',

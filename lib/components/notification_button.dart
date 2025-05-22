@@ -2,18 +2,22 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_application_1/providers/notification_provider.dart';
 
+/// 상단바에 표시되는 알림 아이콘 버튼 위젯
 class NotificationButton extends StatelessWidget {
   const NotificationButton({super.key});
 
   @override
   Widget build(BuildContext context) {
     return Consumer<NotificationProvider>(
+      // NotificationProvider의 상태 변화에 따라 UI 갱신
       builder: (context, provider, _) {
         return Stack(
           children: [
+            // 기본 알림 아이콘 버튼
             IconButton(
               icon: const Icon(Icons.notifications, color: Color(0xff263238)),
               onPressed: () {
+                // 알림 아이콘 클릭 시 알림 다이얼로그 표시
                 showDialog(
                   context: context,
                   builder:
@@ -131,6 +135,7 @@ class NotificationButton extends StatelessWidget {
                 );
               },
             ),
+            // 읽지 않은 알림이 있을 경우 빨간 점 표시
             if (provider.hasUnread)
               const Positioned(
                 right: 6,

@@ -15,13 +15,14 @@ import 'package:flutter_application_1/components/navigation_stack.dart';
 import 'package:flutter_application_1/components/navigation_stack.dart';
 import 'package:flutter_application_1/components/navigation_helper.dart';
 
+/// 네비게이션 드로어 위젯
 class NavigationDrawerWidget extends StatelessWidget {
-  final String username;
-  final Function(String) onFolderCreated;
-  final List<String> folders;
-  final BuildContext scaffoldContext; // scaffold.of(context) 때문에 추가
-  final String? preScreen;
-  final List<int>? prePathIds;
+  final String username; // 사용자 이름
+  final Function(String) onFolderCreated; // 폴더 생성 콜백
+  final List<String> folders; // 폴더 목록
+  final BuildContext scaffoldContext; // Scaffold 접근용 context
+  final String? preScreen; // 이전 화면 이름
+  final List<int>? prePathIds; // 이전 경로 ID 목록
 
   const NavigationDrawerWidget({
     Key? key,
@@ -33,11 +34,11 @@ class NavigationDrawerWidget extends StatelessWidget {
     this.prePathIds,
   }) : super(key: key);
 
-  // 로그아웃 함수
+  // 로그아웃 처리
   void _logout(BuildContext context) {
-    WebSocketService().disconnect();
-    Provider.of<UserProvider>(context, listen: false).clearUser();
-    NavigationStack.clear();
+    WebSocketService().disconnect(); // 웹소켓 연결 해제
+    Provider.of<UserProvider>(context, listen: false).clearUser(); // 사용자 정보 초기화
+    NavigationStack.clear(); // 네비게이션 스택 초기화
     Navigator.pushAndRemoveUntil(
       context,
       MaterialPageRoute(builder: (context) => const LoginScreen()),
@@ -48,7 +49,7 @@ class NavigationDrawerWidget extends StatelessWidget {
     ).showSnackBar(const SnackBar(content: Text('로그아웃되었습니다.')));
   }
 
-  // 회원탈퇴 함수
+  // 회원 탈퇴 처리
   void _deleteAccount(BuildContext context) async {
     final shouldDelete = await showDialog<bool>(
       context: context,
@@ -115,7 +116,7 @@ class NavigationDrawerWidget extends StatelessWidget {
         child: ListView(
           padding: EdgeInsets.zero,
           children: [
-            // 상단 사용자 정보
+            // 사용자 정보 표시 영역
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
               color: const Color(0xFF455A64),
@@ -148,6 +149,8 @@ class NavigationDrawerWidget extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 70),
+
+            // 중요문서함 버튼
             ListTile(
               leading: const Icon(
                 Icons.star_border,
@@ -164,6 +167,7 @@ class NavigationDrawerWidget extends StatelessWidget {
               ),
               tileColor: const Color(0xFF455A64),
               onTap: () {
+                // 이전 경로로 복귀 처리
                 if (prePathIds != null) {
                   NavigationStack.pop();
                   if (preScreen == 'CLOUD') {
@@ -192,6 +196,7 @@ class NavigationDrawerWidget extends StatelessWidget {
               visualDensity: VisualDensity(vertical: -4),
             ),
 
+            // 휴지통 버튼
             ListTile(
               leading: const Icon(Icons.delete, color: Colors.white, size: 16),
               title: const Text(
@@ -231,6 +236,8 @@ class NavigationDrawerWidget extends StatelessWidget {
               },
               visualDensity: VisualDensity(vertical: -4),
             ),
+
+            // 정리 이력 목록 버튼
             ListTile(
               leading: const Icon(Icons.history, color: Colors.white, size: 16),
               title: const Text(
@@ -272,10 +279,10 @@ class NavigationDrawerWidget extends StatelessWidget {
                         ),
                   ),
                 );
-
-                // print('최근 항목 눌림');
               },
             ),
+
+            // 예약하기 버튼
             ListTile(
               leading: const Icon(Icons.check, color: Colors.white, size: 16),
               title: const Text(
@@ -295,6 +302,8 @@ class NavigationDrawerWidget extends StatelessWidget {
               },
               visualDensity: VisualDensity(vertical: -4),
             ),
+
+            // 예약 목록 보기
             ListTile(
               leading: const Icon(Icons.list, color: Colors.white, size: 16),
               title: const Text(
@@ -315,12 +324,15 @@ class NavigationDrawerWidget extends StatelessWidget {
               visualDensity: VisualDensity(vertical: -4),
             ),
 
+            // 구분선
             Divider(
               color: Colors.white54, // 색은 살짝 연하게
               thickness: 0.5, // 선 굵기
               indent: 12, // 왼쪽 여백
               endIndent: 12, // 오른쪽 여백
             ),
+
+            // 로그아웃 버튼
             ListTile(
               leading: Icon(Icons.exit_to_app, color: Colors.white, size: 16),
               title: Text(
@@ -335,6 +347,8 @@ class NavigationDrawerWidget extends StatelessWidget {
               visualDensity: VisualDensity(vertical: -4), // ✅ 간격 줄이기
               onTap: () => _logout(context),
             ),
+
+            // 회원 탈퇴 버튼
             ListTile(
               leading: Icon(Icons.person_remove, color: Colors.white, size: 16),
               title: Text(
