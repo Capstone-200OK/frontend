@@ -61,15 +61,16 @@ class _CloudScreenState extends State<CloudScreen> {
   late String url;
   late FileUploader uploader;
   int currentFolderId = 2; // 시작 폴더 ID (예: 2번 루트)
-  String currentFolderName = 'CloudROOT'; // 현재 폴더명 ( ROOT로 시작 )
-  List<String> breadcrumbPath = ['CloudROOT']; // 폴더명을 저장하는 List
+  String currentFolderName = 'Cloud'; // 현재 폴더명 ( ROOT로 시작 )
+  List<String> breadcrumbPath = ['Cloud']; // 폴더명을 저장하는 List
   List<int> folderStack = []; // 상위 폴더 경로 추적
   Map<String, int> folderNameToId = {};
   Map<int, String> folderIdToName = {};
   late String s3BaseUrl;
   late int? userId;
   List<ImportantFileItem> importantFiles = [];
-
+  bool _dragHandled = false;
+  
   bool isAlreadyImportantFolder(int folderId) {
     return importantFolders.any((f) => f.folderId == folderId);
   }
@@ -98,6 +99,151 @@ class _CloudScreenState extends State<CloudScreen> {
       await fetchImportantStatus(); // 별표 상태 초기화
     });
   }
+List<PopupMenuEntry<String>> buildContextMenuItems({
+  required bool isFolder,
+  required bool isCloud,
+}) {
+  List<PopupMenuEntry<String>> items = [];
+
+  if (isFolder) {
+    items.addAll([
+      const PopupMenuItem(
+        value: 'delete',
+        child: Row(
+          children: [
+            Icon(Icons.delete, size: 16, color: Colors.black54),
+            SizedBox(width: 8),
+            Text('삭제', style: TextStyle(fontSize: 12)),
+          ],
+        ),
+      ),
+      const PopupMenuItem(
+        value: 'add_to_important',
+        child: Row(
+          children: [
+            Icon(Icons.star, size: 15, color: Colors.black54),
+            SizedBox(width: 8),
+            Text('중요 폴더로 추가', style: TextStyle(fontSize: 12)),
+          ],
+        ),
+      ),
+    ]);
+
+    if (isCloud) {
+      items.add(
+        const PopupMenuItem(
+          value: 'grant',
+          child: Row(
+            children: [
+              Icon(Icons.person_add, size: 15, color: Colors.black54),
+              SizedBox(width: 8),
+              Text('초대하기', style: TextStyle(fontSize: 12)),
+            ],
+          ),
+        ),
+      );
+    }
+  } else {
+    items.addAll([
+      const PopupMenuItem(
+        value: 'delete',
+        child: Row(
+          children: [
+            Icon(Icons.delete, size: 16, color: Colors.black54),
+            SizedBox(width: 8),
+            Text('삭제', style: TextStyle(fontSize: 12)),
+          ],
+        ),
+      ),
+      const PopupMenuItem(
+        value: 'add_to_important',
+        child: Row(
+          children: [
+            Icon(Icons.star, size: 15, color: Colors.black54),
+            SizedBox(width: 8),
+            Text('중요 문서로 추가', style: TextStyle(fontSize: 12)),
+          ],
+        ),
+      ),
+    ]);
+  }
+
+  return items;
+}
+
+OverlayEntry? _uploadOverlayEntry;
+List<String> _uploadingFiles = [];
+Set<String> _completedFiles = {};
+Set<String> _failedFiles = {};
+void _showUploadStatusOverlayUI() {
+  _uploadOverlayEntry?.remove();
+
+  _uploadOverlayEntry = OverlayEntry(
+    builder: (context) => Positioned(
+      bottom: 30,
+      right: 30,
+      child: Material(
+        color: Colors.transparent,
+        child: Container(
+          width: 320,
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Colors.black87,
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text(
+                '📦 파일 업로드 중...',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 8),
+              ..._uploadingFiles.map((fileName) {
+                Widget statusIcon;
+                if (_completedFiles.contains(fileName)) {
+                  statusIcon = const Icon(Icons.check, color: Colors.green, size: 16);
+                } else if (_failedFiles.contains(fileName)) {
+                  statusIcon = const Icon(Icons.error, color: Colors.red, size: 16);
+                } else {
+                  statusIcon = const SizedBox(
+                    width: 16,
+                    height: 16,
+                    child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                  );
+                }
+
+                return Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 3),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Expanded(
+                        child: Text(
+                          fileName,
+                          style: const TextStyle(color: Colors.white, fontSize: 13),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      statusIcon,
+                    ],
+                  ),
+                );
+              }),
+            ],
+          ),
+        ),
+      ),
+    ),
+  );
+
+  Overlay.of(context).insert(_uploadOverlayEntry!);
+}
+
 
   Future<void> fetchImportantStatus() async {
     if (userId == null) return;
@@ -112,7 +258,38 @@ class _CloudScreenState extends State<CloudScreen> {
         pathIds.map((id) => folderIdToName[id] ?? 'Unknown').toList();
     return pathNames.join('/');
   }
+  void _showUploadStatusOverlay(String message, {bool autoRemove = false}) {
+  _uploadOverlayEntry?.remove(); // 기존 오버레이 제거
+  _uploadOverlayEntry = OverlayEntry(
+    builder: (context) => Positioned(
+      bottom: 30,
+      right: 30,
+      child: Material(
+        color: Colors.transparent,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+          decoration: BoxDecoration(
+            color: Colors.black87,
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Text(
+            message,
+            style: const TextStyle(color: Colors.white),
+          ),
+        ),
+      ),
+    ),
+  );
 
+  Overlay.of(context).insert(_uploadOverlayEntry!);
+
+  if (autoRemove) {
+    Future.delayed(const Duration(seconds: 3), () {
+      _uploadOverlayEntry?.remove();
+      _uploadOverlayEntry = null;
+      });
+    }
+  } 
   String getTruncatedPath({int showLast = 2}) {
     //상위는 ...으로 표시하기기
     if (breadcrumbPath.length <= showLast + 1) {
@@ -140,7 +317,7 @@ class _CloudScreenState extends State<CloudScreen> {
       folders.clear();
       selectedFiles.clear();
       folderStack.clear();
-      folderIdToName[2] = "CloudROOT"; 
+      folderIdToName[2] = "Cloud"; 
       for (final folder in data) {
         final id = folder['id'];
         final name = folder['name'];
@@ -163,8 +340,8 @@ class _CloudScreenState extends State<CloudScreen> {
         // }
       }
 
-      breadcrumbPath = ['CloudROOT'];
-      currentFolderId = 2; // CloudROOT는 논리적 루트
+      breadcrumbPath = ['Cloud'];
+      currentFolderId = 2; // Cloud는 논리적 루트
       setState(() {});
     } else {
       print("🚫 클라우드 진입 가능 폴더 불러오기 실패: ${response.statusCode}");
@@ -196,7 +373,7 @@ class _CloudScreenState extends State<CloudScreen> {
       folderIdToName.addAll({for (var f in folderList) f['id']: f['name']});
 
       setState(() {
-        currentFolderName = data['name'] ?? 'CloudROOT';
+        currentFolderName = data['name'] ?? 'Cloud';
 
         if (pushToStack && currentFolderId != folderId) {
           folderStack.add(currentFolderId);
@@ -375,71 +552,36 @@ class _CloudScreenState extends State<CloudScreen> {
     onSelected(selected);
   }
 
-  Future<void> showContextMenuAtPosition({
-    required BuildContext context,
-    required Offset position,
-    required Function(String?) onSelected,
-  }) async {
-    final RenderBox overlay =
-        Overlay.of(context).context.findRenderObject() as RenderBox;
+Future<void> showContextMenuAtPosition({
+  required BuildContext context,
+  required Offset position,
+  required Function(String?) onSelected,
+  required bool isFolder,
+  required bool isCloud,
+}) async {
+  final RenderBox overlay =
+      Overlay.of(context).context.findRenderObject() as RenderBox;
 
-    final RelativeRect positionRect = RelativeRect.fromLTRB(
-      position.dx,
-      position.dy,
-      overlay.size.width - position.dx,
-      overlay.size.height - position.dy,
-    );
+  final RelativeRect positionRect = RelativeRect.fromLTRB(
+    position.dx,
+    position.dy,
+    overlay.size.width - position.dx,
+    overlay.size.height - position.dy,
+  );
 
-    final selected = await showMenu<String>(
-      context: context,
-      position: positionRect,
-      color: Color(0xFFECEFF1),
-      items: [
-        PopupMenuItem(
-          value: 'create',
-          child: Row(
-            children: const [
-              Icon(Icons.create_new_folder, size: 16, color: Colors.black54),
-              SizedBox(width: 8),
-              Text('새 폴더', style: TextStyle(fontSize: 12)),
-            ],
-          ),
-        ),
-        PopupMenuItem(
-          value: 'delete',
-          child: Row(
-            children: const [
-              Icon(Icons.delete, size: 16, color: Colors.black54),
-              SizedBox(width: 8),
-              Text('삭제', style: TextStyle(fontSize: 12)),
-            ],
-          ),
-        ),
-        PopupMenuItem(
-          value: 'add_to_important',
-          child: Row(
-            children: const [
-              Icon(Icons.star, size: 15, color: Colors.black54),
-              SizedBox(width: 8),
-              Text('중요 문서로 추가', style: TextStyle(fontSize: 12)),
-            ],
-          ),
-        ),
-        PopupMenuItem(
-          value: 'grant',
-          child: Row(
-            children: const [
-              Icon(Icons.person_add, size: 15, color: Colors.black54),
-              SizedBox(width: 8),
-              Text('초대하기', style: TextStyle(fontSize: 12)),
-            ]
-          )
-        )
-      ],
-    );
+  final selected = await showMenu<String>(
+    context: context,
+    position: positionRect,
+    color: const Color(0xFFECEFF1),
+    items: buildContextMenuItems(
+      isFolder: isFolder,
+      isCloud: isCloud,
+    ),
+  );
 
-    onSelected(selected);
-  }
+  onSelected(selected);
+}
+
 
   Widget _buildPreviewContent(String url, String type, {String? thumbnailUrl}) {
     final lower = type.toLowerCase();
@@ -688,56 +830,36 @@ class _CloudScreenState extends State<CloudScreen> {
                             return Row(
                               children: [
                                 GestureDetector(
-                                  onTapDown:
-                                      isEllipsis
-                                          ? (details) async {
-                                            final hiddenItems = breadcrumbPath
-                                                .sublist(
-                                                  0,
-                                                  breadcrumbPath.length -
-                                                      showLast,
-                                                );
-                                            final selected = await showMenu<
-                                              String
-                                            >(
-                                              context: context,
-                                              position: RelativeRect.fromLTRB(
-                                                details.globalPosition.dx,
-                                                details.globalPosition.dy,
-                                                details.globalPosition.dx,
-                                                details.globalPosition.dy,
-                                              ),
-                                              items:
-                                                  hiddenItems.map((name) {
-                                                    return PopupMenuItem<
-                                                      String
-                                                    >(
-                                                      value: name,
-                                                      
-                                                      child: Row(
-                                                        children: [
-                                                          SizedBox(width: 8),
-                                                          Expanded(
-                                                            child: Text(
-                                                              name,
-                                                              style: const TextStyle(
-                                                                fontSize: 14,
-                                                                fontFamily:
-                                                                    'APPLESDGOTHICNEOR',
-                                                              ),
-                                                            ),
-                                                          ),
-                                                        ],
-                                                      ),
-                                                    );
-                                                  }).toList(),
-                                            );
-                                            if (selected != null) {
-                                              int targetIndex = breadcrumbPath
-                                                  .indexOf(selected);
-                                              int diff =
-                                                  (breadcrumbPath.length - 1) -
-                                                  targetIndex;
+                                  onTapDown: isEllipsis
+                                      ? (details) async {
+                                          final hiddenItems = breadcrumbPath.sublist(
+                                              0, breadcrumbPath.length - showLast);
+                                          final selected = await showMenu<String>(
+                                            context: context,
+                                            position: RelativeRect.fromLTRB(
+                                              details.globalPosition.dx,
+                                              details.globalPosition.dy,
+                                              details.globalPosition.dx,
+                                              details.globalPosition.dy,
+                                            ),
+                                            color: Color(0xFFECEFF1),
+                                            items: hiddenItems.map((name) {
+                                              return PopupMenuItem<String>(
+                                                value: name,
+                                                child: Text(
+                                                  name,
+                                                  style: TextStyle(
+                                                    fontFamily: 'APPLESDGOTHICNEOR',
+                                                    fontSize: 14,
+                                                    color: Colors.black,
+                                                  ),
+                                                ),
+                                              );
+                                            }).toList(),
+                                          );
+                                          if (selected != null) {
+                                            int targetIndex = breadcrumbPath.indexOf(selected);
+                                            int diff = (breadcrumbPath.length - 1) - targetIndex;
 
                                               for (int i = 0; i < diff; i++) {
                                                 if (folderStack.isNotEmpty) {
@@ -807,7 +929,7 @@ class _CloudScreenState extends State<CloudScreen> {
                 ),
                 Expanded(
                   child: Padding(
-                    padding: const EdgeInsets.only(left: 110.0),
+                    padding: const EdgeInsets.only(left: 135.0),
                     child: Text(
                       '파일',
                       style: TextStyle(
@@ -1010,7 +1132,9 @@ class _CloudScreenState extends State<CloudScreen> {
                                       builder: (_) => FolderGrantDialog(folderId: folderId),
                                     );
                                   }
-                                  },
+                                  },    
+                                  isFolder: true,
+                                  isCloud: true, // Personal은 false
                                 );
                               },
 
@@ -1142,82 +1266,78 @@ class _CloudScreenState extends State<CloudScreen> {
                     // DropTarget (파일 드래그 앤 드랍)
                     child: DropTarget(
                       onDragDone: (detail) async {
-                        if (_isUploading) return;
+                        if (_isUploading || _dragHandled) return;
                         _isUploading = true;
+                        _dragHandled = true;
 
                         try {
-                          List<File> droppedFiles =
-                              detail.files.map((f) => File(f.path)).toList();
+                          List<File> droppedFiles = detail.files.map((f) => File(f.path)).toList();
 
-                          List<FileItem> newFileItems = [];
-
-                          // 드래그 앤 드롭한 파일이 비어있는지 확인
+                          // 드래그된 파일이 없으면 리턴
                           if (droppedFiles.isEmpty) {
                             print('드래그된 파일이 없습니다.');
                             return;
                           }
 
-                          // 중복 체크 및 파일 정보 업데이트
-                          for (final file in detail.files) {
-                            final fileName = file.name;
+                          // 업로드 상태 초기화
+                          _uploadingFiles = droppedFiles.map((f) => f.path.split(Platform.pathSeparator).last).toList();
+                          _completedFiles.clear();
+                          _failedFiles.clear();
+                          _showUploadStatusOverlayUI();
 
+                          // 새 파일 추가 (UI용)
+                          List<FileItem> newFileItems = [];
+                          for (final f in droppedFiles) {
+                            final fileName = f.path.split(Platform.pathSeparator).last;
                             if (!fileNames.contains(fileName)) {
                               final fileType = fileName.split('.').last;
-                              final fileSize = File(file.path).lengthSync();
-                              final fileItem = FileItem(
-                                name: fileName,
-                                type: fileType,
-                                sizeInBytes: fileSize,
-                              );
-                              newFileItems.add(fileItem);
+                              final fileSize = f.lengthSync();
+                              newFileItems.add(FileItem(name: fileName, type: fileType, sizeInBytes: fileSize));
                               fileNames.add(fileName);
                             }
                           }
-
                           setState(() {
                             selectedFiles.addAll(newFileItems);
                           });
 
-                          final currentFolderPath = () {
-                            folderIdToName.putIfAbsent(currentFolderId, () => currentFolderName);
-                            return getCurrentFolderPath();
-                          }();
-                          // 업로드 전에 절대경로 요청
-                          final pathRes = await http.get(Uri.parse('$url/folder/absolute-path/$currentFolderId'));
-                          final absolutePath = pathRes.body;
-                          // 업로드 호출
-                          print('📦 folderIdToName: $folderIdToName');
-                          print('📁 folderStack: $folderStack');
-                          print('📁 currentFolderId: $currentFolderId');
-                          print('📁 경로: $absolutePath');
-                          await uploader.uploadFiles(
-                            file: droppedFiles[0],
-                            userId: userId!, // login 할때때 받아올 값으로 수정
-                            folderId: currentFolderId,
-                            currentFolderPath: '$absolutePath}',
-                          );
-                          await refreshCurrentFolderFiles();
-                          // setState(() {
-                          //   //파일 추가 후 selectedFiles 초기화화
-                          //   selectedFiles.clear();
-                          //   fileNames.clear();
-                          // });
+                          final int fixedFolderId = currentFolderId;
+                          final currentFolderPath = getCurrentFolderPath();
 
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text(
-                                '${droppedFiles.length}개의 파일 업로드 완료!',
-                              ),
-                            ),
-                          );
+                          // 실제 업로드 수행
+                          for (final file in droppedFiles) {
+                            final fileName = file.path.split(Platform.pathSeparator).last;
+                            try {
+                              await uploader.uploadFiles(
+                                file: file,
+                                userId: userId!,
+                                folderId: fixedFolderId,
+                                currentFolderPath: currentFolderPath,
+                              );
+                              _completedFiles.add(fileName);
+                            } catch (e) {
+                              print("❌ 업로드 실패: $fileName → $e");
+                              _failedFiles.add(fileName);
+                            }
+                            _showUploadStatusOverlayUI(); // 상태 갱신
+                          }
+
+                          await refreshCurrentFolderFiles();
+
+                          // 업로드 오버레이 일정 시간 후 자동 제거
+                          Future.delayed(const Duration(seconds: 3), () {
+                            _uploadOverlayEntry?.remove();
+                            _uploadOverlayEntry = null;
+                          });
                         } catch (e) {
-                          // 예외 발생 시 처리
-                          print('파일 업로드 중 오류 발생: $e');
+                          print('파일 업로드 전체 실패: $e');
                           ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text('파일 업로드 실패: $e')),
+                            SnackBar(content: Text('파일 업로드 중 오류 발생: $e')),
                           );
                         } finally {
                           _isUploading = false;
+                          Future.delayed(const Duration(milliseconds: 500), () {
+                            _dragHandled = false;
+                          });
                         }
                       },
                       onDragEntered: (details) {
@@ -1304,7 +1424,9 @@ class _CloudScreenState extends State<CloudScreen> {
                                               print('중요 문서 추가 실패: $e');
                                             }
                                           }
-                                        },
+                                        },    
+                                        isFolder: false,
+                                        isCloud: true, // Personal은 false
                                       );
                                     },
                                     child: MouseRegion(

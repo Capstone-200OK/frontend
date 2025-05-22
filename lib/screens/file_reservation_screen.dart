@@ -20,16 +20,22 @@ class FileReservationScreen extends StatefulWidget {
 class _FileReservationScreenState extends State<FileReservationScreen> {
   FolderItem? selectedPreviousFolder;
   FolderItem? selectedNewFolder;
-  List<String> intervals = ['하루', '일주일', '한 달'];
+  List<String> intervals = ['DAILY', 'WEEKLY', 'MONTHLY'];
   int selectedInterval = 0;
   int selectedHour = 12;
   String? selectedMode;
   late int? userId;
-
+  late PageController _intervalPageController;
+  bool keepFolder = false;
+  bool keepFileName = false;
   @override
   void initState() {
     super.initState();
     userId = Provider.of<UserProvider>(context, listen: false).userId;
+    _intervalPageController = PageController(
+      initialPage: 1000 * intervals.length + 0, // 무한스크롤 느낌
+      viewportFraction: 0.58,
+    );
 
     // ⭐ modify 모드면 기존 값으로 초기화
     if (widget.mode == 'modify' && widget.reservation != null) {
@@ -41,13 +47,95 @@ class _FileReservationScreenState extends State<FileReservationScreen> {
       selectedHour = r.nextExecuted.hour;
     }
   }
-
+  @override
+  void dispose() {
+    _intervalPageController.dispose();
+    super.dispose();
+  }
   void _changeInterval(int direction) {
     setState(() {
       selectedInterval = (selectedInterval + direction) % intervals.length;
-      if (selectedInterval < 0) selectedInterval += intervals.length;
+      if (selectedInterval < 0) {
+        selectedInterval += intervals.length;
+      }
     });
   }
+Widget buildIntervalSelector() {
+  return SizedBox(
+    height: 50,
+    child: Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        IconButton(
+          icon: const Icon(Icons.chevron_left),
+          onPressed: () {
+            _intervalPageController.previousPage(
+              duration: const Duration(milliseconds: 300),
+              curve: Curves.easeInOut,
+            );
+          },
+        ),
+        SizedBox(
+          width: 150,
+          height: 40,
+          child: PageView.builder(
+            controller: _intervalPageController,
+            scrollDirection: Axis.horizontal,
+            itemBuilder: (context, index) {
+              final actualIndex = index % intervals.length;
+              final isSelected =
+                _intervalPageController.hasClients &&
+                ((_intervalPageController.page?.round() ?? 0) % intervals.length == actualIndex);
+              return Center(
+                child: TweenAnimationBuilder<double>(
+                  tween: Tween<double>(
+                    begin: isSelected ? 1.0 : 0.8,
+                    end: isSelected ? 1.0 : 0.8,
+                  ),
+                  duration: const Duration(milliseconds: 100),
+                  curve: Curves.easeOut,
+                  builder: (context, scale, child) {
+                    return Opacity(
+                      opacity: isSelected ? 1.0 : 0.4,
+                      child: Transform.scale(
+                        scale: scale,
+                        child: Text(
+                          intervals[actualIndex],
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              );
+            },
+            onPageChanged: (index) {
+              setState(() {
+                selectedInterval = index % intervals.length;
+              });
+            },
+          ),
+        ),
+        IconButton(
+          icon: const Icon(Icons.chevron_right),
+          onPressed: () {
+            _intervalPageController.nextPage(
+              duration: const Duration(milliseconds: 300),
+              curve: Curves.easeInOut,
+            );
+          },
+        ),
+      ],
+    ),
+  );
+}
+
+
+
+
 
   @override
   Widget build(BuildContext context) {
@@ -102,16 +190,9 @@ class _FileReservationScreenState extends State<FileReservationScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text('주기를 설정하세요', style: TextStyle(fontSize: 14)),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              IconButton(onPressed: () => _changeInterval(-1), icon: const Icon(Icons.arrow_left)),
-                              Text(intervals[selectedInterval]),
-                              IconButton(onPressed: () => _changeInterval(1), icon: const Icon(Icons.arrow_right)),
-                            ],
-                          ),
-                          const SizedBox(height: 10),
+                          const Text('주기를 설정하세요', style: TextStyle(fontSize: 14,fontFamily: 'APPLESDGOTHICNEOEB',)),
+                          buildIntervalSelector(),
+                          const SizedBox(height: 4),
 
                           // 시간 선택
                           SizedBox(
@@ -122,13 +203,25 @@ class _FileReservationScreenState extends State<FileReservationScreen> {
                                 scrollController: FixedExtentScrollController(initialItem: selectedHour),
                                 itemExtent: 30,
                                 onSelectedItemChanged: (index) => setState(() => selectedHour = index),
-                                children: List.generate(24, (index) => Center(child: Text('${index.toString().padLeft(2, '0')}:00'))),
+                                children: List.generate(24, (index) {
+                                  final isSelected = index == selectedHour;
+                                  return Center(
+                                    child: Text(
+                                      '${index.toString().padLeft(2, '0')}:00',
+                                      style: TextStyle(
+                                        fontSize: 18,
+                                        color: isSelected ? Colors.black : Colors.grey.shade600, // 🔹 흐림 효과
+                                        fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                                      ),
+                                    ),
+                                  );
+                                }),
                               ),
                             ),
                           ),
                           const SizedBox(height: 10),
-
-                          const Text('관리 폴더 선택'),
+                          const Text('관리 폴더 선택', style: TextStyle(fontFamily: 'APPLESDGOTHICNEOEB',)),
+                          const SizedBox(height: 10),
                           GestureDetector(
                             onTap: () async {
                               final result = await showDialog<FolderItem>(
@@ -139,9 +232,10 @@ class _FileReservationScreenState extends State<FileReservationScreen> {
                             },
                             child: folderBox(selectedPreviousFolder?.name ?? '', Icons.add_circle),
                           ),
-                          const SizedBox(height: 12),
+                          const SizedBox(height: 10),
 
-                          const Text('목적지 폴더 선택'),
+                          const Text('목적지 폴더 선택', style: TextStyle(fontFamily: 'APPLESDGOTHICNEOEB',)),
+                          const SizedBox(height: 10),
                           GestureDetector(
                             onTap: () async {
                               final result = await showDialog<FolderItem>(
@@ -165,7 +259,7 @@ class _FileReservationScreenState extends State<FileReservationScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           const SizedBox(height: 16),
-                          const Text('정리 기준 선택'),
+                          const Text('정리 기준 선택', style: TextStyle(fontFamily: 'APPLESDGOTHICNEOEB',)),
                           const SizedBox(height: 8),
                           Wrap(
                             spacing: 10,
@@ -177,8 +271,23 @@ class _FileReservationScreenState extends State<FileReservationScreen> {
                               _buildTag(context, '유형', 'type'),
                             ],
                           ),
-                          const SizedBox(height: 20),
-
+                          const SizedBox(height: 8),
+                          CheckboxListTile(
+                            contentPadding: EdgeInsets.zero,
+                            title: const Text('기존 폴더 유지', style: TextStyle(fontSize: 12, fontFamily: 'APPLESDGOTHICNEOR',)),
+                            value: keepFolder,
+                            onChanged: (val) => setState(() => keepFolder = val!),
+                            controlAffinity: ListTileControlAffinity.leading,
+                          ),
+                          if (selectedMode == 'content')
+                            CheckboxListTile(
+                              contentPadding: EdgeInsets.zero,
+                              title: const Text('기존 파일이름 유지', style: TextStyle(fontSize: 12, fontFamily: 'APPLESDGOTHICNEOR',)),
+                              value: keepFileName,
+                              onChanged: (val) => setState(() => keepFileName = val!),
+                              controlAffinity: ListTileControlAffinity.leading,
+                            ),
+                          const SizedBox(height: 10),
                           ElevatedButton(
                             onPressed: () async {
                               if (selectedPreviousFolder == null || selectedNewFolder == null) {
@@ -186,11 +295,7 @@ class _FileReservationScreenState extends State<FileReservationScreen> {
                                 return;
                               }
 
-                              String convertedInterval = intervals[selectedInterval] == '하루'
-                                  ? 'DAILY'
-                                  : intervals[selectedInterval] == '일주일'
-                                      ? 'WEEKLY'
-                                      : 'MONTHLY';
+                              String convertedInterval = intervals[selectedInterval];
 
                               DateTime selectedDateTime = DateTime.now().copyWith(
                                 hour: selectedHour,
@@ -207,6 +312,8 @@ class _FileReservationScreenState extends State<FileReservationScreen> {
                                   criteria: selectedMode?.toUpperCase() ?? 'TYPE',
                                   interval: convertedInterval,
                                   nextExecuted: selectedDateTime,
+                                  keepFolder: keepFolder,
+                                  keepFileName: keepFileName,
                                 );
                               } else {
                                 success = await FileReservationService.addReservation(
@@ -216,9 +323,10 @@ class _FileReservationScreenState extends State<FileReservationScreen> {
                                   criteria: selectedMode?.toUpperCase() ?? 'TYPE',
                                   interval: convertedInterval,
                                   nextExecuted: selectedDateTime,
+                                  keepFolder: keepFolder,
+                                  keepFileName: keepFileName,
                                 );
                               }
-
                               if (success) {
                                 ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(widget.mode == 'modify' ? '파일 예약 수정 완료!' : '파일 예약 등록 완료!')));
                                 Navigator.of(context, rootNavigator: true).pop();
