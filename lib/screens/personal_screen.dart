@@ -229,7 +229,9 @@ class _PersonalScreenState extends State<PersonalScreen> {
     bool pushToStack = true, // true면 현재 경로를 스택에 추가 (뒤로가기용)
   }) async {
     final response = await http.get(
-      Uri.parse('$url/folder/hierarchy/$folderId/$userId'),
+      Uri.parse(
+        '$url/folder/hierarchy/$folderId/$userId',
+      ),
       headers: {"Content-Type": "application/json"},
     );
 
@@ -642,19 +644,13 @@ Future<void> showContextMenuAtPosition({
 
               // 홈 버튼
               IconButton(
-                icon: const Icon(
-                  Icons.home,
-                  color: Color(0xff263238),
-                  size: 24,
-                ),
+                icon: const Icon(Icons.home, color: Color(0xff263238), size: 24),
                 onPressed: () {
                   // 홈으로 이동
                   NavigationStack.clear(); // 내비게이션 스택 초기화
-                  NavigationStack.push(
-                    'HomeScreen', 
-                    arguments: {'username': widget.username}
-                  );
+                  NavigationStack.push('HomeScreen', arguments: {'username': widget.username});
                   NavigationStack.printStack(); // 스택 상태 출력 (디버깅용)
+
                   Navigator.pushReplacement(
                     context,
                     MaterialPageRoute(
@@ -673,20 +669,16 @@ Future<void> showContextMenuAtPosition({
                   size: 15,
                 ),
                 onPressed: () {
-                  final currentRoute = NavigationStack.peek()?['route'];              
+                  final currentRoute = NavigationStack.peek()?['route'];
+                  
                   // 검색에서 들어온 경우: 이전 화면으로
-                  if (folderStack.isEmpty || 
-                      currentRoute == 'SearchPersonalScreen') {
+                  if (folderStack.isEmpty || currentRoute == 'SearchPersonalScreen') {
                     // stack이 비어있거나 현재 route가 SearchPersonalSceen이면 NavigationHelper 사용
                     NavigationHelper.navigateToPrevious(context);
                   } else {
                     // 일반 폴더 탐색 뒤로가기
                     int previousFolderId = folderStack.removeLast();
-                    fetchFolderHierarchy(
-                      previousFolderId,
-                      userId!,
-                      pushToStack: false,
-                    );
+                    fetchFolderHierarchy(previousFolderId, userId!, pushToStack: false);
                   }
                 },
               ),
@@ -714,30 +706,20 @@ Future<void> showContextMenuAtPosition({
                       onPressed: () {
                         // 히스토리 화면으로 이동
                         NavigationStack.pop();
-                        NavigationStack.push(
-                          'PersonalScreen2',
-                          arguments: {
-                            'username': widget.username,
-                            'targetPathIds': [...folderStack, currentFolderId],
-                          },
-                        );
+                        NavigationStack.push('PersonalScreen2', arguments: {
+                          'username': widget.username,
+                          'targetPathIds': [...folderStack, currentFolderId],
+                        });
                         NavigationStack.printStack();
-                        NavigationStack.push(
-                          'RecentFileScreen',
-                          arguments: {
-                            'username': widget.username,
-                            'userId': userId,
-                          },
-                        );
+                        NavigationStack.push('RecentFileScreen', arguments: {'username': widget.username, 'userId': userId});
                         NavigationStack.printStack();
                         Navigator.pushReplacement(
                           context,
                           MaterialPageRoute(
-                            builder:
-                                (_) => RecentFileScreen(
-                                  username: widget.username,
-                                  userId: userId,
-                                ),
+                            builder: (_) => RecentFileScreen(
+                              username: widget.username,
+                              userId: userId,
+                            ),
                           ),
                         );
                       },
@@ -784,17 +766,14 @@ Future<void> showContextMenuAtPosition({
                       child: SingleChildScrollView(
                         scrollDirection: Axis.horizontal,
                         child: Row(
-                          children: List.generate(breadcrumbPath.length, (
-                            index,
-                          ) {
+                          children: List.generate(breadcrumbPath.length, (index) {
                             int showLast = 2;
                             bool isEllipsis = (breadcrumbPath.length > showLast + 1 && index == 0); // "..." 여부
                             bool isHidden = (breadcrumbPath.length > showLast + 1 && index < breadcrumbPath.length - showLast); // 숨김 처리 여부
                             bool isLast = index == breadcrumbPath.length - 1; // 마지막 항목 여부
                             bool clickable = !isLast && !isEllipsis; // 클릭 가능 여부
 
-                            if (!isEllipsis && isHidden) 
-                              return SizedBox.shrink(); // 중간 경로 숨기기
+                            if (!isEllipsis && isHidden) return SizedBox.shrink(); // 중간 경로 숨기기
 
                             return Row(
                               children: [
@@ -831,17 +810,14 @@ Future<void> showContextMenuAtPosition({
                                             int targetIndex = breadcrumbPath.indexOf(selected);
                                             int diff = (breadcrumbPath.length - 1) - targetIndex;
 
-                                              for (int i = 0; i < diff; i++) {
-                                                if (folderStack.isNotEmpty) {
-                                                  int previousFolderId =
-                                                      folderStack.removeLast();
-                                                  await fetchFolderHierarchy(
-                                                    previousFolderId,
-                                                    userId!,
-                                                    pushToStack: false,
-                                                  );
-                                                }
-                                              } 
+                                            for (int i = 0; i < diff; i++) {
+                                              if (folderStack.isNotEmpty) {
+                                                int previousFolderId = folderStack.removeLast();
+                                                await fetchFolderHierarchy(
+                                                    previousFolderId, userId!,
+                                                    pushToStack: false);
+                                              }
+                                            }
                                           }
                                     }
                                     : null,
@@ -860,18 +836,16 @@ Future<void> showContextMenuAtPosition({
                                         }
                                     },
                                     child: Text(
-                                    isEllipsis ? "..." : breadcrumbPath[index], // 표시할 텍스트 
+                                    isEllipsis ? "..." : breadcrumbPath[index], // 표시할 텍스트
                                     style: TextStyle(
                                       fontSize: 16,
                                       fontFamily: 'APPLESDGOTHICNEOR',
-                                      color:
-                                          (isEllipsis || clickable)
-                                              ? Colors.black
-                                              : Colors.black,
-                                      decoration:
-                                          (isEllipsis || clickable)
-                                              ? TextDecoration.underline
-                                              : TextDecoration.none,
+                                      color: (isEllipsis || clickable)
+                                          ? Colors.black
+                                          : Colors.black,
+                                      decoration: (isEllipsis || clickable)
+                                          ? TextDecoration.underline
+                                          : TextDecoration.none,
                                     ),
                                   ),
                                 ),
@@ -987,7 +961,7 @@ Future<void> showContextMenuAtPosition({
                 ),
               ],
             ),
-            const SizedBox(height: 8), // 폴더/파일 리스트와의 간격
+            const SizedBox(height: 8), 
 
             // 폴더 & 파일 영역
             Container(
@@ -1007,26 +981,27 @@ Future<void> showContextMenuAtPosition({
 
                       // GestureDetector로 감싸서 우클릭 이벤트 추가
                       child: GestureDetector(
-                        child: GridView.builder( // 폴더 수
+                        child: GridView.builder(
+                          itemCount: folders.length, // 폴더 개수
                           gridDelegate:
                               const SliverGridDelegateWithFixedCrossAxisCount(
-                                crossAxisCount: 2, // 한 줄에 2개
+                                crossAxisCount: 2, // 한 줄에 폴더 2개씩 배치
                                 mainAxisSpacing: 12, // 위아래 간격
                                 crossAxisSpacing: 12, // 좌우 간격
                                 childAspectRatio: 2.0, // 가로:세로 비율
                               ),
                           itemBuilder: (context, index) {
                             final folderName = folders[index]; // 폴더 이름
-                            final folderId = folderNameToId[folderName]; // 폴더 ID 조회
-                            final folderKey = GlobalKey(); // key 생성
-                            final isSelected = selectedFolderNames.contains(
+                            final folderId = folderNameToId[folderName]; // 폴더 ID
+                            final folderKey = GlobalKey(); // 폴더 구분용 key
+                            final isSelected = selectedFolderNames.contains( // 선택 여부 확인
                               folderName,
-                            ); // 선택 여부
+                            );
 
                             return GestureDetector(
                               key: folderKey,
 
-                              // 폴더 클릭 시 선택 토글
+                              // 폴더 클릭 시 선택/해제
                               onTap: () {
                                 setState(() {
                                   if (selectedFolderNames.contains(
@@ -1039,31 +1014,30 @@ Future<void> showContextMenuAtPosition({
                                 });
                               },
 
-                              // 더블 클릭 시 폴더 진입
+                              // 폴더 더블 클릭 시 내부로 진입
                               onDoubleTap: () {
                                 if (folderId != null) {
-                                  fetchFolderHierarchy(folderId, userId!); // 해당 폴더로 이동
+                                  fetchFolderHierarchy(folderId, userId!); // 폴더 내부 조회
                                 }
                               },
 
-                              // 마우스 우클릭 (secondary tap)
+                              // 마우스 우클릭 시 컨텍스트 메뉴 표시
                               onSecondaryTapDown: (TapDownDetails details) {
                                 showContextMenuAtPosition(
                                   context: context,
                                   position: details.globalPosition,
                                   onSelected: (selected) async {
                                     if (selected == 'delete') {
-                                      // 삭제 선택 시
+                                      // 삭제 선택 시 폴더 휴지통 이동
                                       if (folderId != null) {
                                         await moveToTrash(userId!, [
                                           folderId,
                                         ], []);
                                         setState(() {
-                                          folders.removeAt(index); // UI 갱신
+                                          folders.removeAt(index); // UI에서 제거
                                         });
                                       }
                                     } else if (selected == 'add_to_important') {
-                                      // 중요 문서함 추가
                                       if (folderId != null &&
                                           !isAlreadyImportantFolder(folderId)) {
                                         await addToImportant(
@@ -1109,7 +1083,7 @@ Future<void> showContextMenuAtPosition({
                                 );
                               },
 
-                              // 실제 폴더 카드 UI
+                              // 폴더 UI 박스
                               child: Container(
                                 padding: const EdgeInsets.symmetric(
                                   horizontal: 12,
@@ -1117,35 +1091,43 @@ Future<void> showContextMenuAtPosition({
                                 ),
                                 decoration: BoxDecoration(
                                   color: Colors.white,
-                                  borderRadius: BorderRadius.circular(12), // 모서리 둥글게
+                                  borderRadius: BorderRadius.circular(12),
                                   border: Border.all(
                                     color:
                                         selectedFolderNames.contains(folderName)
-                                            ? Colors.blueGrey // 선택 시 강조 색
-                                            : Colors.grey.shade400, // 비선택 시 회색
+                                            ? Colors.blueGrey // 선택됨 표시
+                                            : Colors.grey.shade400, // 기본 회색
                                     width: 1.5,
                                   ),
                                   boxShadow: [
                                     BoxShadow(
                                       color: Colors.black12,
                                       blurRadius: 3,
-                                      offset: Offset(0, 2), // 아래로 그림자
+                                      offset: Offset(0, 2),
                                     ),
                                   ],
                                 ),
+
+                                // 폴더 내부 내용
                                 child: Row(
                                   children: [
-                                    // 체크박스 (선택 여부 표시 및 선택/해제)
+                                    // 체크박스 (선택 상태 조절용)
                                     Transform.scale(
-                                      scale: 0.6, // 체크박스 크기 축소
+                                      scale: 0.6,
                                       child: Checkbox(
-                                        value: selectedFolderNames.contains(folderName), // 선택된 폴더인지 확인
+                                        value: selectedFolderNames.contains(
+                                          folderName,
+                                        ),
                                         onChanged: (value) {
                                           setState(() {
                                             if (value == true) {
-                                              selectedFolderNames.add(folderName); // 선택 추가
+                                              selectedFolderNames.add(
+                                                folderName,
+                                              );
                                             } else {
-                                              selectedFolderNames.remove(folderName); // 선택 해제
+                                              selectedFolderNames.remove(
+                                                folderName,
+                                              );
                                             }
                                           });
                                         },
@@ -1157,13 +1139,13 @@ Future<void> showContextMenuAtPosition({
                                       Icons.folder,
                                       color: Color(0xFF263238),
                                     ),
-                                    const SizedBox(width: 8), // 아이콘과 텍스트 사이 간격
-
+                                    const SizedBox(width: 8),
+                                    
                                     // 폴더 이름 텍스트
                                     Expanded(
                                       child: Text(
-                                        folderName, // 폴더 이름 표시
-                                        overflow: TextOverflow.ellipsis, // 너무 길면 생략 (...)
+                                        folderName,
+                                        overflow: TextOverflow.ellipsis, // 길면 ... 처리
                                         style: const TextStyle(
                                           fontSize: 12,
                                           fontFamily: 'APPLESDGOTHICNEOR',
@@ -1171,28 +1153,31 @@ Future<void> showContextMenuAtPosition({
                                         ),
                                       ),
                                     ),
-
-                                    // 중요 표시(⭐) 아이콘 버튼
                                     IconButton(
                                       icon: Icon(
                                         isAlreadyImportantFolder(folderId!)
-                                            ? Icons.star // 이미 중요 폴더인 경우
-                                            : Icons.star_border, // 아닐 경우 빈 별
+                                            ? Icons.star
+                                            : Icons.star_border,
                                         color:
                                             isAlreadyImportantFolder(folderId!)
-                                                ? Colors.amber // 중요 폴더일 때 노란색
-                                                : Colors.grey, // 아닐 때 회색
+                                                ? Colors.amber
+                                                : Colors.grey,
                                         size: 13,
                                       ),
                                       onPressed: () async {
-                                        if (isAlreadyImportantFolder(folderId!)) {
-                                           // ⭐ 중요 폴더이면 제거
+                                        if (isAlreadyImportantFolder(
+                                          folderId!,
+                                        )) {
                                           final target = importantFolders
                                               .firstWhere(
                                                 (f) => f.folderId == folderId,
                                               );
-                                          await removeFromImportant(target.importantId);
-                                          ScaffoldMessenger.of(context).showSnackBar(
+                                          await removeFromImportant(
+                                            target.importantId,
+                                          );
+                                          ScaffoldMessenger.of(
+                                            context,
+                                          ).showSnackBar(
                                             SnackBar(
                                               content: Text(
                                                 '$folderName 폴더가 중요 문서함에서 삭제되었습니다.',
@@ -1200,7 +1185,6 @@ Future<void> showContextMenuAtPosition({
                                             ),
                                           );
                                         } else {
-                                          // ⭐ 중요 폴더 아니면 추가
                                           await addToImportant(
                                             userId: userId!,
                                             folderId: folderId,
@@ -1215,7 +1199,6 @@ Future<void> showContextMenuAtPosition({
                                             ),
                                           );
                                         }
-                                        // 상태 갱신
                                         await fetchImportantStatus();
                                         setState(() {});
                                       },
@@ -1237,11 +1220,13 @@ Future<void> showContextMenuAtPosition({
                     // DropTarget (파일 드래그 앤 드랍)
                     child: DropTarget(
                       onDragDone: (detail) async {
+                        // 이미 업로드 중이거나 드래그 처리 중이면 무시
                         if (_isUploading || _dragHandled) return;
                         _isUploading = true;
                         _dragHandled = true;
 
                         try {
+                          // 드롭된 파일들을 File 객체 리스트로 변환
                           List<File> droppedFiles = detail.files.map((f) => File(f.path)).toList();
 
                           // 드래그된 파일이 없으면 리턴
@@ -1254,27 +1239,29 @@ Future<void> showContextMenuAtPosition({
                           _uploadingFiles = droppedFiles.map((f) => f.path.split(Platform.pathSeparator).last).toList();
                           _completedFiles.clear();
                           _failedFiles.clear();
-                          _showUploadStatusOverlayUI();
+                          _showUploadStatusOverlayUI(); // 상태 표시 오버레이 띄우기
 
                           // 새 파일 추가 (UI용)
                           List<FileItem> newFileItems = [];
                           for (final f in droppedFiles) {
                             final fileName = f.path.split(Platform.pathSeparator).last;
                             if (!fileNames.contains(fileName)) {
-                              final fileType = fileName.split('.').last;
-                              final fileSize = f.lengthSync();
+                              final fileType = fileName.split('.').last; // 확장자
+                              final fileSize = f.lengthSync(); // 파일 크기
                               newFileItems.add(FileItem(name: fileName, type: fileType, sizeInBytes: fileSize));
-                              fileNames.add(fileName);
+                              fileNames.add(fileName); // 중복 방지를 위해 저장
                             }
                           }
+                          // 상태 업데이트 : UI에 파일 추가
                           setState(() {
-                            selectedFiles.addAll(newFileItems);
+                            selectedFiles.addAll(newFileItems); 
                           });
 
+                          // 업로드 대상 폴더 정보 저장
                           final int fixedFolderId = currentFolderId;
                           final currentFolderPath = getCurrentFolderPath();
 
-                          // 실제 업로드 수행
+                          // 실제 파일 업로드 수행
                           for (final file in droppedFiles) {
                             final fileName = file.path.split(Platform.pathSeparator).last;
                             try {
@@ -1284,43 +1271,43 @@ Future<void> showContextMenuAtPosition({
                                 folderId: fixedFolderId,
                                 currentFolderPath: currentFolderPath,
                               );
-                              _completedFiles.add(fileName);
+                              _completedFiles.add(fileName); // 성공한 파일 목록에 추가
                             } catch (e) {
                               print("❌ 업로드 실패: $fileName → $e");
-                              _failedFiles.add(fileName);
+                              _failedFiles.add(fileName); // 실패한 파일 목록에 추가
                             }
-                            _showUploadStatusOverlayUI(); // 상태 갱신
+                            _showUploadStatusOverlayUI(); // 진행 상태 갱신
                           }
-
+                          // 업로드 후 현재 폴더의 파일 목록 새로고침
                           await refreshCurrentFolderFiles();
 
                           // 업로드 오버레이 일정 시간 후 자동 제거
                           Future.delayed(const Duration(seconds: 3), () {
-                            _uploadOverlayEntry?.remove();
-                            _uploadOverlayEntry = null;
+                            _uploadOverlayEntry?.remove(); // 오버레이 제거
+                            _uploadOverlayEntry = null; // 참조 제거
                           });
                         } catch (e) {
+                          // 전체 업로드 중 오류 발생 시 에러 로그 및 스낵바 표시
                           print('파일 업로드 전체 실패: $e');
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(content: Text('파일 업로드 중 오류 발생: $e')),
                           );
                         } finally {
+                          // 업로드 상태 초기화
                           _isUploading = false;
+
+                          // 드래그 처리 플래그도 딜레이 후 초기화
                           Future.delayed(const Duration(milliseconds: 500), () {
                             _dragHandled = false;
                           });
                         }
                       },
-
-                      // 드래그 이벤트 콜백 처리
                       onDragEntered: (details) {
                         print('드래그 시작');
                       },
                       onDragExited: (details) {
                         print('드래그 종료');
                       },
-
-                      // 파일 목록 영역
                       child: Container(
                         margin: const EdgeInsets.symmetric(
                           vertical: 12,
@@ -1337,12 +1324,12 @@ Future<void> showContextMenuAtPosition({
                           children: [
                             Expanded(
                               child: ListView.builder(
-                                itemCount: selectedFiles.length, // 파일 개수
+                                itemCount: selectedFiles.length, // 파일 개수만큼 생성
                                 itemBuilder: (context, index) {
                                   final file = selectedFiles[index];
-                                  final fileKey = GlobalKey();
+                                  final fileKey = GlobalKey(); // 마우스 Hover 시 미리보기
                                   return GestureDetector(
-                                    // 우클릭 시 컨텍스트 메뉴 표시
+                                    // 마우스 우클리 시 메뉴 표시
                                     onSecondaryTapDown: (
                                       TapDownDetails details,
                                     ) {
@@ -1350,22 +1337,28 @@ Future<void> showContextMenuAtPosition({
                                         context: context,
                                         position: details.globalPosition,
                                         onSelected: (selected) async {
-                                          final file = selectedFiles[index];
+                                          final file = selectedFiles[index]; // 선택된 파일
                                           if (selected == 'delete') {
+                                            // 삭제 선택 시 -> 휴지통으로 이동
                                             try {
-                                              // 파일 삭제
-                                              await moveToTrash(userId!, [], [file.id]);
+                                              await moveToTrash(userId!, [], [
+                                                file.id,
+                                              ]);
                                               setState(() {
-                                                selectedFiles.removeAt(index);
-                                                fileNames.remove(file.name);
+                                                selectedFiles.removeAt(index); // 리스트에서 제거
+                                                fileNames.remove(file.name); // 중복 방지 리스트에서도 제거
                                               });
                                             } catch (e) {
                                               print('파일 휴지통 이동 실패: $e');
                                             }
-                                          } else if (selected == 'add_to_important') {
-                                            // 중요 문서함에 추가
-                                            if (isAlreadyImportantFile(file.id!)) {
-                                              ScaffoldMessenger.of(context).showSnackBar(
+                                          } else if (selected ==
+                                              'add_to_important') { // 중복 문서함에 추가
+                                            if (isAlreadyImportantFile( // 이미 등록된 경우 알림
+                                              file.id!,
+                                            )) {
+                                              ScaffoldMessenger.of(
+                                                context,
+                                              ).showSnackBar(
                                                 SnackBar(
                                                   content: Text(
                                                     '이미 중요 문서함에 추가된 파일입니다.',
@@ -1379,7 +1372,9 @@ Future<void> showContextMenuAtPosition({
                                                 userId: userId!,
                                                 fileId: file.id,
                                               );
-                                              ScaffoldMessenger.of(context).showSnackBar(
+                                              ScaffoldMessenger.of(
+                                                context,
+                                              ).showSnackBar(
                                                 SnackBar(
                                                   content: Text(
                                                     '${file.name} 파일이 중요 문서함에 추가되었습니다.',
@@ -1388,7 +1383,9 @@ Future<void> showContextMenuAtPosition({
                                               );
                                             } catch (e) {
                                               print('중요 문서 추가 실패: $e');
-                                              ScaffoldMessenger.of(context).showSnackBar(
+                                              ScaffoldMessenger.of(
+                                                context,
+                                              ).showSnackBar(
                                                 SnackBar(
                                                   content: Text(
                                                     '중요 문서 추가 실패: $e',
@@ -1398,44 +1395,43 @@ Future<void> showContextMenuAtPosition({
                                             }
                                           }
                                         },
-                                        isFolder: false,
-                                        isCloud: false,
+                                        isFolder: false, 
+                                        isCloud: false, 
                                       );
                                     },
-
-                                    // 마우스 호버 시 미리보기 표시
                                     child: MouseRegion(
                                       key: fileKey,
+                                      // 마우스를 파일 항목 이에 올렸을 때
                                       onEnter: (event) {
                                         _hoverTimer = Timer(
-                                          const Duration(milliseconds: 500),
+                                          const Duration(milliseconds: 500), // 0.5초 후 미리보기 오버레이 표시
                                           () {
                                             final position =
                                                 event.position; // 마우스 위치
                                             _showPreviewOverlayAtPosition(
                                               context,
-                                              file.fileUrl,
-                                              file.type,
-                                              position,
-                                              thumbnailUrl: file.fileThumbnail,
+                                              file.fileUrl, // 미리볼 파일 URL
+                                              file.type, // 파일 형식
+                                              position, // 마우스 위치 오버레이 표시
+                                              thumbnailUrl: file.fileThumbnail, // 썸네일 이미지가 있을 경우 사용
                                             );
                                           },
                                         );
                                       },
+                                      // 마우스가 벗어났을 때 미리보기 제거
                                       onExit: (_) {
                                         _hoverTimer?.cancel();
                                         _removePreviewOverlay();
                                       },
-
-                                      // 파일 리스트 타일
+                                      // 파일 항목 구성
                                       child: ListTile(
                                         leading: const Icon(
                                           Icons.insert_drive_file,
-                                          size: 20,
+                                          size: 20, // 파일 아이콘
                                         ),
                                         title: Text(
-                                          file.name,
-                                          overflow: TextOverflow.ellipsis,
+                                          file.name, // 파일 이름
+                                          overflow: TextOverflow.ellipsis, // 길 경우 말줄임표 처리
                                           style: const TextStyle(fontSize: 13),
                                         ),
                                         subtitle: Text(
@@ -1443,26 +1439,39 @@ Future<void> showContextMenuAtPosition({
                                           style: const TextStyle(fontSize: 11),
                                         ),
 
-                                        // 별 버튼 ( 중요 표시 )
                                         trailing: Row(
                                           mainAxisSize: MainAxisSize.min,
                                           children: [
                                             IconButton(
                                               icon: Icon(
+                                                // 중요 표시 여부에 따라 아이콘 변경
                                                 isAlreadyImportantFile(file.id!)
                                                     ? Icons.star
                                                     : Icons.star_border,
                                                 color:
-                                                    isAlreadyImportantFile(file.id!)
+                                                    isAlreadyImportantFile(
+                                                          file.id!,
+                                                        )
                                                         ? Colors.amber
                                                         : Colors.grey,
                                                 size: 13,
                                               ),
+
                                               onPressed: () async {
-                                                if (isAlreadyImportantFile(file.id!)) {
-                                                  final target = importantFiles.firstWhere((f) => f.fileId == file.id);
-                                                  await removeFromImportant(target.importantId);
-                                                  ScaffoldMessenger.of(context).showSnackBar(
+                                                if (isAlreadyImportantFile(
+                                                  file.id!,
+                                                )) {  // 중요 문서함에서 제거
+                                                  final target = importantFiles
+                                                      .firstWhere(
+                                                        (f) =>
+                                                            f.fileId == file.id,
+                                                      );
+                                                  await removeFromImportant(
+                                                    target.importantId,
+                                                  );
+                                                  ScaffoldMessenger.of(
+                                                    context,
+                                                  ).showSnackBar(
                                                     SnackBar(
                                                       content: Text(
                                                         '${file.name} 파일이 중요 문서함에서 삭제되었습니다.',
@@ -1470,16 +1479,22 @@ Future<void> showContextMenuAtPosition({
                                                     ),
                                                   );
                                                 } else {
+                                                  // 중요 문서함에 추가
                                                   await addToImportant(
                                                     userId: userId!,
                                                     fileId: file.id,
                                                   );
-                                                  ScaffoldMessenger.of(context).showSnackBar(
+                                                  ScaffoldMessenger.of(
+                                                    context,
+                                                  ).showSnackBar(
                                                     SnackBar(
-                                                      content: Text('${file.name} 파일이 중요 문서함에 추가되었습니다.',),
+                                                      content: Text(
+                                                        '${file.name} 파일이 중요 문서함에 추가되었습니다.',
+                                                      ),
                                                     ),
                                                   );
                                                 }
+                                                // 상태 갱신
                                                 await fetchImportantStatus();
                                                 setState(() {});
                                               },
