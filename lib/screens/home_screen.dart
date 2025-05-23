@@ -16,8 +16,9 @@ import 'package:flutter_application_1/providers/notification_provider.dart';
 import 'package:flutter_application_1/components/navigation_stack.dart';
 import 'package:flutter_application_1/components/navigation_helper.dart';
 
+// 홈 화면 위젯 (앱 진입 지점 역할)
 class HomeScreen extends StatefulWidget {
-  final String username;
+  final String username; // 사용자 이름 전달
   const HomeScreen({Key? key, required this.username}) : super(key: key);
 
   @override
@@ -25,12 +26,13 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  late int? userId;
-  late String url;
+  late int? userId; // 사용자 ID
+  late String url; // 사용자 base URL
 
   @override
   void initState() {
     super.initState();
+    // 위젯 빌드 후 WebSocket 연결 설정
     WidgetsBinding.instance.addPostFrameCallback((_) {
       userId = Provider.of<UserProvider>(context, listen: false).userId;
       url = dotenv.get("BaseUrl");
@@ -43,6 +45,7 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      // 상단 앱바
       appBar: AppBar(
         title: Image.asset(
           'assets/images/LOGO-text.png',
@@ -54,6 +57,7 @@ class _HomeScreenState extends State<HomeScreen> {
             padding: const EdgeInsets.only(right: 111),
             child: Row(
               children: [
+                // 최근 항목 버튼
                 IconButton(
                   icon: const Icon(
                     Icons.history,
@@ -72,26 +76,28 @@ class _HomeScreenState extends State<HomeScreen> {
                         ),
                       ),
                     );
-                    // print('최근 항목 눌림');
                   },
                 ),
-                const NotificationButton(),
+                const NotificationButton(), // 알림 아이콘
               ],
             ),
           ),
         ],
       ),
+      // 왼쪽 네비게이션 드로어
       drawer: NavigationDrawerWidget(
         username: widget.username,
-        onFolderCreated: (folderName) {},
+        onFolderCreated: (folderName) {}, // 홈에서는 사용되지 않음
         folders: const [],
         scaffoldContext: context,
       ),
+      // 본문 영역
       body: Container(
         color: Colors.white,
         padding: const EdgeInsets.all(16.0),
         child: Column(
           children: [
+            // 사용자 인사 텍스트
             Align(
               alignment: Alignment.center,
               child: Text(
@@ -104,9 +110,12 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
             const SizedBox(height: 100),
+
+            // 개인 / 클라우드 버튼 영역
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
+                // 개인 버튼
                 ElevatedButton(
                   onPressed: () {
                     NavigationStack.push('PersonalScreen1', arguments: {
@@ -157,6 +166,8 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                 ),
                 const SizedBox(width: 150),
+
+                // 클라우드 버튼
                 ElevatedButton(
                   onPressed: () {
                     NavigationStack.push('CloudScreen1', arguments: {
@@ -202,6 +213,8 @@ class _HomeScreenState extends State<HomeScreen> {
               ],
             ),
             const SizedBox(height: 237),
+
+            // 통합 검색바
             SearchBarWithOverlay(
               baseUrl: dotenv.get("BaseUrl"),
               username: widget.username,

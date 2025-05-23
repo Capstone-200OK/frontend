@@ -12,10 +12,12 @@ import 'package:http/http.dart' as http;
 import 'package:flutter_application_1/components/navigation_stack.dart';
 import 'package:flutter_application_1/components/navigation_helper.dart';
 
+// 최근 정리된 파일 목록을 보여주는 화면 (SORTY 기록 화면)
 class RecentFileScreen extends StatefulWidget {
-  final String username;
-  final userId;
+  final String username; // 사용자 이름
+  final userId; // 사용자 ID
 
+  // 생성자: 사용자 이름과 ID를 필수로 받음
   const RecentFileScreen({
     Key? key,
     required this.username,
@@ -27,39 +29,38 @@ class RecentFileScreen extends StatefulWidget {
 }
 
 class _RecentFileScreenState extends State<RecentFileScreen> {
-  int? latestSortingId;
-  DateTime? latestDate;
-  List<DateTime> historyDates = [];
-  bool isExist = true;
-  bool isLoading = true;
-  // 폴더 목록 상태 관리
-  List<String> folders = [];
+  int? latestSortingId; // 가장 최근 정리 기록의 ID
+  DateTime? latestDate;  // 가장 최근 정리 날짜
+  List<DateTime> historyDates = []; // 전체 정리 날짜 리스트
+  bool isExist = true; // 기록 존재 여부
+  bool isLoading = true; // 로딩 중 여부
+  List<String> folders = []; // 폴더 목록 상태 관리
   bool _isHovering = false; // 마우스 호버 상태 정의
-  List<Map<String, String>> sortingHistories = [];
-  late int? userId;
-  late String url;
+  List<Map<String, String>> sortingHistories = []; // 정리 기록 상세 정보
+  late int? userId; // 사용자 ID
+  late String url; // API 호출을 위한 Base URL
   @override
   void initState() {
     super.initState();
-    url = dotenv.get("BaseUrl");
+    url = dotenv.get("BaseUrl"); // .env에서 base URL 가져오기
+    // buildContext가 유효해진 후 userId를 가져와서 기록 조회 시작
     WidgetsBinding.instance.addPostFrameCallback((_) {
       setState(() {
         userId = Provider.of<UserProvider>(context, listen: false).userId;
-        fetchSortyHistory(); // 2️⃣. initState에서 호출
+        fetchSortyHistory(); // 정리 기록 가져오기
       });
     });
   }
 
+  // 최근 정리 기록 데이터 불러오기
   Future<void> fetchSortyHistory() async {
     try {
-      // (1) userId는 로그인 정보에서 받아야 함. 일단 임시 1
-      //final userId = 1; // 실제로는 Provider 같은 데서 받아와야 함
-
-      // (2) 가장 최근 sortingId 가져오기
+      // (1) 가장 최신 정리 기록 ID 요청
       latestSortingId = await SortingHistoryService.fetchLatestSortingHistoryId(
         userId!,
       );
 
+      // 기록이 없다면 종료
       if (latestSortingId == null) {
         setState(() {
           isExist = true;
@@ -68,8 +69,10 @@ class _RecentFileScreenState extends State<RecentFileScreen> {
         return;
       }
 
+      // (2) 가장 최근 정리 기록 상세 내역 요청
       final histories = await SortingHistoryService.fetchSortingHistory(latestSortingId!, userId!);
 
+      // (3) 전체 날짜 목록 요청
       final response = await http.get(
         Uri.parse('$url/sorting-history/list/$userId'),
         headers: {"Content-Type": "application/json"},
@@ -78,6 +81,7 @@ class _RecentFileScreenState extends State<RecentFileScreen> {
       if (response.statusCode == 200) {
         final List<dynamic> data = jsonDecode(response.body);
 
+        // 날짜 목록 파싱
         List<DateTime> fetchedDates = data
             .map((entry) => DateTime.parse(entry['sortingDate']))
             .toList();
@@ -104,20 +108,24 @@ class _RecentFileScreenState extends State<RecentFileScreen> {
     }
   }
 
+  // 날짜를 보기 좋은 포맷으로 변환
   String formatDate(DateTime dt) {
     return "${dt.year}-${dt.month.toString().padLeft(2, '0')}-${dt.day.toString().padLeft(2, '0')} ${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}";
   }
 
   @override
   Widget build(BuildContext context) {
+    // 가장 최근 날짜를 제외한 과거 기록 목록
     final pastDates = historyDates.where((d) => d != latestDate).toList();
 
     return Scaffold(
       backgroundColor: Colors.white,
+
+      // 상단 앱바 정의
       appBar: PreferredSize(
         preferredSize: const Size.fromHeight(kToolbarHeight),
         child: AppBar(
-          automaticallyImplyLeading: false,
+          automaticallyImplyLeading: false,  // 기본 뒤로가기 제거
           backgroundColor: Colors.white,
 
           title: Container(
@@ -125,10 +133,11 @@ class _RecentFileScreenState extends State<RecentFileScreen> {
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
+                // 홈 버튼
                 IconButton(
                   icon: const Icon(Icons.home, color: Color(0xff263238)),
                   onPressed: () {
-                    NavigationStack.clear();
+                    NavigationStack.clear(); // 내비게이션 스택 초기화
                     NavigationStack.push('HomeScreen', arguments: {'username': widget.username});
                     NavigationStack.printStack();
                     Navigator.pushReplacement(
@@ -141,6 +150,8 @@ class _RecentFileScreenState extends State<RecentFileScreen> {
                   },
                 ),
                 const SizedBox(width: 22),
+
+                // 뒤로가기 버튼
                 IconButton(
                   icon: const Icon(
                     Icons.arrow_back,
@@ -150,6 +161,8 @@ class _RecentFileScreenState extends State<RecentFileScreen> {
                   onPressed: () => NavigationHelper.navigateToPrevious(context),
                 ),
                 const SizedBox(width: 8),
+
+                // 화면 제목
                 Expanded(
                   child: Text(
                     "${widget.username}님의 SORTY 기록",
@@ -167,8 +180,10 @@ class _RecentFileScreenState extends State<RecentFileScreen> {
       ),
       body: SafeArea(
         child: isLoading
+          // 로딩 중일 때는 로딩 인디케이터 표시
           ? const Center(child: CircularProgressIndicator()) // 🔹 무조건 먼저 보여줌
             : isExist
+                // 정리 기록이 존재하지 않을 경우 안내 메시지 표시
                 ? Center(
                   child: Padding(
                     padding: const EdgeInsets.only(
@@ -207,6 +222,7 @@ class _RecentFileScreenState extends State<RecentFileScreen> {
                 )
                 : isLoading
                 ? const Center(child: CircularProgressIndicator())
+                // 기록이 존재할 경우 최근 기록 박스를 표시
                 : Column(
                   children: [
                     const SizedBox(height: 80),
@@ -221,6 +237,7 @@ class _RecentFileScreenState extends State<RecentFileScreen> {
                         ),
                         child: Row(
                           children: [
+                            // 시계 아이콘
                             const Icon(
                               Icons.access_time,
                               color: Colors.white,
@@ -228,6 +245,7 @@ class _RecentFileScreenState extends State<RecentFileScreen> {
                             ),
                             const SizedBox(width: 60),
 
+                            // 마우스 호버 감지 및 클릭 시 기록 상세 보기
                             MouseRegion(
                               onEnter:
                                   (_) => setState(() => _isHovering = true),
@@ -249,12 +267,13 @@ class _RecentFileScreenState extends State<RecentFileScreen> {
                                     final fileName =
                                         histories.first['fileName'] ?? '';
 
+                                    // 정리된 파일의 경로 및 이름을 보여주는 다이얼로그 호출
                                     showFileMoveDialog(
                                       context,
                                       fromPath,
                                       toPath,
                                       fileName,
-                                      allHistories: histories, // 전체 이력 넘겨줌
+                                      allHistories: histories,
                                     );
                                   } else {
                                     print('❌ 정리 내역 없음');
@@ -270,6 +289,7 @@ class _RecentFileScreenState extends State<RecentFileScreen> {
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     const SizedBox(height: 30),
+                                    // 정리 기록 타이틀
                                     Text(
                                       "The most up to date",
                                       style: TextStyle(
@@ -281,6 +301,7 @@ class _RecentFileScreenState extends State<RecentFileScreen> {
                                         fontFamily: 'APPLESDGOTHICNEOR',
                                       ),
                                     ),
+                                    // 날짜 출력
                                     Text(
                                       "${latestDate?.year}.${latestDate?.month.toString().padLeft(2, '0')}.${latestDate?.day.toString().padLeft(2, '0')}",
                                       style: TextStyle(
@@ -295,8 +316,9 @@ class _RecentFileScreenState extends State<RecentFileScreen> {
                                 ),
                               ),
                             ),
-
                             const Spacer(),
+
+                            // undo 버튼 (되돌리기 기능)
                             Container(
                               height: 80, //높이
                               width: 80, //너비
@@ -312,7 +334,7 @@ class _RecentFileScreenState extends State<RecentFileScreen> {
                                   final success =
                                       await SortingRollbackService.rollbackSorting(
                                         latestSortingId!,
-                                      ); // 임시 sortingId = 45
+                                      ); 
 
                                   if (success) {
                                     ScaffoldMessenger.of(context).showSnackBar(
@@ -348,14 +370,16 @@ class _RecentFileScreenState extends State<RecentFileScreen> {
                         ),
                       ),
                     ),
-                    const SizedBox(height: 24),
+                    const SizedBox(height: 24), // 아래 여백
+                    
+                    // 과거 정리 기록 텍스트
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 110.0),
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.start, // 왼쪽 정렬
                         children: const [
                           Text(
-                            "과거 정리 기억",
+                            "과거 정리 기억", // 섹션 제목
                             style: TextStyle(
                               fontSize: 14,
 
@@ -365,15 +389,17 @@ class _RecentFileScreenState extends State<RecentFileScreen> {
                         ],
                       ),
                     ),
-                    const SizedBox(height: 5),
+                    const SizedBox(height: 5), // 제목과 리스트 사이 간격
 
+                    // 과거 기록 리스트 (스크롤 가능)
                     Expanded(
                       child: SingleChildScrollView(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             const SizedBox(height: 8),
-                            //과거 날짜 정리 기록
+                            
+                            // 과거 날짜별 정리 기록을 보여주는 리스트
                             SizedBox(
                               height: 130,
                               child: ListView.builder(
@@ -394,20 +420,24 @@ class _RecentFileScreenState extends State<RecentFileScreen> {
                                       decoration: const BoxDecoration(
                                         color: Color(0xFFECECEC),
                                       ),
+
+                                      // 날짜 버튼 (정리 기록 확인용)
                                       child: TextButton(
                                         onPressed: () async {
                                           print('날짜 ${formatDate(date)} 클릭됨!');
 
                                           try {
                                             if (userId == null) return;
-                                            final sortingId =
-                                                await SortingHistoryService.fetchSortingIdByDate(
+                                            // 선택한 날짜의 sortingId 가져오기
+                                            final sortingId = await SortingHistoryService.fetchSortingIdByDate(
                                                   userId!,
                                                   date,
                                                 );
                                             if (sortingId == null) return;
+                                            // 해당 sortingId의 파일 이동 기록 가져오기
                                             final histories = await SortingHistoryService.fetchSortingHistory(sortingId, userId!);
 
+                                            // 기록이 존재하면 다이얼로그로 표시
                                             if (histories.isNotEmpty) {
                                               final fromPath =
                                                   histories
@@ -455,16 +485,16 @@ class _RecentFileScreenState extends State<RecentFileScreen> {
                                         },
                                         style: TextButton.styleFrom(
                                           padding:
-                                              EdgeInsets.zero, // 텍스트 주변에 여백 제거
+                                              EdgeInsets.zero, // 텍스트 주변 여백 제거
                                           alignment:
-                                              Alignment.centerLeft, // 왼쪽 정렬
+                                              Alignment.centerLeft, // 텍스트 왼쪽 정렬
                                         ),
                                         child: Text(
                                           formatDate(date),
                                           style: const TextStyle(
                                             fontSize: 12,
                                             fontFamily: 'APPLESDGOTHICNEOR',
-                                            color: Colors.black, // 버튼 안 텍스트 색
+                                            color: Colors.black, 
                                           ),
                                         ),
                                       ),
@@ -473,8 +503,7 @@ class _RecentFileScreenState extends State<RecentFileScreen> {
                                 },
                               ),
                             ),
-
-                            const SizedBox(height: 24), // 간격
+                            const SizedBox(height: 24), // 리스트와 다음 요소 간 간격
                           ],
                         ),
                       ),
@@ -500,7 +529,7 @@ class _RecentFileScreenState extends State<RecentFileScreen> {
                                 fontSize: 14, // 힌트 텍스트 크기
                                 fontFamily: 'APPLESDGOTHICNEOEB',
                               ),
-                              filled: true, // 🔹 배경색 적용할 때 필수
+                              filled: true, // 배경색 적용할 때 필수
                               fillColor: Color(0xFFCFD8DC), //  TextField 배경색
                               contentPadding: EdgeInsets.symmetric(
                                 vertical: 18,

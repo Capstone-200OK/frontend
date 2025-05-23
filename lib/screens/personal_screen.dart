@@ -30,8 +30,8 @@ import 'package:flutter_application_1/components/navigation_stack.dart';
 import 'package:flutter_application_1/components/navigation_helper.dart';
 
 class PersonalScreen extends StatefulWidget {
-  final String username;
-  final List<int>? targetPathIds;
+  final String username; // 사용자 이름
+  final List<int>? targetPathIds; // 탐색하려는 폴더 경로 ID 리스트 (선택적)
 
   const PersonalScreen({Key? key, required this.username, this.targetPathIds})
     : super(key: key);
@@ -41,33 +41,31 @@ class PersonalScreen extends StatefulWidget {
 }
 
 class _PersonalScreenState extends State<PersonalScreen> {
-  // 파일 선택 상태 저장용 리스트
-  List<FileItem> selectedFiles = [];
-  List<String> selectedFolderNames = [];
-  String? selectedFolderName;
-  bool isStartSelected = false;
-  bool isDestSelected = false;
-  // 폴더 목록 상태 관리
-  List<String> folders = [];
-  // 클래스 맨 위에 추가
-  final GlobalKey _previewKey = GlobalKey();
-  OverlayEntry? _previewOverlay;
-  Timer? _hoverTimer;
-  bool _isUploading = false;
-  Set<String> fileNames = {}; // 중복 방지를 위한 파일 이름 저장용 집합
-  late String url;
-  late FileUploader uploader;
-  int currentFolderId = 1; // 시작 폴더 ID (예: 2번 루트)
-  String currentFolderName = 'Personal'; // 현재 폴더명 ( personal로 시작 )
-  List<String> breadcrumbPath = ['Personal']; // 폴더명을 저장하는 List
-  List<int> folderStack = []; // 상위 폴더 경로 추적
-  Map<String, int> folderNameToId = {};
-  Map<int, String> folderIdToName = {};
-  late String s3BaseUrl;
-  late int? userId;
-  bool _dragHandled = false;
-  List<ImportantFolderItem> importantFolders = [];
-  List<ImportantFileItem> importantFiles = [];
+  List<FileItem> selectedFiles = []; // 선택된 파일 리스트
+  List<String> selectedFolderNames = []; // 선택된 폴더 이름 리스트 (다중 선택 지원)
+  String? selectedFolderName; // 현재 선택된 단일 폴더 이름
+  bool isStartSelected = false; // 시작 지점 폴더 선택 여부
+  bool isDestSelected = false; // 목적지 폴더 선택 여부
+  List<String> folders = []; // 현재 폴더에 존재하는 폴더 이름 리스트
+  final GlobalKey _previewKey = GlobalKey(); // 미리보기용 글로벌 키
+  OverlayEntry? _previewOverlay; // 파일 미리보기 오버레이
+  Timer? _hoverTimer; // 마우스 hover 시 미리보기 딜레이를 위한 타이머
+  bool _isUploading = false; // 파일 업로드 중인지 여부
+  Set<String> fileNames = {}; // 중복 업로드 방지를 위한 파일 이름 집합
+  late String url; // 서버 기본 URL
+  late FileUploader uploader; // 파일 업로더 인스턴스
+  int currentFolderId = 1; // 현재 폴더 ID (기본값: 루트 폴더 ID = 1)
+  String currentFolderName = 'Personal'; // 현재 폴더 이름 (기본: Personal)
+  List<String> breadcrumbPath = ['Personal']; // 현재까지 이동한 폴더 경로 이름 리스트 (Breadcrumb)
+  List<int> folderStack = []; // 상위 폴더 경로 추적용 스택 (ID 기준)
+  Map<String, int> folderNameToId = {}; // 폴더 이름 → ID 매핑
+  Map<int, String> folderIdToName = {}; // 폴더 ID → 이름 매핑
+  late String s3BaseUrl; // S3 스토리지 기본 URL
+  late int? userId; // 현재 사용자 ID
+  bool _dragHandled = false; // 드래그 중복 처리를 막기 위한 플래그
+  List<ImportantFolderItem> importantFolders = []; // 중요 폴더 리스트
+  List<ImportantFileItem> importantFiles = []; // 중요 파일 리스트
+  // 폴더가 중요 폴더인지 여부 판단
   bool isAlreadyImportantFolder(int folderId) {
     return importantFolders.any((f) => f.folderId == folderId);
   }
@@ -98,97 +96,110 @@ class _PersonalScreenState extends State<PersonalScreen> {
       } else {
         await fetchFolderHierarchy(1, userId!, pushToStack: false);
       }
-
       await fetchImportantStatus(); // 별표 상태 초기화
     });
   }
 
+  // 우클릭 컨텍스트 메뉴 항목을 구성하는 함수
   List<PopupMenuEntry<String>> buildContextMenuItems({
-  required bool isFolder,
-  required bool isCloud,
-}) {
-  List<PopupMenuEntry<String>> items = [];
+    required bool isFolder, // 폴더인지 여부
+    required bool isCloud, // 클라우드 문서함인지 여부
+  }) {
+    List<PopupMenuEntry<String>> items = []; // 팝업 메뉴 항목
 
-  if (isFolder) {
-    items.addAll([
-      const PopupMenuItem(
-        value: 'delete',
-        child: Row(
-          children: [
-            Icon(Icons.delete, size: 16, color: Colors.black54),
-            SizedBox(width: 8),
-            Text('삭제', style: TextStyle(fontSize: 12)),
-          ],
-        ),
-      ),
-      const PopupMenuItem(
-        value: 'add_to_important',
-        child: Row(
-          children: [
-            Icon(Icons.star, size: 15, color: Colors.black54),
-            SizedBox(width: 8),
-            Text('중요 폴더로 추가', style: TextStyle(fontSize: 12)),
-          ],
-        ),
-      ),
-    ]);
-
-    if (isCloud) {
-      items.add(
+    // 폴더일 경우
+    if (isFolder) {
+      items.addAll([
+        // 삭제 항목 추가
         const PopupMenuItem(
-          value: 'grant',
+          value: 'delete',
           child: Row(
             children: [
-              Icon(Icons.person_add, size: 15, color: Colors.black54),
+              Icon(Icons.delete, size: 16, color: Colors.black54),
               SizedBox(width: 8),
-              Text('초대하기', style: TextStyle(fontSize: 12)),
+              Text('삭제', style: TextStyle(fontSize: 12)),
             ],
           ),
         ),
-      );
-    }
-  } else {
-    items.addAll([
-      const PopupMenuItem(
-        value: 'delete',
-        child: Row(
-          children: [
-            Icon(Icons.delete, size: 16, color: Colors.black54),
-            SizedBox(width: 8),
-            Text('삭제', style: TextStyle(fontSize: 12)),
-          ],
+        // 중요 폴더로 추가 항목
+        const PopupMenuItem(
+          value: 'add_to_important',
+          child: Row(
+           children: [
+              Icon(Icons.star, size: 15, color: Colors.black54),
+              SizedBox(width: 8),
+              Text('중요 폴더로 추가', style: TextStyle(fontSize: 12)),
+            ],
+          ),
         ),
-      ),
-      const PopupMenuItem(
-        value: 'add_to_important',
-        child: Row(
-          children: [
-            Icon(Icons.star, size: 15, color: Colors.black54),
-            SizedBox(width: 8),
-            Text('중요 문서로 추가', style: TextStyle(fontSize: 12)),
-          ],
+      ]);
+
+     // 클라우드 문서함일 경우 → 초대하기 항목 추가
+     if (isCloud) {
+        items.add(
+          const PopupMenuItem(
+            value: 'grant',
+            child: Row(
+              children: [
+                Icon(Icons.person_add, size: 15, color: Colors.black54),
+                SizedBox(width: 8),
+                Text('초대하기', style: TextStyle(fontSize: 12)),
+              ],
+            ),
+          ),
+        );
+      }
+    // 파일일 경우
+    } else {
+      items.addAll([
+        // 삭제 항목
+        const PopupMenuItem(
+          value: 'delete',
+          child: Row(
+            children: [
+              Icon(Icons.delete, size: 16, color: Colors.black54),
+              SizedBox(width: 8),
+              Text('삭제', style: TextStyle(fontSize: 12)),
+            ],
+         ),
         ),
-      ),
-    ]);
+        // 중요 문서로 추가 항목
+        const PopupMenuItem(
+          value: 'add_to_important',
+          child: Row(
+            children: [
+              Icon(Icons.star, size: 15, color: Colors.black54),
+             SizedBox(width: 8),
+              Text('중요 문서로 추가', style: TextStyle(fontSize: 12)),
+            ],
+         ),
+        ),
+      ]);
+   }
+    return items;
   }
-
-  return items;
-}
-
-
+  
+  // 현재 폴더의 전체 경로를 문자열로 반환
   String getCurrentFolderPath() {
+    // 현재까지의 폴더 ID 경로 구성 (스택 + 현재 폴더 ID)
     List<int> pathIds = [...folderStack, currentFolderId];
+
+    // 각 ID에 대응하는 폴더 이름을 매핑 (없으면 'Unknown')
     List<String> pathNames =
         pathIds.map((id) => folderIdToName[id] ?? 'Unknown').toList();
+
+    // 경로를 "/" 구분자로 연결해서 반환
     return pathNames.join('/');
   }
 
+  // 경로가 길 경우 생략(...) 표시로 줄여서 반환
   String getTruncatedPath({int showLast = 2}) {
-    //상위는 ...으로 표시하기기
+    // 표시할 경로 길이가 충분히 짧으면 전체 경로 그대로 표시
     if (breadcrumbPath.length <= showLast + 1) {
       return breadcrumbPath.join("  >  ");
     }
 
+    // 그렇지 않으면 앞은 생략(...)으로, 마지막 몇 개만 표시
     final start = '...';
     final end = breadcrumbPath
         .sublist(breadcrumbPath.length - showLast)
@@ -196,54 +207,68 @@ class _PersonalScreenState extends State<PersonalScreen> {
     return '$start  >  $end';
   }
 
+  // 중요 폴더 및 중요 파일 정보를 서버에서 가져와 상태 업데이트
   Future<void> fetchImportantStatus() async {
     if (userId == null) return;
+
+    // 사용자 ID 기반으로 중요 폴더와 중요 파일 정보 요청
     final folders = await fetchImportantFolders(userId!);
     final files = await fetchImportantFiles(userId!);
+
+    // 상태 업데이트
     setState(() {
       importantFolders = folders;
       importantFiles = files;
     });
   }
 
+  // 특정 폴더 ID에 대한 폴더 계층 구조와 파일 목록을 서버에서 가져오기
   Future<void> fetchFolderHierarchy(
     int folderId,
     int userId, {
-    bool pushToStack = true,
+    bool pushToStack = true, // true면 현재 경로를 스택에 추가 (뒤로가기용)
   }) async {
     final response = await http.get(
       Uri.parse('$url/folder/hierarchy/$folderId/$userId'),
       headers: {"Content-Type": "application/json"},
     );
 
+    // 요청 성공 시
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);
+
+      // 하위 폴더 목록을 Map으로 파싱
       List<Map<String, dynamic>> folderList = List<Map<String, dynamic>>.from(
         data['subFolders'],
       );
 
+      // 폴더 이름과 ID 매핑 저장 (이름으로 ID 찾기용)
       folderNameToId = {for (var f in folderList) f['name']: f['id']};
 
-      // ✅ 덮어쓰기 제거하고 addAll만 사용
+      // 기존 맵에 덮어쓰기 없이 추가
       folderIdToName.addAll({for (var f in folderList) f['id']: f['name']});
 
       setState(() {
+        // 현재 폴더 이름 업데이트 (없으면 기본값 'Personal')
         currentFolderName = data['name'] ?? 'Personal';
 
+        // 경로 이동 기록 스택 업데이트
         if (pushToStack && currentFolderId != folderId) {
           folderStack.add(currentFolderId);
           breadcrumbPath.add(currentFolderName);
         } else if (!pushToStack) {
           if (breadcrumbPath.length > 1) {
-            breadcrumbPath.removeLast();
+            breadcrumbPath.removeLast(); // 한 단계 뒤로 가기
           }
         }
 
+        // 현재 폴더 ID 갱신
         currentFolderId = folderId;
 
-        // 🔸 folder 이름 리스트만 추출하여 UI용으로 저장
+        // 폴더 이름 리스트 UI용으로 저장
         folders = folderList.map((f) => f['name'] as String).toList();
 
+        // 파일 정보 리스트로 변환 후 상태 저장
         selectedFiles = List<FileItem>.from(
           data['files'].map(
             (f) => FileItem(
@@ -257,6 +282,7 @@ class _PersonalScreenState extends State<PersonalScreen> {
           ),
         );
 
+        // 파일 이름 중복 방지를 위한 Set 저장
         fileNames = selectedFiles.map((f) => f.name).toSet();
       });
     } else {
@@ -264,24 +290,30 @@ class _PersonalScreenState extends State<PersonalScreen> {
     }
   }
 
+  // 현재 폴더에 있는 파일 및 하위 폴더 목록을 새로고침하는 함수
   Future<void> refreshCurrentFolderFiles() async {
+    // 현재 폴더 ID와 사용자 ID를 이용해 폴더 계층 정보 요청
     final response = await http.get(
       Uri.parse('$url/folder/hierarchy/$currentFolderId/$userId'),
       headers: {"Content-Type": "application/json"},
     );
 
+    // 요청이 성공한 경우
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);
+      // 하위 폴더 목록 추출 및 변환
       List<Map<String, dynamic>> folderList = List<Map<String, dynamic>>.from(
         data['subFolders'],
       );
 
-      folderNameToId = {for (var f in folderList) f['name']: f['id']};
-      folderIdToName.addAll({for (var f in folderList) f['id']: f['name']});
+      folderNameToId = {for (var f in folderList) f['name']: f['id']}; // 폴더 이름 → ID 매핑 저장
+      folderIdToName.addAll({for (var f in folderList) f['id']: f['name']}); // 폴더 ID → 이름 매핑 추가 (덮어쓰기 아님)
 
+      // UI 상태 업데이트
       setState(() {
-        folders = folderList.map((f) => f['name'] as String).toList();
+        folders = folderList.map((f) => f['name'] as String).toList(); // 폴더 이름 리스트 추출
 
+        // 파일 목록을 FileItem 리스트로 변환
         selectedFiles = List<FileItem>.from(
           data['files'].map(
             (f) => FileItem(
@@ -294,61 +326,69 @@ class _PersonalScreenState extends State<PersonalScreen> {
           ),
         );
 
+        // 파일 이름 중복 방지를 위한 Set으로 저장
         fileNames = selectedFiles.map((f) => f.name).toSet();
       });
     } else {
+      // 요청 실패 시 로그 출력
       print('파일 새로고침 실패: ${response.statusCode}');
     }
   }
 
+  // 미리보기 오버레이를 화면에 표시하는 함수
   void _showPreviewOverlay(
     BuildContext context,
-    String? url,
-    String type,
-    GlobalKey key,
+    String? url, // 미리볼 파일의 URL
+    String type, // 파일 타입
+    GlobalKey key, // 미리보기 위치 기준이 되는 위젯의 키
   ) {
+    // 기준 위젯의 위치를 가져오기 위한 RenderBox
     final renderBox = key.currentContext?.findRenderObject() as RenderBox?;
     if (renderBox == null || url == null) return;
 
-    final overlay = Overlay.of(context);
-    final offset = renderBox.localToGlobal(Offset.zero);
+    final overlay = Overlay.of(context); // 오버레이 레이어 가져오기
+    final offset = renderBox.localToGlobal(Offset.zero); // 위젯의 화면 위치 계산
 
+    // 오버레이 생성
     _previewOverlay = OverlayEntry(
       builder:
           (context) => Positioned(
-            left: offset.dx + renderBox.size.width + 10,
-            top: offset.dy,
+            left: offset.dx + renderBox.size.width + 10, // 오른쪽 옆에 위치
+            top: offset.dy, // 동일한 Y 위치
             child: Material(
               elevation: 4,
               child: Container(
                 width: 240,
                 height: 240,
                 color: Colors.white,
-                child: _buildPreviewContent(url, type),
+                child: _buildPreviewContent(url, type), // 파일 형식에 맞는 미리보기 표시
               ),
             ),
           ),
     );
 
-    overlay.insert(_previewOverlay!);
+    overlay.insert(_previewOverlay!); // 오버레이 삽입
   }
 
+  // 검색어 하이라이트 기능 구현 함수
   TextSpan highlightOccurrences(String source, String query) {
     if (query.isEmpty) {
+      // 검색어가 없으면 전체 텍스트 그대로 반환
       return TextSpan(
         text: source,
         style: const TextStyle(color: Colors.black, fontSize: 14),
       );
     }
 
-    final matches = <TextSpan>[];
-    final lcSource = source.toLowerCase();
+    final matches = <TextSpan>[]; // 결과로 반환될 TextSpan 리스트
+    final lcSource = source.toLowerCase(); // 소문자 변환 (대소문자 무시 비교)
     final lcQuery = query.toLowerCase();
 
     int start = 0;
-    int index = lcSource.indexOf(lcQuery, start);
+    int index = lcSource.indexOf(lcQuery, start); // 첫 매칭 인덱스 찾기
 
     while (index != -1) {
+      // 매칭 이전 부분 텍스트 추가
       if (index > start) {
         matches.add(
           TextSpan(
@@ -358,6 +398,7 @@ class _PersonalScreenState extends State<PersonalScreen> {
         );
       }
 
+      // 매칭된 부분 강조 (굵은 파란색)
       matches.add(
         TextSpan(
           text: source.substring(index, index + query.length),
@@ -370,9 +411,10 @@ class _PersonalScreenState extends State<PersonalScreen> {
       );
 
       start = index + query.length;
-      index = lcSource.indexOf(lcQuery, start);
+      index = lcSource.indexOf(lcQuery, start); // 다음 매칭 찾기
     }
 
+    // 마지막 매칭 이후 텍스트 추가
     if (start < source.length) {
       matches.add(
         TextSpan(
@@ -381,68 +423,72 @@ class _PersonalScreenState extends State<PersonalScreen> {
         ),
       );
     }
-
-    return TextSpan(children: matches);
+    return TextSpan(children: matches); // 모든 부분 합쳐서 반환
   }
 
-OverlayEntry? _uploadOverlayEntry;
-List<String> _uploadingFiles = [];
-Set<String> _completedFiles = {};
-Set<String> _failedFiles = {};
-void _showUploadStatusOverlayUI() {
-  _uploadOverlayEntry?.remove();
+  // 업로드 상태 오버레이를 위한 변수들
+  OverlayEntry? _uploadOverlayEntry;
+  List<String> _uploadingFiles = []; // 업로드 중인 파일 이름 목록
+  Set<String> _completedFiles = {}; // 업로드 완료된 파일
+  Set<String> _failedFiles = {}; // 업로드 실패한 파일
+  
+  // 업로드 상태 오버레이 UI 표시 함수
+  void _showUploadStatusOverlayUI() {
+    _uploadOverlayEntry?.remove(); // 기존 오버레이 제거
 
-  _uploadOverlayEntry = OverlayEntry(
-    builder: (context) => Positioned(
-      bottom: 30,
-      right: 30,
-      child: Material(
-        color: Colors.transparent,
-        child: Container(
-          width: 320,
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: Colors.black87,
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Text(
-                '📦 파일 업로드 중...',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
+    _uploadOverlayEntry = OverlayEntry(
+      builder: (context) => Positioned(
+        bottom: 30,
+        right: 30,
+        child: Material(
+          color: Colors.transparent,
+          child: Container(
+            width: 320,
+           padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.black87,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Text(
+                  '📦 파일 업로드 중...',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
-              ),
-              const SizedBox(height: 8),
-              ..._uploadingFiles.map((fileName) {
-                Widget statusIcon;
-                if (_completedFiles.contains(fileName)) {
-                  statusIcon = const Icon(Icons.check, color: Colors.green, size: 16);
-                } else if (_failedFiles.contains(fileName)) {
-                  statusIcon = const Icon(Icons.error, color: Colors.red, size: 16);
-                } else {
-                  statusIcon = const SizedBox(
-                    width: 16,
-                    height: 16,
-                    child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                  );
-                }
+                const SizedBox(height: 8),
 
-                return Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 3),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Expanded(
-                        child: Text(
-                          fileName,
-                          style: const TextStyle(color: Colors.white, fontSize: 13),
-                          overflow: TextOverflow.ellipsis,
+                // 업로드 중인 각 파일 상태 표시
+                ..._uploadingFiles.map((fileName) {
+                  Widget statusIcon;
+                  if (_completedFiles.contains(fileName)) {
+                    statusIcon = const Icon(Icons.check, color: Colors.green, size: 16);
+                  } else if (_failedFiles.contains(fileName)) {
+                    statusIcon = const Icon(Icons.error, color: Colors.red, size: 16);
+                  } else {
+                    statusIcon = const SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                    );
+                  }
+
+                 return Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 3),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Expanded(
+                          child: Text(
+                            fileName,
+                            style: const TextStyle(color: Colors.white, fontSize: 13),
+                            overflow: TextOverflow.ellipsis, // 길면 말줄임표 처리
+                          ),
                         ),
-                      ),
                       statusIcon,
                     ],
                   ),
@@ -458,17 +504,18 @@ void _showUploadStatusOverlayUI() {
   Overlay.of(context).insert(_uploadOverlayEntry!);
 }
 
-
-  Future<void> showContextMenuAtPosition({
+// 우클릭 메뉴를 특정 위치에 띄우는 함수
+Future<void> showContextMenuAtPosition({
   required BuildContext context,
   required Offset position,
-  required Function(String?) onSelected,
+  required Function(String?) onSelected, // 선택 후 실행될 콜백
   required bool isFolder,
   required bool isCloud,
 }) async {
   final RenderBox overlay =
       Overlay.of(context).context.findRenderObject() as RenderBox;
 
+  // 마우스 위치 기준 상대 위치 계산
   final RelativeRect positionRect = RelativeRect.fromLTRB(
     position.dx,
     position.dy,
@@ -476,6 +523,7 @@ void _showUploadStatusOverlayUI() {
     overlay.size.height - position.dy,
   );
 
+  // 메뉴 표시
   final selected = await showMenu<String>(
     context: context,
     position: positionRect,
@@ -485,38 +533,41 @@ void _showUploadStatusOverlayUI() {
       isCloud: isCloud,
     ),
   );
-
-  onSelected(selected);
+  onSelected(selected); // 선택 결과 콜백 실행
 }
-
+  // 파일 형식에 따른 미리보기 위젯 생성 함수
   Widget _buildPreviewContent(String url, String type, {String? thumbnailUrl}) {
     final lower = type.toLowerCase();
 
-    // 이미지 확장자면 원본 URL 사용
+    // 이미지 형식인 경우
     if (["png", "jpg", "jpeg", "gif", "bmp"].contains(lower)) {
       return Image.network(url, fit: BoxFit.contain);
     }
 
-    // 썸네일 URL이 있으면 우선 사용
+    // 썸네일이 있다면 우선 사용
     if (thumbnailUrl != null && thumbnailUrl.isNotEmpty) {
       return Image.network(thumbnailUrl, fit: BoxFit.contain);
     }
 
-    // fallback: 직접 렌더링 시도
+    // PDF 문서
     if (lower == "pdf") {
       return SfPdfViewer.network(url); // PDF 지원
-    } else if (["doc", "docx", "xls", "xlsx", "ppt", "pptx"].contains(lower)) {
+    } 
+    // 오피스 문서 (doc, ppt 등)
+    else if (["doc", "docx", "xls", "xlsx", "ppt", "pptx"].contains(lower)) {
       return OfficeViewerWindows(fileUrl: url); // 오피스
     }
-
+    // 지원하지 않는 형식
     return const Center(child: Text("미리보기를 지원하지 않는 형식입니다."));
   }
 
+  // 기존 미리보기 오버레이 제거
   void _removePreviewOverlay() {
     _previewOverlay?.remove();
     _previewOverlay = null;
   }
 
+  // 특정 위치에 파일 미리보기 오버레이 표시
   void _showPreviewOverlayAtPosition(
     BuildContext context,
     String? url,
@@ -526,13 +577,13 @@ void _showUploadStatusOverlayUI() {
   }) {
     if (url == null) return;
 
-    _removePreviewOverlay();
+    _removePreviewOverlay(); // 기존 오버레이 제거
 
     _previewOverlay = OverlayEntry(
       builder:
           (context) => Positioned(
             left: position.dx,
-            top: position.dy - 250,
+            top: position.dy - 250, // 커서보다 위쪽에 표시
             child: Material(
               elevation: 4,
               borderRadius: BorderRadius.circular(8),
@@ -551,39 +602,45 @@ void _showUploadStatusOverlayUI() {
           ),
     );
 
-    Overlay.of(context).insert(_previewOverlay!);
+    Overlay.of(context).insert(_previewOverlay!); // 오버레이 삽입
   }
 
+  // 새로운 폴더를 추가하는 함수
   void addFolder(String name) {
     setState(() {
-      folders.add(name);
+      folders.add(name); // 폴더 리스트에 이름 추가 후 UI 갱신
     });
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: Colors.white, // 배경색 흰색
 
+      // 상단 앱바
       appBar: PreferredSize(
         preferredSize: const Size.fromHeight(kToolbarHeight),
         child: AppBar(
           automaticallyImplyLeading: false, // 기본 뒤로가기/햄버거 제거
           backgroundColor: Colors.white,
-          elevation: 0,
+          elevation: 0, // 그림자 제거
 
+          // 햄버거 메뉴 버튼 (Navigation Drawer 열기)
           leading: Builder(
             builder:
                 (context) => IconButton(
                   icon: const Icon(Icons.menu, color: Colors.black),
                   onPressed: () {
-                    Scaffold.of(context).openDrawer();
+                    Scaffold.of(context).openDrawer(); // Drawer 열기
                   },
                 ),
           ),
+          // 앱바 내부 요소 정렬
           title: Row(
             children: [
               const SizedBox(width: 22), //햄버거 버튼과의 간격
+
+              // 홈 버튼
               IconButton(
                 icon: const Icon(
                   Icons.home,
@@ -591,12 +648,13 @@ void _showUploadStatusOverlayUI() {
                   size: 24,
                 ),
                 onPressed: () {
-                  NavigationStack.clear();
+                  // 홈으로 이동
+                  NavigationStack.clear(); // 내비게이션 스택 초기화
                   NavigationStack.push(
-                    'HomeScreen',
-                    arguments: {'username': widget.username},
+                    'HomeScreen', 
+                    arguments: {'username': widget.username}
                   );
-                  NavigationStack.printStack();
+                  NavigationStack.printStack(); // 스택 상태 출력 (디버깅용)
                   Navigator.pushReplacement(
                     context,
                     MaterialPageRoute(
@@ -605,7 +663,8 @@ void _showUploadStatusOverlayUI() {
                   );
                 },
               ),
-              const SizedBox(width: 22),
+              const SizedBox(width: 22), // 홈 버튼과의 간격
+
               // 뒤로가기 버튼
               IconButton(
                 icon: Icon(
@@ -614,14 +673,14 @@ void _showUploadStatusOverlayUI() {
                   size: 15,
                 ),
                 onPressed: () {
-                  final currentRoute = NavigationStack.peek()?['route'];
-
-                  if (folderStack.isEmpty ||
+                  final currentRoute = NavigationStack.peek()?['route'];              
+                  // 검색에서 들어온 경우: 이전 화면으로
+                  if (folderStack.isEmpty || 
                       currentRoute == 'SearchPersonalScreen') {
-                    // ✅ stack이 비어있거나 현재 route가 SearchPersonalSceen이면 NavigationHelper 사용
+                    // stack이 비어있거나 현재 route가 SearchPersonalSceen이면 NavigationHelper 사용
                     NavigationHelper.navigateToPrevious(context);
                   } else {
-                    // ✅ 일반 폴더 뒤로가기
+                    // 일반 폴더 탐색 뒤로가기
                     int previousFolderId = folderStack.removeLast();
                     fetchFolderHierarchy(
                       previousFolderId,
@@ -633,25 +692,27 @@ void _showUploadStatusOverlayUI() {
               ),
               const SizedBox(width: 8),
 
-              // 타이틀
+              // 타이틀 텍스트 (유저명 표시)
               Expanded(
                 child: Text(
                   '${widget.username}님의 파일함',
                   style: const TextStyle(
                     fontSize: 18,
-                    //fontWeight: FontWeight.bold,
                     fontFamily: 'APPLESDGOTHICNEOEB',
                   ),
                 ),
               ),
-              //아이콘 버튼
+
+              // 오른쪽 아이콘 버튼 (히스토리, 알림)
               Padding(
                 padding: const EdgeInsets.only(right: 95), // 오른쪽에서 10px 떨어짐
                 child: Row(
                   children: [
+                    // 히스토리 아이콘
                     IconButton(
                       icon: const Icon(Icons.history, color: Color(0xff263238)),
                       onPressed: () {
+                        // 히스토리 화면으로 이동
                         NavigationStack.pop();
                         NavigationStack.push(
                           'PersonalScreen2',
@@ -681,6 +742,7 @@ void _showUploadStatusOverlayUI() {
                         );
                       },
                     ),
+                    // 알림 버튼 (커스텀 위젯)
                     const NotificationButton(),
                   ],
                 ),
@@ -689,32 +751,36 @@ void _showUploadStatusOverlayUI() {
           ),
         ),
       ),
-
+      // 사이드 메뉴 (Navigation Drawer)
       drawer: NavigationDrawerWidget(
-        username: widget.username,
+        username: widget.username, // 사용자 이름 전달
 
+        // 폴더 생성 시 호출될 콜백
         onFolderCreated: (folderName) {
           setState(() {
-            folders.add(folderName);
+            folders.add(folderName); // 폴더 리스트에 추가
           });
         },
-        folders: folders,
-        scaffoldContext: context,
-        preScreen: 'PERSONAL',
-        prePathIds: [...folderStack, currentFolderId],
+        folders: folders, // 현재 폴더 목록 전달
+        scaffoldContext: context, // 스캐폴드 컨텍스트 전달
+        preScreen: 'PERSONAL', // 현재 화면 타입 지정
+        prePathIds: [...folderStack, currentFolderId], // 현재 경로 ID 전달
       ),
+
+      // 본문 시작
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
           children: [
-            // 폴더 & 파일 레이블
+            // 상단 레이블 영역 (경로 + 파일 텍스트 + 버튼들)
             Row(
               children: [
+                // 왼쪽 경로 표시
                 Expanded(
                   child: Padding(
                     padding: const EdgeInsets.only(left: 100.0),
                     child: Tooltip(
-                      message: breadcrumbPath.join(" / "),
+                      message: breadcrumbPath.join(" / "), // 전체 경로 툴팁으로 표시
                       child: SingleChildScrollView(
                         scrollDirection: Axis.horizontal,
                         child: Row(
@@ -722,21 +788,18 @@ void _showUploadStatusOverlayUI() {
                             index,
                           ) {
                             int showLast = 2;
-                            bool isEllipsis =
-                                (breadcrumbPath.length > showLast + 1 &&
-                                    index == 0);
-                            bool isHidden =
-                                (breadcrumbPath.length > showLast + 1 &&
-                                    index < breadcrumbPath.length - showLast);
-                            bool isLast = index == breadcrumbPath.length - 1;
-                            bool clickable = !isLast && !isEllipsis;
+                            bool isEllipsis = (breadcrumbPath.length > showLast + 1 && index == 0); // "..." 여부
+                            bool isHidden = (breadcrumbPath.length > showLast + 1 && index < breadcrumbPath.length - showLast); // 숨김 처리 여부
+                            bool isLast = index == breadcrumbPath.length - 1; // 마지막 항목 여부
+                            bool clickable = !isLast && !isEllipsis; // 클릭 가능 여부
 
-                            if (!isEllipsis && isHidden)
-                              return SizedBox.shrink();
+                            if (!isEllipsis && isHidden) 
+                              return SizedBox.shrink(); // 중간 경로 숨기기
 
                             return Row(
                               children: [
                                 GestureDetector(
+                                  // "..." 클릭 시 숨겨진 경로 메뉴 표시
                                   onTapDown: isEllipsis
                                       ? (details) async {
                                           final hiddenItems = breadcrumbPath.sublist(
@@ -778,32 +841,26 @@ void _showUploadStatusOverlayUI() {
                                                     pushToStack: false,
                                                   );
                                                 }
-                                              }
-                                            }
+                                              } 
                                           }
-                                          : null,
-                                  onTap:
-                                      (isEllipsis || !clickable)
-                                          ? null
-                                          : () async {
-                                            int diff =
-                                                (breadcrumbPath.length - 1) -
-                                                index;
-
-                                            for (int i = 0; i < diff; i++) {
-                                              if (folderStack.isNotEmpty) {
-                                                int previousFolderId =
-                                                    folderStack.removeLast();
-                                                await fetchFolderHierarchy(
-                                                  previousFolderId,
-                                                  userId!,
-                                                  pushToStack: false,
-                                                );
-                                              }
-                                            }
-                                          },
-                                  child: Text(
-                                    isEllipsis ? "..." : breadcrumbPath[index],
+                                    }
+                                    : null,
+                                    // 경로 항목 클릭 시 해당 폴더로 이동
+                                    onTap: (isEllipsis || !clickable)
+                                    ? null
+                                    : () async {
+                                    int diff = (breadcrumbPath.length - 1) - index;
+                                        for (int i = 0; i < diff; i++) {
+                                          if (folderStack.isNotEmpty) {
+                                            int previousFolderId = folderStack.removeLast();
+                                            await fetchFolderHierarchy(
+                                                previousFolderId, userId!,
+                                                pushToStack: false);
+                                          }
+                                        }
+                                    },
+                                    child: Text(
+                                    isEllipsis ? "..." : breadcrumbPath[index], // 표시할 텍스트 
                                     style: TextStyle(
                                       fontSize: 16,
                                       fontFamily: 'APPLESDGOTHICNEOR',
@@ -819,13 +876,13 @@ void _showUploadStatusOverlayUI() {
                                   ),
                                 ),
                                 if (!isLast)
-                                  const Text(
-                                    "  >  ",
-                                    style: TextStyle(
-                                      fontSize: 16,
-                                      fontFamily: 'APPLESDGOTHICNEOR',
-                                    ),
-                                  ),
+                                 const Text(
+                                   "  >  ",
+                                   style: TextStyle(
+                                    fontSize: 16,
+                                    fontFamily: 'APPLESDGOTHICNEOR',
+                                   ),
+                                 ),
                               ],
                             );
                           }),
@@ -834,6 +891,8 @@ void _showUploadStatusOverlayUI() {
                     ),
                   ),
                 ),
+
+                // 가운데 "파일" 텍스트
                 Expanded(
                   child: Padding(
                     padding: const EdgeInsets.only(left: 135.0),
@@ -846,11 +905,13 @@ void _showUploadStatusOverlayUI() {
                     ),
                   ),
                 ),
+
+                // 오른쪽 버튼 영역 (새 폴더 + SORTY)
                 Padding(
                   padding: const EdgeInsets.only(right: 101),
                   child: Row(
                     children: [
-                      // 🔹 새 폴더 아이콘 버튼
+                      // 새 폴더 아이콘 버튼
                       IconButton(
                         icon: const Icon(
                           Icons.create_new_folder,
@@ -879,7 +940,7 @@ void _showUploadStatusOverlayUI() {
                       ),
 
                       const SizedBox(width: 10), // 버튼 사이 간격
-                      // 🔹 Sorty 버튼
+                      // Sorty 버튼 (정렬 기능)
                       ElevatedButton(
                         onPressed:
                             selectedFolderNames.isNotEmpty
@@ -926,7 +987,7 @@ void _showUploadStatusOverlayUI() {
                 ),
               ],
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 8), // 폴더/파일 리스트와의 간격
 
             // 폴더 & 파일 영역
             Container(
@@ -944,65 +1005,72 @@ void _showUploadStatusOverlayUI() {
                       ),
                       padding: const EdgeInsets.all(12),
 
-                      // 🔽 GestureDetector로 감싸서 우클릭 이벤트 추가
+                      // GestureDetector로 감싸서 우클릭 이벤트 추가
                       child: GestureDetector(
-                        child: GridView.builder(
-                          itemCount: folders.length,
+                        child: GridView.builder( // 폴더 수
                           gridDelegate:
                               const SliverGridDelegateWithFixedCrossAxisCount(
-                                crossAxisCount: 2,
-                                mainAxisSpacing: 12,
-                                crossAxisSpacing: 12,
-                                childAspectRatio: 2.0,
+                                crossAxisCount: 2, // 한 줄에 2개
+                                mainAxisSpacing: 12, // 위아래 간격
+                                crossAxisSpacing: 12, // 좌우 간격
+                                childAspectRatio: 2.0, // 가로:세로 비율
                               ),
                           itemBuilder: (context, index) {
-                            final folderName = folders[index];
-                            final folderId = folderNameToId[folderName];
-                            final folderKey = GlobalKey();
+                            final folderName = folders[index]; // 폴더 이름
+                            final folderId = folderNameToId[folderName]; // 폴더 ID 조회
+                            final folderKey = GlobalKey(); // key 생성
                             final isSelected = selectedFolderNames.contains(
                               folderName,
-                            );
+                            ); // 선택 여부
 
                             return GestureDetector(
                               key: folderKey,
+
+                              // 폴더 클릭 시 선택 토글
                               onTap: () {
                                 setState(() {
                                   if (selectedFolderNames.contains(
                                     folderName,
                                   )) {
-                                    selectedFolderNames.remove(folderName);
+                                    selectedFolderNames.remove(folderName); // 선택 해제
                                   } else {
-                                    selectedFolderNames.add(folderName);
+                                    selectedFolderNames.add(folderName); // 선택 추가
                                   }
                                 });
                               },
+
+                              // 더블 클릭 시 폴더 진입
                               onDoubleTap: () {
                                 if (folderId != null) {
-                                  fetchFolderHierarchy(folderId, userId!);
+                                  fetchFolderHierarchy(folderId, userId!); // 해당 폴더로 이동
                                 }
                               },
+
+                              // 마우스 우클릭 (secondary tap)
                               onSecondaryTapDown: (TapDownDetails details) {
                                 showContextMenuAtPosition(
                                   context: context,
                                   position: details.globalPosition,
                                   onSelected: (selected) async {
                                     if (selected == 'delete') {
+                                      // 삭제 선택 시
                                       if (folderId != null) {
                                         await moveToTrash(userId!, [
                                           folderId,
                                         ], []);
                                         setState(() {
-                                          folders.removeAt(index);
+                                          folders.removeAt(index); // UI 갱신
                                         });
                                       }
                                     } else if (selected == 'add_to_important') {
+                                      // 중요 문서함 추가
                                       if (folderId != null &&
                                           !isAlreadyImportantFolder(folderId)) {
                                         await addToImportant(
                                           userId: userId!,
                                           folderId: folderId,
                                         );
-                                        await fetchImportantStatus();
+                                        await fetchImportantStatus(); // 상태 갱신
                                         ScaffoldMessenger.of(
                                           context,
                                         ).showSnackBar(
@@ -1014,6 +1082,7 @@ void _showUploadStatusOverlayUI() {
                                         );
                                       }
                                     } else if (selected == 'create') {
+                                      // 하위 폴더 생성
                                       showDialog(
                                         context: context,
                                         builder:
@@ -1040,6 +1109,7 @@ void _showUploadStatusOverlayUI() {
                                 );
                               },
 
+                              // 실제 폴더 카드 UI
                               child: Container(
                                 padding: const EdgeInsets.symmetric(
                                   horizontal: 12,
@@ -1047,54 +1117,53 @@ void _showUploadStatusOverlayUI() {
                                 ),
                                 decoration: BoxDecoration(
                                   color: Colors.white,
-                                  borderRadius: BorderRadius.circular(12),
+                                  borderRadius: BorderRadius.circular(12), // 모서리 둥글게
                                   border: Border.all(
                                     color:
                                         selectedFolderNames.contains(folderName)
-                                            ? Colors.blueGrey
-                                            : Colors.grey.shade400,
+                                            ? Colors.blueGrey // 선택 시 강조 색
+                                            : Colors.grey.shade400, // 비선택 시 회색
                                     width: 1.5,
                                   ),
                                   boxShadow: [
                                     BoxShadow(
                                       color: Colors.black12,
                                       blurRadius: 3,
-                                      offset: Offset(0, 2),
+                                      offset: Offset(0, 2), // 아래로 그림자
                                     ),
                                   ],
                                 ),
                                 child: Row(
                                   children: [
+                                    // 체크박스 (선택 여부 표시 및 선택/해제)
                                     Transform.scale(
-                                      scale: 0.6,
+                                      scale: 0.6, // 체크박스 크기 축소
                                       child: Checkbox(
-                                        value: selectedFolderNames.contains(
-                                          folderName,
-                                        ),
+                                        value: selectedFolderNames.contains(folderName), // 선택된 폴더인지 확인
                                         onChanged: (value) {
                                           setState(() {
                                             if (value == true) {
-                                              selectedFolderNames.add(
-                                                folderName,
-                                              );
+                                              selectedFolderNames.add(folderName); // 선택 추가
                                             } else {
-                                              selectedFolderNames.remove(
-                                                folderName,
-                                              );
+                                              selectedFolderNames.remove(folderName); // 선택 해제
                                             }
                                           });
                                         },
                                       ),
                                     ),
+
+                                    // 폴더 아이콘
                                     const Icon(
                                       Icons.folder,
                                       color: Color(0xFF263238),
                                     ),
-                                    const SizedBox(width: 8),
+                                    const SizedBox(width: 8), // 아이콘과 텍스트 사이 간격
+
+                                    // 폴더 이름 텍스트
                                     Expanded(
                                       child: Text(
-                                        folderName,
-                                        overflow: TextOverflow.ellipsis,
+                                        folderName, // 폴더 이름 표시
+                                        overflow: TextOverflow.ellipsis, // 너무 길면 생략 (...)
                                         style: const TextStyle(
                                           fontSize: 12,
                                           fontFamily: 'APPLESDGOTHICNEOR',
@@ -1102,31 +1171,28 @@ void _showUploadStatusOverlayUI() {
                                         ),
                                       ),
                                     ),
+
+                                    // 중요 표시(⭐) 아이콘 버튼
                                     IconButton(
                                       icon: Icon(
                                         isAlreadyImportantFolder(folderId!)
-                                            ? Icons.star
-                                            : Icons.star_border,
+                                            ? Icons.star // 이미 중요 폴더인 경우
+                                            : Icons.star_border, // 아닐 경우 빈 별
                                         color:
                                             isAlreadyImportantFolder(folderId!)
-                                                ? Colors.amber
-                                                : Colors.grey,
+                                                ? Colors.amber // 중요 폴더일 때 노란색
+                                                : Colors.grey, // 아닐 때 회색
                                         size: 13,
                                       ),
                                       onPressed: () async {
-                                        if (isAlreadyImportantFolder(
-                                          folderId!,
-                                        )) {
+                                        if (isAlreadyImportantFolder(folderId!)) {
+                                           // ⭐ 중요 폴더이면 제거
                                           final target = importantFolders
                                               .firstWhere(
                                                 (f) => f.folderId == folderId,
                                               );
-                                          await removeFromImportant(
-                                            target.importantId,
-                                          );
-                                          ScaffoldMessenger.of(
-                                            context,
-                                          ).showSnackBar(
+                                          await removeFromImportant(target.importantId);
+                                          ScaffoldMessenger.of(context).showSnackBar(
                                             SnackBar(
                                               content: Text(
                                                 '$folderName 폴더가 중요 문서함에서 삭제되었습니다.',
@@ -1134,6 +1200,7 @@ void _showUploadStatusOverlayUI() {
                                             ),
                                           );
                                         } else {
+                                          // ⭐ 중요 폴더 아니면 추가
                                           await addToImportant(
                                             userId: userId!,
                                             folderId: folderId,
@@ -1148,6 +1215,7 @@ void _showUploadStatusOverlayUI() {
                                             ),
                                           );
                                         }
+                                        // 상태 갱신
                                         await fetchImportantStatus();
                                         setState(() {});
                                       },
@@ -1243,12 +1311,16 @@ void _showUploadStatusOverlayUI() {
                           });
                         }
                       },
+
+                      // 드래그 이벤트 콜백 처리
                       onDragEntered: (details) {
                         print('드래그 시작');
                       },
                       onDragExited: (details) {
                         print('드래그 종료');
                       },
+
+                      // 파일 목록 영역
                       child: Container(
                         margin: const EdgeInsets.symmetric(
                           vertical: 12,
@@ -1265,11 +1337,12 @@ void _showUploadStatusOverlayUI() {
                           children: [
                             Expanded(
                               child: ListView.builder(
-                                itemCount: selectedFiles.length,
+                                itemCount: selectedFiles.length, // 파일 개수
                                 itemBuilder: (context, index) {
                                   final file = selectedFiles[index];
                                   final fileKey = GlobalKey();
                                   return GestureDetector(
+                                    // 우클릭 시 컨텍스트 메뉴 표시
                                     onSecondaryTapDown: (
                                       TapDownDetails details,
                                     ) {
@@ -1280,9 +1353,8 @@ void _showUploadStatusOverlayUI() {
                                           final file = selectedFiles[index];
                                           if (selected == 'delete') {
                                             try {
-                                              await moveToTrash(userId!, [], [
-                                                file.id,
-                                              ]);
+                                              // 파일 삭제
+                                              await moveToTrash(userId!, [], [file.id]);
                                               setState(() {
                                                 selectedFiles.removeAt(index);
                                                 fileNames.remove(file.name);
@@ -1290,14 +1362,10 @@ void _showUploadStatusOverlayUI() {
                                             } catch (e) {
                                               print('파일 휴지통 이동 실패: $e');
                                             }
-                                          } else if (selected ==
-                                              'add_to_important') {
-                                            if (isAlreadyImportantFile(
-                                              file.id!,
-                                            )) {
-                                              ScaffoldMessenger.of(
-                                                context,
-                                              ).showSnackBar(
+                                          } else if (selected == 'add_to_important') {
+                                            // 중요 문서함에 추가
+                                            if (isAlreadyImportantFile(file.id!)) {
+                                              ScaffoldMessenger.of(context).showSnackBar(
                                                 SnackBar(
                                                   content: Text(
                                                     '이미 중요 문서함에 추가된 파일입니다.',
@@ -1311,9 +1379,7 @@ void _showUploadStatusOverlayUI() {
                                                 userId: userId!,
                                                 fileId: file.id,
                                               );
-                                              ScaffoldMessenger.of(
-                                                context,
-                                              ).showSnackBar(
+                                              ScaffoldMessenger.of(context).showSnackBar(
                                                 SnackBar(
                                                   content: Text(
                                                     '${file.name} 파일이 중요 문서함에 추가되었습니다.',
@@ -1322,9 +1388,7 @@ void _showUploadStatusOverlayUI() {
                                               );
                                             } catch (e) {
                                               print('중요 문서 추가 실패: $e');
-                                              ScaffoldMessenger.of(
-                                                context,
-                                              ).showSnackBar(
+                                              ScaffoldMessenger.of(context).showSnackBar(
                                                 SnackBar(
                                                   content: Text(
                                                     '중요 문서 추가 실패: $e',
@@ -1338,6 +1402,8 @@ void _showUploadStatusOverlayUI() {
                                         isCloud: false,
                                       );
                                     },
+
+                                    // 마우스 호버 시 미리보기 표시
                                     child: MouseRegion(
                                       key: fileKey,
                                       onEnter: (event) {
@@ -1360,6 +1426,8 @@ void _showUploadStatusOverlayUI() {
                                         _hoverTimer?.cancel();
                                         _removePreviewOverlay();
                                       },
+
+                                      // 파일 리스트 타일
                                       child: ListTile(
                                         leading: const Icon(
                                           Icons.insert_drive_file,
@@ -1375,6 +1443,7 @@ void _showUploadStatusOverlayUI() {
                                           style: const TextStyle(fontSize: 11),
                                         ),
 
+                                        // 별 버튼 ( 중요 표시 )
                                         trailing: Row(
                                           mainAxisSize: MainAxisSize.min,
                                           children: [
@@ -1384,28 +1453,16 @@ void _showUploadStatusOverlayUI() {
                                                     ? Icons.star
                                                     : Icons.star_border,
                                                 color:
-                                                    isAlreadyImportantFile(
-                                                          file.id!,
-                                                        )
+                                                    isAlreadyImportantFile(file.id!)
                                                         ? Colors.amber
                                                         : Colors.grey,
                                                 size: 13,
                                               ),
                                               onPressed: () async {
-                                                if (isAlreadyImportantFile(
-                                                  file.id!,
-                                                )) {
-                                                  final target = importantFiles
-                                                      .firstWhere(
-                                                        (f) =>
-                                                            f.fileId == file.id,
-                                                      );
-                                                  await removeFromImportant(
-                                                    target.importantId,
-                                                  );
-                                                  ScaffoldMessenger.of(
-                                                    context,
-                                                  ).showSnackBar(
+                                                if (isAlreadyImportantFile(file.id!)) {
+                                                  final target = importantFiles.firstWhere((f) => f.fileId == file.id);
+                                                  await removeFromImportant(target.importantId);
+                                                  ScaffoldMessenger.of(context).showSnackBar(
                                                     SnackBar(
                                                       content: Text(
                                                         '${file.name} 파일이 중요 문서함에서 삭제되었습니다.',
@@ -1417,13 +1474,9 @@ void _showUploadStatusOverlayUI() {
                                                     userId: userId!,
                                                     fileId: file.id,
                                                   );
-                                                  ScaffoldMessenger.of(
-                                                    context,
-                                                  ).showSnackBar(
+                                                  ScaffoldMessenger.of(context).showSnackBar(
                                                     SnackBar(
-                                                      content: Text(
-                                                        '${file.name} 파일이 중요 문서함에 추가되었습니다.',
-                                                      ),
+                                                      content: Text('${file.name} 파일이 중요 문서함에 추가되었습니다.',),
                                                     ),
                                                   );
                                                 }
@@ -1433,6 +1486,7 @@ void _showUploadStatusOverlayUI() {
                                             ),
                                           ],
                                         ),
+                                        // 파일 클릭 시 미리보기 다이얼로그
                                         onTap: () {
                                           print(
                                             '[파일 미리보기 요청] file.name=${file.name}, fileUrl=${file.fileUrl}, type=${file.type}',

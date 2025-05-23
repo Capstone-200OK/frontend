@@ -3,8 +3,9 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
+/// 폴더 권한 부여(초대) 다이얼로그
 class FolderGrantDialog extends StatefulWidget {
-  final int folderId;
+  final int folderId; // 권한을 부여할 폴더 ID
 
   const FolderGrantDialog({super.key, required this.folderId});
 
@@ -14,13 +15,14 @@ class FolderGrantDialog extends StatefulWidget {
 
 class _FolderGrantDialogState extends State<FolderGrantDialog> {
   final TextEditingController _emailController = TextEditingController();
-  bool _read = false;
-  bool _write = false;
-  bool _delete = false;
-  bool _isLoading = false;
-  String _message = '';
+  bool _read = false; // 읽기 권한
+  bool _write = false; // 쓰기 권한
+  bool _delete = false; // 삭제 권한
+  bool _isLoading = false; // 로딩 상태
+  String _message = ''; // 에러 또는 성공 메시지
   final String url = dotenv.get("BaseUrl");
 
+  // 체크된 권한들을 정수값으로 변환 (chmod 형식)
   int getChmod() {
     int chmod = 0;
     if (_read) chmod += 1;
@@ -29,6 +31,7 @@ class _FolderGrantDialogState extends State<FolderGrantDialog> {
     return chmod;
   }
 
+  // 사용자에게 폴더 권한을 부여하는 API 호출
   Future<void> grantPermission() async {
     setState(() {
       _isLoading = true;
@@ -45,6 +48,7 @@ class _FolderGrantDialogState extends State<FolderGrantDialog> {
         return;
       }
 
+      // 이메일로 사용자 정보 조회
       final userRes = await http.get(Uri.parse('$url/user/by-email/$email'));
       if (userRes.statusCode != 200) {
         setState(() {
@@ -55,8 +59,9 @@ class _FolderGrantDialogState extends State<FolderGrantDialog> {
       }
 
       final userId = jsonDecode(userRes.body)['userId'];
-      final chmod = getChmod();
+      final chmod = getChmod(); // 권한값 계산
 
+      // 권한 부여 요청
       final res = await http.post(
         Uri.parse('$url/folder-access/grant'),
         headers: {'Content-Type': 'application/json'},
@@ -68,7 +73,7 @@ class _FolderGrantDialogState extends State<FolderGrantDialog> {
       );
 
       if (res.statusCode == 200) {
-        Navigator.pop(context);
+        Navigator.pop(context); // 다이얼로그 닫기
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('권한 부여 성공')),
         );
@@ -95,11 +100,13 @@ class _FolderGrantDialogState extends State<FolderGrantDialog> {
       content: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
+          // 이메일 입력 필드
           TextField(
             controller: _emailController,
             decoration: const InputDecoration(labelText: '사용자 이메일'),
           ),
           const SizedBox(height: 12),
+          // 권한 체크박스들
           CheckboxListTile(
             title: const Text('읽기'),
             value: _read,
@@ -115,11 +122,14 @@ class _FolderGrantDialogState extends State<FolderGrantDialog> {
             value: _delete,
             onChanged: (v) => setState(() => _delete = v!),
           ),
+          // 로딩 인디케이터 및 메시지
           if (_isLoading) const CircularProgressIndicator(),
           if (_message.isNotEmpty)
             Text(_message, style: const TextStyle(color: Colors.red)),
         ],
       ),
+      
+      // 하단 버튼들
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context),

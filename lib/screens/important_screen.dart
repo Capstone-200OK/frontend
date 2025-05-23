@@ -33,12 +33,14 @@ class _ImportantScreenState extends State<ImportantScreen> {
   @override
   void initState() {
     super.initState();
+    // 위젯 렌더링 후 유저 ID 가져오고 중요 항목 로드
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       userId = Provider.of<UserProvider>(context, listen: false).userId;
       await fetchImportantItems();
     });
   }
 
+  // 파일 미리보기 콘텐츠 구성
   Widget _buildPreviewContent(String url, String type, {String? thumbnailUrl}) {
     final lower = type.toLowerCase();
 
@@ -59,6 +61,7 @@ class _ImportantScreenState extends State<ImportantScreen> {
     return const Center(child: Text("미리보기를 지원하지 않는 형식입니다."));
   }
 
+  // 중요 파일 및 폴더 불러오기
   Future<void> fetchImportantItems() async {
     if (userId == null) return;
     final files = await fetchImportantFiles(userId!);
@@ -70,6 +73,7 @@ class _ImportantScreenState extends State<ImportantScreen> {
     });
   }
 
+  // 폴더 경로 불러오기 (Personal 화면 이동용)
   Future<List<Map<String, dynamic>>> fetchFolderPath(int folderId) async {
     try {
       final response = await http.get(
@@ -108,6 +112,7 @@ class _ImportantScreenState extends State<ImportantScreen> {
     _previewOverlay = null;
   }
 
+  // 컨텍스트 메뉴 표시 (우클릭 시)
   void _showContextMenu({
     required BuildContext context,
     required Offset position,
@@ -227,7 +232,7 @@ class _ImportantScreenState extends State<ImportantScreen> {
             Expanded(
               child: Row(
                 children: [
-                  // 🔹 폴더 영역 (왼쪽 여백 추가됨)
+                  // 왼쪽: 폴더 리스트
                   Padding(
                     padding: const EdgeInsets.only(left: 97), // 오른쪽으로 밀기
                     child: SizedBox(
@@ -333,7 +338,7 @@ class _ImportantScreenState extends State<ImportantScreen> {
                     ),
                   ),
                   const SizedBox(width: 53),
-                  // 🔹 파일 영역 (변경 없음)
+                  // 오른쪽: 파일 리스트
                   SizedBox(
                     height: 400,
                     width: 370,
@@ -430,7 +435,7 @@ class _ImportantScreenState extends State<ImportantScreen> {
             ),
             //검색창
             Padding(
-              padding: const EdgeInsets.only(bottom: 48), // 🔸 위쪽 여백 줄여서 위로 올림
+              padding: const EdgeInsets.only(bottom: 48), 
               child: SizedBox(
                 width: 800,
                 child: TextField(
