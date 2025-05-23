@@ -229,9 +229,7 @@ class _PersonalScreenState extends State<PersonalScreen> {
     bool pushToStack = true, // true면 현재 경로를 스택에 추가 (뒤로가기용)
   }) async {
     final response = await http.get(
-      Uri.parse(
-        '$url/folder/hierarchy/$folderId/$userId',
-      ),
+      Uri.parse('$url/folder/hierarchy/$folderId/$userId'),
       headers: {"Content-Type": "application/json"},
     );
 
@@ -644,13 +642,19 @@ Future<void> showContextMenuAtPosition({
 
               // 홈 버튼
               IconButton(
-                icon: const Icon(Icons.home, color: Color(0xff263238), size: 24),
+                icon: const Icon(
+                  Icons.home,
+                  color: Color(0xff263238),
+                  size: 24,
+                ),
                 onPressed: () {
                   // 홈으로 이동
                   NavigationStack.clear(); // 내비게이션 스택 초기화
-                  NavigationStack.push('HomeScreen', arguments: {'username': widget.username});
+                  NavigationStack.push(
+                    'HomeScreen', 
+                    arguments: {'username': widget.username}
+                  );
                   NavigationStack.printStack(); // 스택 상태 출력 (디버깅용)
-
                   Navigator.pushReplacement(
                     context,
                     MaterialPageRoute(
@@ -669,16 +673,20 @@ Future<void> showContextMenuAtPosition({
                   size: 15,
                 ),
                 onPressed: () {
-                  final currentRoute = NavigationStack.peek()?['route'];
-                  
+                  final currentRoute = NavigationStack.peek()?['route'];              
                   // 검색에서 들어온 경우: 이전 화면으로
-                  if (folderStack.isEmpty || currentRoute == 'SearchPersonalScreen') {
+                  if (folderStack.isEmpty || 
+                      currentRoute == 'SearchPersonalScreen') {
                     // stack이 비어있거나 현재 route가 SearchPersonalSceen이면 NavigationHelper 사용
                     NavigationHelper.navigateToPrevious(context);
                   } else {
                     // 일반 폴더 탐색 뒤로가기
                     int previousFolderId = folderStack.removeLast();
-                    fetchFolderHierarchy(previousFolderId, userId!, pushToStack: false);
+                    fetchFolderHierarchy(
+                      previousFolderId,
+                      userId!,
+                      pushToStack: false,
+                    );
                   }
                 },
               ),
@@ -706,20 +714,30 @@ Future<void> showContextMenuAtPosition({
                       onPressed: () {
                         // 히스토리 화면으로 이동
                         NavigationStack.pop();
-                        NavigationStack.push('PersonalScreen2', arguments: {
-                          'username': widget.username,
-                          'targetPathIds': [...folderStack, currentFolderId],
-                        });
+                        NavigationStack.push(
+                          'PersonalScreen2',
+                          arguments: {
+                            'username': widget.username,
+                            'targetPathIds': [...folderStack, currentFolderId],
+                          },
+                        );
                         NavigationStack.printStack();
-                        NavigationStack.push('RecentFileScreen', arguments: {'username': widget.username, 'userId': userId});
+                        NavigationStack.push(
+                          'RecentFileScreen',
+                          arguments: {
+                            'username': widget.username,
+                            'userId': userId,
+                          },
+                        );
                         NavigationStack.printStack();
                         Navigator.pushReplacement(
                           context,
                           MaterialPageRoute(
-                            builder: (_) => RecentFileScreen(
-                              username: widget.username,
-                              userId: userId,
-                            ),
+                            builder:
+                                (_) => RecentFileScreen(
+                                  username: widget.username,
+                                  userId: userId,
+                                ),
                           ),
                         );
                       },
@@ -766,14 +784,17 @@ Future<void> showContextMenuAtPosition({
                       child: SingleChildScrollView(
                         scrollDirection: Axis.horizontal,
                         child: Row(
-                          children: List.generate(breadcrumbPath.length, (index) {
+                          children: List.generate(breadcrumbPath.length, (
+                            index,
+                          ) {
                             int showLast = 2;
                             bool isEllipsis = (breadcrumbPath.length > showLast + 1 && index == 0); // "..." 여부
                             bool isHidden = (breadcrumbPath.length > showLast + 1 && index < breadcrumbPath.length - showLast); // 숨김 처리 여부
                             bool isLast = index == breadcrumbPath.length - 1; // 마지막 항목 여부
                             bool clickable = !isLast && !isEllipsis; // 클릭 가능 여부
 
-                            if (!isEllipsis && isHidden) return SizedBox.shrink(); // 중간 경로 숨기기
+                            if (!isEllipsis && isHidden) 
+                              return SizedBox.shrink(); // 중간 경로 숨기기
 
                             return Row(
                               children: [
@@ -810,14 +831,17 @@ Future<void> showContextMenuAtPosition({
                                             int targetIndex = breadcrumbPath.indexOf(selected);
                                             int diff = (breadcrumbPath.length - 1) - targetIndex;
 
-                                            for (int i = 0; i < diff; i++) {
-                                              if (folderStack.isNotEmpty) {
-                                                int previousFolderId = folderStack.removeLast();
-                                                await fetchFolderHierarchy(
-                                                    previousFolderId, userId!,
-                                                    pushToStack: false);
-                                              }
-                                            }
+                                              for (int i = 0; i < diff; i++) {
+                                                if (folderStack.isNotEmpty) {
+                                                  int previousFolderId =
+                                                      folderStack.removeLast();
+                                                  await fetchFolderHierarchy(
+                                                    previousFolderId,
+                                                    userId!,
+                                                    pushToStack: false,
+                                                  );
+                                                }
+                                              } 
                                           }
                                     }
                                     : null,
@@ -836,16 +860,18 @@ Future<void> showContextMenuAtPosition({
                                         }
                                     },
                                     child: Text(
-                                    isEllipsis ? "..." : breadcrumbPath[index], // 표시할 텍스트
+                                    isEllipsis ? "..." : breadcrumbPath[index], // 표시할 텍스트 
                                     style: TextStyle(
                                       fontSize: 16,
                                       fontFamily: 'APPLESDGOTHICNEOR',
-                                      color: (isEllipsis || clickable)
-                                          ? Colors.black
-                                          : Colors.black,
-                                      decoration: (isEllipsis || clickable)
-                                          ? TextDecoration.underline
-                                          : TextDecoration.none,
+                                      color:
+                                          (isEllipsis || clickable)
+                                              ? Colors.black
+                                              : Colors.black,
+                                      decoration:
+                                          (isEllipsis || clickable)
+                                              ? TextDecoration.underline
+                                              : TextDecoration.none,
                                     ),
                                   ),
                                 ),
