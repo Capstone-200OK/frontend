@@ -96,7 +96,15 @@ class _FolderGrantDialogState extends State<FolderGrantDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: const Text('폴더에 사용자 초대'),
+      backgroundColor: Colors.white,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      title: const Text(
+        '폴더에 사용자 초대',
+        style: TextStyle(
+          fontSize: 18,
+          fontFamily: 'APPLESDGOTHICNEOEB'
+        ),
+      ),
       content: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -128,16 +136,32 @@ class _FolderGrantDialogState extends State<FolderGrantDialog> {
             Text(_message, style: const TextStyle(color: Colors.red)),
         ],
       ),
-      
+
       // 하단 버튼들
       actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: const Text('취소'),
+        OutlinedButton(
+          onPressed: () {
+            Navigator.pop(context); // 다이얼로그 닫기
+          },
+          style: OutlinedButton.styleFrom(
+            side: const BorderSide(color: Colors.black87),
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+          ),
+          child: const Text(
+           '취소',
+           style: TextStyle(color: Colors.black87),
+            ),
         ),
-        ElevatedButton(
+        OutlinedButton(
           onPressed: grantPermission,
-          child: const Text('초대'),
+          style: OutlinedButton.styleFrom(
+            side: const BorderSide(color: Colors.black87), // 테두리 색
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+          ),
+          child: const Text(
+            '초대',
+            style: TextStyle(color: Colors.black87),
+            ),
         ),
       ],
     );
