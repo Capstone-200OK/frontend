@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/screens/login_screen.dart'; // 로그인 화면 불러오기
-import 'package:http/http.dart' as http;
-import 'dart:convert';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:http/http.dart' as http; // HTTP 요청을 위한 패키지
+import 'dart:convert'; // JSON 인코딩/디코딩
+import 'package:flutter_dotenv/flutter_dotenv.dart'; // 환경변수 사용을 위한 패키지
 
+// 회원가입 화면 Stateful 위젯 정의
 class SignUpScreen extends StatefulWidget {
   const SignUpScreen({Key? key}) : super(key: key);
 
@@ -16,15 +17,12 @@ class _SignUpScreenState extends State<SignUpScreen> {
   final _formKey = GlobalKey<FormState>();
 
   // 입력 필드를 위한 컨트롤러
-  final TextEditingController _idController =
-      TextEditingController(); // 아이디 입력 컨트롤러
-  final TextEditingController _emailController =
-      TextEditingController(); // 이메일 입력 컨트롤러
-  final TextEditingController _passwordController =
-      TextEditingController(); // 비밀번호 입력 컨트롤러
-        String urlAddress = dotenv.get("BaseUrl");
+  final TextEditingController _idController = TextEditingController(); // 아이디 입력 컨트롤러
+  final TextEditingController _emailController = TextEditingController(); // 이메일 입력 컨트롤러
+  final TextEditingController _passwordController = TextEditingController(); // 비밀번호 입력 컨트롤러
+  String urlAddress = dotenv.get("BaseUrl"); // .env에서 API URL 읽기
 
-  //회원가입 요청 함수
+  // 서버로 회원가입 요청을 보내는 함수
   Future<void> _registerUser() async {
     final String nickname = _idController.text;
     final String email = _emailController.text;
@@ -46,7 +44,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
       );
 
       if (response.statusCode == 200 || response.statusCode == 201) {
-        // 성공 시
+        // 성공 시 로그인 화면으로 이동
         ScaffoldMessenger.of(
           context,
         ).showSnackBar(const SnackBar(content: Text('회원가입 성공')));
@@ -55,15 +53,14 @@ class _SignUpScreenState extends State<SignUpScreen> {
           MaterialPageRoute(builder: (context) => const LoginScreen()),
         );
       } else {
-        // 실패 시
+        // 실패 시 서버 응답 본문 출력
         ScaffoldMessenger.of(
           context,
         ).showSnackBar(SnackBar(content: Text('회원가입 실패: ${response.body}')));
       }
     } catch (e) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('에러 발생: $e')));
+      // 예외처리
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('에러 발생: $e')));
     }
   }
 

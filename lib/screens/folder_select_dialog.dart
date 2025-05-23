@@ -6,13 +6,14 @@ import 'dart:convert';
 import 'package:provider/provider.dart';
 import 'package:flutter_application_1/providers/user_provider.dart';
 
+/// 폴더 항목 모델 (트리 구조 구성용)
 class FolderSelectableItem {
   final int id;
   final String name;
   final int? parentId;
   final String folderType;
-  List<FolderSelectableItem> children = [];
-  bool isExpanded = false;
+  List<FolderSelectableItem> children = []; // 하위 폴더
+  bool isExpanded = false; // 확장 여부
 
   FolderSelectableItem({
     required this.id,
@@ -22,6 +23,7 @@ class FolderSelectableItem {
   });
 }
 
+/// 폴더 선택 다이얼로그
 class FolderSelectDialog extends StatefulWidget {
   const FolderSelectDialog({Key? key}) : super(key: key);
 
@@ -30,8 +32,8 @@ class FolderSelectDialog extends StatefulWidget {
 }
 
 class _FolderSelectDialogState extends State<FolderSelectDialog> {
-  List<FolderSelectableItem> folderTree = [];
-  FolderSelectableItem? selected;
+  List<FolderSelectableItem> folderTree = []; // 전체 트리 구조
+  FolderSelectableItem? selected; // 선택된 폴더
   late int? userId;
   late String url;
 
@@ -39,12 +41,14 @@ class _FolderSelectDialogState extends State<FolderSelectDialog> {
   void initState() {
     super.initState();
     url = dotenv.get("BaseUrl");
+    // context 접근 가능한 시점에 사용자 ID 초기화 및 폴더 로드
     WidgetsBinding.instance.addPostFrameCallback((_) {
       userId = Provider.of<UserProvider>(context, listen: false).userId;
       fetchSelectableFolders();
     });
   }
 
+  /// 서버로부터 선택 가능한 폴더 목록 조회
   Future<void> fetchSelectableFolders() async {
     final response = await http.get(
       Uri.parse('$url/folder/selectable/$userId'),
@@ -73,6 +77,7 @@ class _FolderSelectDialogState extends State<FolderSelectDialog> {
     }
   }
 
+  /// flat 리스트를 트리 구조로 변환
   List<FolderSelectableItem> buildFolderTree(
     List<FolderSelectableItem> flatList,
   ) {
@@ -83,14 +88,15 @@ class _FolderSelectDialogState extends State<FolderSelectDialog> {
 
     for (var item in flatList) {
       if (item.parentId == null) {
-        roots.add(item);
+        roots.add(item); // 루트 노드
       } else {
-        map[item.parentId!]?.children.add(item);
+        map[item.parentId!]?.children.add(item); // 자식 노드로 연결
       }
     }
     return roots;
   }
 
+  /// 폴더 트리 UI 구성 (재귀적으로 구성)
   Widget buildFolderNode(FolderSelectableItem folder) {
     final isRoot = folder.parentId == null;
 
@@ -122,7 +128,7 @@ class _FolderSelectDialogState extends State<FolderSelectDialog> {
               color:
                   isRoot
                       ? const Color(0xFFECEFF1)
-                      : Colors.black, // ✅ 텍스트 색상 분기
+                      : Colors.black,
              
             ),
           ),
@@ -167,6 +173,7 @@ class _FolderSelectDialogState extends State<FolderSelectDialog> {
         child: ListView(children: folderTree.map(buildFolderNode).toList()),
       ),
       actions: [
+        // 취소 버튼
         TextButton(
           onPressed: () => Navigator.pop(context, null),
           child: const Text(
@@ -178,6 +185,7 @@ class _FolderSelectDialogState extends State<FolderSelectDialog> {
             ),
           ),
         ),
+        // 확인 버튼 (선택된 폴더 반환)
         ElevatedButton(
           style: ElevatedButton.styleFrom(
             backgroundColor:

@@ -28,7 +28,7 @@ class FileSortyScreen extends StatefulWidget {
   State<FileSortyScreen> createState() => _FileSortyScreenState(); // State 객체 생성
 }
 
-// FileSortyScreen의 상태 클래스
+// FileSortyScreen의 상태 클래스 - 자동 정리 로직 및 UI 처리
 class _FileSortyScreenState extends State<FileSortyScreen> {
   String? selectedMode; // 선택된 정리 기준
   late String url; // 서버 URL

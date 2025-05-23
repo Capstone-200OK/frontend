@@ -9,6 +9,7 @@ import 'package:flutter_application_1/screens/home_screen.dart';
 import 'package:flutter_application_1/components/navigation_stack.dart';
 import 'package:flutter_application_1/components/navigation_helper.dart';
 
+// 휴지통 화면 위젯
 class TrashScreen extends StatefulWidget {
   final String username;
   const TrashScreen({super.key, required this.username});
@@ -18,19 +19,21 @@ class TrashScreen extends StatefulWidget {
 }
 
 class _TrashScreenState extends State<TrashScreen> {
-  late int? userId;
-  List<TrashFileItem> deletedFiles = [];
-  List<TrashFolderItem> deletedFolders = [];
+  late int? userId; // 사용자 ID
+  List<TrashFileItem> deletedFiles = []; // 삭제된 파일 목록
+  List<TrashFolderItem> deletedFolders = []; // 삭제된 폴더 목록
 
   @override
   void initState() {
     super.initState();
+    // 위젯 초기화 후 유저 ID를 받아와서 휴지통 데이터 로드
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       userId = Provider.of<UserProvider>(context, listen: false).userId;
       await fetchTrashItems();
     });
   }
 
+  // 서버에서 삭제된 항목(파일/폴더) 불러오기
   Future<void> fetchTrashItems() async {
     if (userId == null) return;
     final files = await fetchDeletedFiles(userId!);
@@ -42,6 +45,7 @@ class _TrashScreenState extends State<TrashScreen> {
     });
   }
 
+  // 우클릭 컨텍스트 메뉴 표시
   void _showContextMenu({
     required BuildContext context,
     required Offset position,
@@ -88,6 +92,8 @@ class _TrashScreenState extends State<TrashScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
+
+      // 상단 앱바 영역
       appBar: PreferredSize(
         preferredSize: const Size.fromHeight(kToolbarHeight),
         child: AppBar(
@@ -102,6 +108,7 @@ class _TrashScreenState extends State<TrashScreen> {
               IconButton(
                 icon: const Icon(Icons.home, color: Color(0xff263238)),
                 onPressed: () {
+                  // 홈으로 이동
                   NavigationStack.clear();
                   NavigationStack.push('HomeScreen', arguments: {'username': widget.username});
                   NavigationStack.printStack();
@@ -137,10 +144,13 @@ class _TrashScreenState extends State<TrashScreen> {
           ),
         ),
       ),
+
+      // 본문 영역
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
           children: [
+            // 라벨 영역
             Row(
               children: const [
                 Expanded(
@@ -170,10 +180,11 @@ class _TrashScreenState extends State<TrashScreen> {
               ],
             ),
 
+            // 폴더 및 파일 리스트 영역
             Expanded(
               child: Row(
                 children: [
-                  // 🔹 폴더 영역 (왼쪽 여백 추가됨)
+                  // 삭제된 폴더 목록
                   Padding(
                     padding: const EdgeInsets.only(left: 97), // 오른쪽으로 밀기
                     child: SizedBox(
@@ -257,7 +268,7 @@ class _TrashScreenState extends State<TrashScreen> {
 
                   const SizedBox(width: 53),
 
-                  // 🔹 파일 영역 (변경 없음)
+                  // 삭제된 파일 목록
                   SizedBox(
                     height: 400,
                     width: 370,
@@ -340,7 +351,7 @@ class _TrashScreenState extends State<TrashScreen> {
 
             // 검색창
             Padding(
-              padding: const EdgeInsets.only(bottom: 48), // 🔸 위쪽 여백 줄여서 위로 올림
+              padding: const EdgeInsets.only(bottom: 48), // 위쪽 여백 줄여서 위로 올림
               child: SizedBox(
                 width: 800,
                 child: TextField(

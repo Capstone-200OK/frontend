@@ -17,28 +17,30 @@ class ReservationListScreen extends StatefulWidget {
 }
 
 class _ReservationListScreenState extends State<ReservationListScreen> {
+  // 예약 목록 데이터를 비동기로 가져올 Future
   Future<List<Reservation>> reservationFuture = Future.value([]);
-  late String baseUrl;
-  late int? userId;
+  late String baseUrl; // API 호출용 베이스 URL
+  late int? userId; // 로그인된 사용자 ID
 
   @override
   void initState() {
     super.initState();
-    baseUrl = dotenv.get("BaseUrl");
+    baseUrl = dotenv.get("BaseUrl"); // 환경변수에서 base URL 가져오기
 
-    // ✅ context 접근은 addPostFrameCallback 안에서
+    // context 접근을 위해 프레임 이후에 실행
     WidgetsBinding.instance.addPostFrameCallback((_) {
       userId = Provider.of<UserProvider>(context, listen: false).userId;
       if (userId != null) {
         setState(() {
-          reservationFuture = fetchReservations(userId!);
+          reservationFuture = fetchReservations(userId!); // 예약 목록 로딩 시작
         });
       } else {
         print("❗ userId가 null입니다. 예약 목록을 불러오지 않습니다.");
       }
     });
   }
-
+  
+  // 예약 목록을 서버에서 가져오는 함수
   Future<List<Reservation>> fetchReservations(int userId) async {
     final response = await http.get(
       Uri.parse('$baseUrl/scheduledTask/list/$userId'),
@@ -52,6 +54,7 @@ class _ReservationListScreenState extends State<ReservationListScreen> {
     }
   }
 
+  // 주기 문자열을 한글로 변환
   String formatInterval(String interval) {
     switch (interval) {
       case 'DAILY':
@@ -65,6 +68,7 @@ class _ReservationListScreenState extends State<ReservationListScreen> {
     }
   }
 
+  // 정리 기준 문자열을 한글로 변환
   String formatCriteria(String criteria) {
     switch (criteria) {
       case 'TYPE':
@@ -80,6 +84,7 @@ class _ReservationListScreenState extends State<ReservationListScreen> {
     }
   }
 
+  // 예약 삭제 API 호출 및 UI 새로고침
   Future<void> deleteReservation(int taskId) async {
     final response = await http.delete(
       Uri.parse('$baseUrl/scheduledTask/delete/$taskId'),
@@ -90,7 +95,7 @@ class _ReservationListScreenState extends State<ReservationListScreen> {
         SnackBar(content: Text('예약이 삭제되었습니다.')),
       );
       setState(() {
-        reservationFuture = fetchReservations(userId!);  // ✅ 새로고침
+        reservationFuture = fetchReservations(userId!);  // 목록 다시 불러오기
       });
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -113,6 +118,7 @@ class _ReservationListScreenState extends State<ReservationListScreen> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
+            // 상단 제목 및 닫기 버튼
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -124,12 +130,14 @@ class _ReservationListScreenState extends State<ReservationListScreen> {
                   ),
                 ),
                 GestureDetector(
-                  onTap: () => Navigator.of(context).pop(),
+                  onTap: () => Navigator.of(context).pop(), // 닫기
                   child: const Icon(Icons.close),
                 ),
               ],
             ),
             const SizedBox(height: 24),
+
+            // 헤더 행 (컬럼 제목)
             Container(
               color: Color(0xFF455A64),
               padding: const EdgeInsets.symmetric(vertical: 12),
@@ -143,23 +151,25 @@ class _ReservationListScreenState extends State<ReservationListScreen> {
               ),
             ),
             const Divider(height: 1),
+
+            // 예약 목록 FutureBuilder로 처리
             FutureBuilder<List<Reservation>>(
               future: reservationFuture,
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return const Padding(
                     padding: EdgeInsets.all(20),
-                    child: CircularProgressIndicator(),
+                    child: CircularProgressIndicator(), // 로딩 중 표시
                   );
                 } else if (snapshot.hasError) {
                   return Padding(
                     padding: const EdgeInsets.all(20),
-                    child: Text('오류 발생: ${snapshot.error}'),
+                    child: Text('오류 발생: ${snapshot.error}'), // 에러 표시
                   );
                 } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
                   return const Padding(
                     padding: EdgeInsets.all(20),
-                    child: Text('예약된 항목이 없습니다.'),
+                    child: Text('예약된 항목이 없습니다.'), // 데이터 없음
                   );
                 }
 
@@ -169,8 +179,11 @@ class _ReservationListScreenState extends State<ReservationListScreen> {
                       reservations.map<Widget>((reservation) {
                         return Container(
                           padding: const EdgeInsets.symmetric(vertical: 16),
+
+                          // 예약 항목 행 (우클릭 메뉴 포함)
                           child: GestureDetector(
                             onSecondaryTapDown: (details) async {
+                              // 우클릭 컨텍스트 메뉴 표시 위치 계산
                               final RenderBox overlay = Overlay.of(context).context.findRenderObject() as RenderBox;
                               final positionRect = RelativeRect.fromLTRB(
                                 details.globalPosition.dx,
@@ -179,6 +192,7 @@ class _ReservationListScreenState extends State<ReservationListScreen> {
                                 overlay.size.height - details.globalPosition.dy,
                               );
 
+                              // 메뉴 보여주기
                               final selected = await showMenu<String>(
                                 context: context,
                                 position: positionRect,
@@ -207,6 +221,7 @@ class _ReservationListScreenState extends State<ReservationListScreen> {
                                 ],
                               );
 
+                              // 선택 처리
                               if (selected == 'delete') {
                                 await deleteReservation(reservation.taskId);
                               } else if (selected == 'modify') {
@@ -219,34 +234,28 @@ class _ReservationListScreenState extends State<ReservationListScreen> {
                                 );
                               }
                             },
+
+                            // 예약 정보 출력 행
                             child: Row(
                               children: [
                                 Expanded(
                                   child: Center(
-                                    child: Text(
-                                      '${reservation.previousFoldername}',
-                                    ),
+                                    child: Text('${reservation.previousFoldername}'),
                                   ),
                                 ),
                                 Expanded(
                                   child: Center(
-                                    child: Text(
-                                      '${reservation.newFoldername}',
-                                    ),
+                                    child: Text('${reservation.newFoldername}'),
                                   ),
                                 ),
                                 Expanded(
                                   child: Center(
-                                    child: Text(
-                                      formatInterval(reservation.interval),
-                                    ),
+                                    child: Text(formatInterval(reservation.interval)),
                                   ),
                                 ),
                                 Expanded(
                                   child: Center(
-                                    child: Text(
-                                      formatCriteria(reservation.criteria),
-                                    ),
+                                    child: Text(formatCriteria(reservation.criteria)),
                                   ),
                                 ),
                               ],
