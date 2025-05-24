@@ -1,5 +1,5 @@
 import 'dart:html' as html;
-import 'dart:ui' as ui;
+import 'dart:ui_web' as ui;
 import 'package:flutter/widgets.dart';
 
 // 웹 기반으로 미리보기 위한 위젯 생성 함수
