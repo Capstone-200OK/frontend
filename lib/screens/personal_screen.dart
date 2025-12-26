@@ -284,12 +284,80 @@ class _PersonalScreenState extends State<PersonalScreen> {
           ),
         );
 
+
         // 파일 이름 중복 방지를 위한 Set 저장
         fileNames = selectedFiles.map((f) => f.name).toSet();
       });
     } else {
       print('폴더 계층 불러오기 실패: ${response.statusCode}');
     }
+  }
+
+  Widget _buildFileLeadingThumb(FileItem file) {
+    final thumb = file.fileThumbnail;
+    final fileUrl = file.fileUrl;
+
+    final ext = file.type.toLowerCase();
+    final isImage = ['png', 'jpg', 'jpeg', 'gif', 'bmp', 'webp'].contains(ext);
+
+    // 우선순위: 썸네일 URL > 이미지면 원본 URL > 기본 아이콘
+    final String? displayUrl =
+        (thumb != null && thumb.isNotEmpty) ? thumb : (isImage ? fileUrl : null);
+
+    if (displayUrl == null || displayUrl.isEmpty) {
+      return Container(
+        width: 40,
+        height: 40,
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: const Color(0xffB0BEC5)),
+        ),
+        child: const Icon(Icons.insert_drive_file, size: 20),
+      );
+    }
+
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(8),
+      child: Image.network(
+        displayUrl,
+        width: 40,
+        height: 40,
+        fit: BoxFit.cover,
+        errorBuilder: (_, __, ___) {
+          return Container(
+            width: 40,
+            height: 40,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: const Color(0xffB0BEC5)),
+            ),
+            child: const Icon(Icons.broken_image, size: 18),
+          );
+        },
+        loadingBuilder: (context, child, progress) {
+          if (progress == null) return child;
+          return Container(
+            width: 40,
+            height: 40,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: const Color(0xffB0BEC5)),
+            ),
+            child: const SizedBox(
+              width: 14,
+              height: 14,
+              child: CircularProgressIndicator(strokeWidth: 2),
+            ),
+          );
+        },
+      ),
+    );
   }
 
   // 현재 폴더에 있는 파일 및 하위 폴더 목록을 새로고침하는 함수
@@ -1280,7 +1348,7 @@ Future<void> showContextMenuAtPosition({
                           }
                           // 업로드 후 현재 폴더의 파일 목록 새로고침
                           await refreshCurrentFolderFiles();
-
+                          Future.delayed(const Duration(seconds: 2), () => refreshCurrentFolderFiles());
                           // 업로드 오버레이 일정 시간 후 자동 제거
                           Future.delayed(const Duration(seconds: 3), () {
                             _uploadOverlayEntry?.remove(); // 오버레이 제거
@@ -1425,10 +1493,7 @@ Future<void> showContextMenuAtPosition({
                                       },
                                       // 파일 항목 구성
                                       child: ListTile(
-                                        leading: const Icon(
-                                          Icons.insert_drive_file,
-                                          size: 20, // 파일 아이콘
-                                        ),
+                                        leading: _buildFileLeadingThumb(file),
                                         title: Text(
                                           file.name, // 파일 이름
                                           overflow: TextOverflow.ellipsis, // 길 경우 말줄임표 처리
